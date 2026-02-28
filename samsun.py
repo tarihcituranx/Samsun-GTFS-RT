@@ -121,6 +121,119 @@ SAMAIR_HATLAR = {
     }
 }
 
+# --- GTFS YARDIMCI FONKSİYONLARI ---
+
+_ASCII_MAP = str.maketrans({
+    'İ': 'I', 'ı': 'i', 'Ş': 'S', 'ş': 's',
+    'Ç': 'C', 'ç': 'c', 'Ğ': 'G', 'ğ': 'g',
+    'Ü': 'U', 'ü': 'u', 'Ö': 'O', 'ö': 'o',
+})
+
+def sanitize_id(text):
+    """ID alanları için: Türkçe karakterleri ASCII'ye çevir, boşluk/özel karakter temizle."""
+    if not text: return str(text) if text is not None else ''
+    t = str(text).translate(_ASCII_MAP)
+    t = re.sub(r'[^A-Za-z0-9_\-./]', '_', t)
+    t = re.sub(r'_+', '_', t).strip('_')
+    return t
+
+def _tr_lower(text):
+    """Türkçe kurallarına uygun küçük harf: I→ı, İ→i, diğerleri standart."""
+    result = []
+    for ch in text:
+        if ch == 'I': result.append('ı')
+        elif ch == 'İ': result.append('i')
+        else: result.append(ch.lower())
+    return ''.join(result)
+
+def _tr_upper_first(ch):
+    """Tek karakter Türkçe büyük harf: i→İ, ı→I."""
+    if ch == 'i': return 'İ'
+    elif ch == 'ı': return 'I'
+    else: return ch.upper()
+
+def title_case_tr(text):
+    """Türkçe uyumlu Title Case ('SOĞUKSU' → 'Soğuksu')."""
+    if not text: return text
+    words = str(text).split()
+    result = []
+    small_words = {'ve', 'ile', 'ya', 'da', 'de', 'den', 'dan', 'ne', 'bir'}
+    for i, word in enumerate(words):
+        if word in ('-', '–'):
+            result.append(word); continue
+        if word.isdigit():
+            result.append(word); continue
+        parts = []
+        for part in re.split(r'(\(|\))', word):
+            if part in ('(', ')'): parts.append(part); continue
+            if not part: continue
+            low = _tr_lower(part)
+            if i > 0 and low in small_words:
+                parts.append(low)
+            else:
+                first = _tr_upper_first(low[0])
+                parts.append(first + low[1:])
+        result.append(''.join(parts))
+    return ' '.join(result)
+
+def extract_short_name(code, short_name):
+    """route_short_name max 12 karakter. Hat numarasını çıkarır."""
+    raw = str(short_name).strip() if short_name else str(code).strip()
+    m = re.match(r'^(\d+[A-Za-z]?|[A-Za-z]\d+[A-Za-z]?)', raw)
+    if m and len(m.group(1)) <= 12:
+        return m.group(1)
+    special = {'TELEFERIK': 'TLFRK', 'TELEFERİK': 'TLFRK'}
+    for key, val in special.items():
+        if key in raw.upper().translate(_ASCII_MAP): return val
+    if 'SAMSUNUM' in raw.upper().translate(_ASCII_MAP):
+        m2 = re.match(r'SAMSUNUM(\d+)', raw, re.IGNORECASE)
+        if m2: return f'SN{m2.group(1)}'
+    if 'ALTINKAYA' in raw.upper().translate(_ASCII_MAP): return 'AK55'
+    ilce = [
+        (r'SAMSUN\s*-\s*TERME', 'SAM-TRM'), (r'TERME\s*-\s*SAMSUN', 'TRM-SAM'),
+        (r'SAMSUN\s*-\s*[CÇ]AR[SŞ]AMBA', 'SAM-CRS'), (r'[CÇ]AR[SŞ]AMBA\s*-\s*SAMSUN', 'CRS-SAM'),
+    ]
+    raw_ascii = raw.upper().translate(_ASCII_MAP)
+    for pattern, short in ilce:
+        if re.search(pattern, raw_ascii): return short
+    if 'TRAMVAY' in raw.upper().translate(_ASCII_MAP): return 'TRAM'
+    return raw[:12].rstrip(' -') if len(raw) > 12 else raw
+
+def clean_long_name(gtfs_short, long_name, db_short=''):
+    """route_long_name başından short_name prefix'ini kaldır."""
+    if not long_name: return ''
+    ln = str(long_name).strip()
+    for prefix in [gtfs_short, db_short]:
+        if not prefix: continue
+        pf = str(prefix).strip()
+        if ln == pf: continue
+        if ln.startswith(pf + ' '):
+            cleaned = ln[len(pf):].strip().lstrip('- ').strip()
+            if cleaned: return cleaned
+    m = re.match(r'^(\d+[/]?[A-Za-z]?|[A-Za-z]\d+[A-Za-z]?)\s+(.+)', ln)
+    if m:
+        code = m.group(1)
+        if code == gtfs_short or code == db_short: return m.group(2).strip()
+    return ln
+
+def gun_to_service(gun_str):
+    """Gün stringini GTFS service_id'ye çevir."""
+    g = str(gun_str).lower()
+    if 'hafta' in g: return '1'
+    elif 'cumartesi' in g: return '2'
+    elif 'pazar' in g: return '3'
+    return '4'
+
+def gtfs_route_type(tip):
+    """Hat tipini GTFS route_type'a çevir."""
+    return {'otobus': '3', 'tramvay': '0', 'ring': '3', 'ekspres': '3',
+            'havalimani': '3', 'ilce': '3', 'teleferik': '6', 'tekne': '4'}.get(tip, '3')
+
+def gtfs_route_color(tip):
+    """Hat tipine göre GTFS route_color."""
+    return {'otobus': '1877F2', 'tramvay': 'E67E22', 'ring': 'F39C12', 'ekspres': '9B59B6',
+            'havalimani': 'E74C3C', 'ilce': '1ABC9C', 'teleferik': 'E91E63', 'tekne': '3498DB'}.get(tip, '1877F2')
+
 # --- YARDIMCI FONKSİYONLAR ---
 
 def parse_int(val):
@@ -388,46 +501,48 @@ class Database:
     def _create_tables(self):
         self.conn.executescript("""
             CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
-            CREATE TABLE IF NOT EXISTS hat(code TEXT PRIMARY KEY, name TEXT, tip TEXT, kat TEXT, alias TEXT DEFAULT '', short_name TEXT DEFAULT '');
-            CREATE TABLE IF NOT EXISTS durak(id TEXT PRIMARY KEY, kod TEXT, ad TEXT, lat REAL, lon REAL);
+            CREATE TABLE IF NOT EXISTS hat(
+                code TEXT PRIMARY KEY, name TEXT, tip TEXT, kat TEXT,
+                alias TEXT DEFAULT '', short_name TEXT DEFAULT '',
+                gtfs_route_id TEXT DEFAULT '',
+                gtfs_route_short_name TEXT DEFAULT '',
+                gtfs_route_long_name TEXT DEFAULT '',
+                gtfs_route_type TEXT DEFAULT '3',
+                gtfs_route_color TEXT DEFAULT '1877F2'
+            );
+            CREATE TABLE IF NOT EXISTS durak(
+                id TEXT PRIMARY KEY, kod TEXT, ad TEXT, lat REAL, lon REAL,
+                gtfs_stop_id TEXT DEFAULT '',
+                gtfs_stop_name TEXT DEFAULT ''
+            );
             CREATE TABLE IF NOT EXISTS hat_durak(id INTEGER PRIMARY KEY, hat TEXT, durak_id TEXT, ad TEXT, sira INT, lat REAL, lon REAL);
-            CREATE TABLE IF NOT EXISTS sefer(id INTEGER PRIMARY KEY, hat TEXT, saat TEXT, yon TEXT, gun TEXT);
+            CREATE TABLE IF NOT EXISTS sefer(
+                id INTEGER PRIMARY KEY, hat TEXT, saat TEXT, yon TEXT, gun TEXT,
+                gtfs_trip_id TEXT DEFAULT '',
+                gtfs_route_id TEXT DEFAULT '',
+                gtfs_service_id TEXT DEFAULT '4'
+            );
             CREATE TABLE IF NOT EXISTS odak(id TEXT PRIMARY KEY, ad TEXT, kod TEXT, gunler TEXT);
             CREATE TABLE IF NOT EXISTS odak_durak(id INTEGER PRIMARY KEY, hat TEXT, ad TEXT, kod TEXT, sira INT, lat REAL, lon REAL, fiyat TEXT, fiyat_ogr TEXT);
             CREATE TABLE IF NOT EXISTS samair(id INTEGER PRIMARY KEY, ad TEXT, kod TEXT);
             CREATE TABLE IF NOT EXISTS samair_durak(id INTEGER PRIMARY KEY, hat INTEGER, ad TEXT, kod TEXT, sira INT, lat REAL, lon REAL, fiyat TEXT);
             CREATE TABLE IF NOT EXISTS samair_sefer(id INTEGER PRIMARY KEY, hat INT, saat TEXT, varis TEXT, firma TEXT, ucak_saat TEXT, tarih TEXT, gun_format TEXT);
-            -- Fiyat Tablosu (Samulaş, SamAir, Odak fiyatları)
             CREATE TABLE IF NOT EXISTS fiyat(
                 id INTEGER PRIMARY KEY,
-                kaynak TEXT,               -- 'samulas', 'samair', 'odak', 'asis'
-                hat_adi TEXT,
-                hat_code TEXT DEFAULT '',  -- Eşleşen hat kodu
-                tam_fiyat REAL DEFAULT 0,
-                indirimli_fiyat REAL DEFAULT 0,
-                ogrenci_fiyat REAL DEFAULT 0,
-                aktarma1 TEXT,
-                aktarma2 REAL DEFAULT 0,
-                link TEXT,
-                guncelleme TEXT
+                kaynak TEXT, hat_adi TEXT, hat_code TEXT DEFAULT '',
+                tam_fiyat REAL DEFAULT 0, indirimli_fiyat REAL DEFAULT 0,
+                ogrenci_fiyat REAL DEFAULT 0, aktarma1 TEXT, aktarma2 REAL DEFAULT 0,
+                link TEXT, guncelleme TEXT
             );
-            
-            -- YENİ: Hat yönleri tablosu (LineDirections endpoint için)
             CREATE TABLE IF NOT EXISTS hat_yon(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                hat TEXT NOT NULL,
-                yon_id TEXT NOT NULL,
-                yon_adi TEXT,
+                hat TEXT NOT NULL, yon_id TEXT NOT NULL, yon_adi TEXT,
                 UNIQUE(hat, yon_id)
             );
-            
-            -- YENİ: GTFS Shapes tablosu (güzergah çizgileri için)
             CREATE TABLE IF NOT EXISTS gtfs_shape(
                 shape_id TEXT NOT NULL,
-                shape_pt_lat REAL NOT NULL,
-                shape_pt_lon REAL NOT NULL,
-                shape_pt_sequence INTEGER NOT NULL,
-                shape_dist_traveled REAL,
+                shape_pt_lat REAL NOT NULL, shape_pt_lon REAL NOT NULL,
+                shape_pt_sequence INTEGER NOT NULL, shape_dist_traveled REAL,
                 PRIMARY KEY (shape_id, shape_pt_sequence)
             );
             
@@ -439,6 +554,24 @@ class Database:
             CREATE INDEX IF NOT EXISTS idx_hat_yon ON hat_yon(hat);
             CREATE INDEX IF NOT EXISTS idx_shape ON gtfs_shape(shape_id);
         """)
+        # Mevcut DB'ler için GTFS sütunlarını ekle (ALTER TABLE migration)
+        _migrations = [
+            ('hat', 'gtfs_route_id', "TEXT DEFAULT ''"),
+            ('hat', 'gtfs_route_short_name', "TEXT DEFAULT ''"),
+            ('hat', 'gtfs_route_long_name', "TEXT DEFAULT ''"),
+            ('hat', 'gtfs_route_type', "TEXT DEFAULT '3'"),
+            ('hat', 'gtfs_route_color', "TEXT DEFAULT '1877F2'"),
+            ('durak', 'gtfs_stop_id', "TEXT DEFAULT ''"),
+            ('durak', 'gtfs_stop_name', "TEXT DEFAULT ''"),
+            ('sefer', 'gtfs_trip_id', "TEXT DEFAULT ''"),
+            ('sefer', 'gtfs_route_id', "TEXT DEFAULT ''"),
+            ('sefer', 'gtfs_service_id', "TEXT DEFAULT '4'"),
+        ]
+        for tbl, col, dtype in _migrations:
+            try:
+                self.conn.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {dtype}")
+            except Exception:
+                pass  # Sütun zaten var
         self.conn.commit()
 
     def _load_durak_coords(self):
@@ -742,6 +875,22 @@ class Collector:
                 log.info(f"      ✅ Yeni Samulaş V1'den {basarili_short} short_name çekildi. Kalanlar otomatik atandı.")
         except Exception as e:
             log.warning(f"      ⚠️ Samulaş V1 entegre edilemedi: {e}")
+        
+        # 4. GTFS sütunlarını hesapla ve güncelle (Tüm hatlar için)
+        all_hatlar = self.db.get("SELECT code, name, tip, kat, short_name FROM hat")
+        for h in all_hatlar:
+            g_route_id = sanitize_id(h['code'])
+            g_short = extract_short_name(h['code'], h['short_name'])
+            db_short = str(h['short_name']).strip() if h['short_name'] else ''
+            raw_long = str(h['name']).strip() if h['name'] else h['code']
+            g_long = title_case_tr(clean_long_name(g_short, raw_long, db_short)).replace(',', ' -')
+            g_type = gtfs_route_type(h['tip'])
+            g_color = gtfs_route_color(h['tip'])
+            self.db.ex(
+                "UPDATE hat SET gtfs_route_id=?, gtfs_route_short_name=?, gtfs_route_long_name=?, gtfs_route_type=?, gtfs_route_color=? WHERE code=?",
+                (g_route_id, g_short, g_long, g_type, g_color, h['code'])
+            )
+        log.info(f"      ✅ {len(all_hatlar)} hat için GTFS alanları hesaplandı")
 
     def _duraklar(self):
         log.info("   📥 Duraklar...")
@@ -756,10 +905,12 @@ class Collector:
                 m = re.match(r'^(\d+)', ad)
                 kod = m.group(1) if m else ''
                 if 40 < lat < 43 and 34 < lon < 38:
-                    rows.append((sid, kod, ad, lat, lon))
+                    g_stop_id = sanitize_id(sid)
+                    g_stop_name = title_case_tr(ad.replace(',', ' '))
+                    rows.append((sid, kod, ad, lat, lon, g_stop_id, g_stop_name))
                     if kod: self.db.durak_coords[kod] = (lat, lon)
-        if rows: self.db.exm("INSERT OR REPLACE INTO durak VALUES(?,?,?,?,?)", rows)
-        log.info(f"      ✅ {len(rows)} durak yüklendi")
+        if rows: self.db.exm("INSERT OR REPLACE INTO durak(id,kod,ad,lat,lon,gtfs_stop_id,gtfs_stop_name) VALUES(?,?,?,?,?,?,?)", rows)
+        log.info(f"      ✅ {len(rows)} durak yüklendi (GTFS alanları dahil)")
 
     def _hat_duraklari(self):
         log.info("   📥 Güzergahlar...")
@@ -786,12 +937,25 @@ class Collector:
         hs = today + timedelta(days=(5 - today.weekday()) if today.weekday() != 5 else 0)
         for i, h in enumerate(hatlar):
             code = h['code']
+            g_route_id = sanitize_id(code)
             for gun, t in [('hi', hi), ('hs', hs)]:
+                service_id = gun_to_service(gun)
                 for d in self.http.asis('Schedules', lineCode=code, scheduleDate=t.strftime("%Y-%m-%d")):
                     saat = d.get('time', d.get('saat', ''))
-                    if saat: self.db.ex("INSERT INTO sefer(hat,saat,yon,gun) VALUES(?,?,?,?)", (code, saat, d.get('yon', ''), gun))
+                    yon = d.get('yon', '')
+                    if saat:
+                        self.db.ex(
+                            "INSERT INTO sefer(hat,saat,yon,gun,gtfs_route_id,gtfs_service_id) VALUES(?,?,?,?,?,?)",
+                            (code, saat, yon, gun, g_route_id, service_id)
+                        )
+                        # gtfs_trip_id için son eklenen id'yi al
+                        last_id = self.db.one("SELECT last_insert_rowid() as lid")
+                        if last_id:
+                            tid = sanitize_id(f"T_{last_id['lid']}")
+                            self.db.ex("UPDATE sefer SET gtfs_trip_id=? WHERE id=?", (tid, last_id['lid']))
             if (i+1)%20==0: log.info(f"      {i+1}/{len(hatlar)}...")
             time.sleep(0.02)
+        log.info(f"      ✅ Seferler yüklendi (GTFS alanları dahil)")
 
     def _fix_stop_coordinates(self):
         """Hatalı durak koordinatlarını düzelt - DEVRE DIŞI (CSV kullanılıyor)"""
@@ -2618,14 +2782,13 @@ def create_app(db, col):
     
     @app.get("/gtfs/static.zip")
     async def gtfs_static_export():
-        """GTFS Static feed'i ZIP olarak indir"""
+        """GTFS Static feed'i ZIP olarak indir — DB'deki GTFS sütunlarını kullanır"""
         import zipfile
         import io
         from bs4 import BeautifulSoup
         
-        # Samulaş Agency dynamic scraper
-        phone = "+905051955000"
-        email = "info@samulas.com.tr"
+        # Agency bilgisi
+        phone, email = "+905051955000", "info@samulas.com.tr"
         try:
             r_ag = requests.get("https://samulas.com.tr/iletisim/", headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
             if r_ag.ok:
@@ -2637,60 +2800,68 @@ def create_app(db, col):
         
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            # 1. agency.txt (Kurumsal Dynamic)
+            # 1. agency.txt
             agency_txt = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email\n"
             agency_txt += f"samulas,Samulaş A.Ş.,https://samulas.com.tr,Europe/Istanbul,tr,{phone},{email}\n"
             zf.writestr("agency.txt", agency_txt)
             
-            # 2. routes.txt
-            routes_txt = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n"
-            hatlar = db.get("SELECT code, name, tip, short_name FROM hat")
-            for h in hatlar:
-                route_type = {'otobus': '3', 'tramvay': '0', 'ring': '3', 'ekspres': '3', 'havalimani': '3', 'ilce': '3', 'teleferik': '6', 'tekne': '4'}.get(h['tip'], '3')
-                color = {'otobus': '1877F2', 'tramvay': 'E67E22', 'ring': 'F39C12', 'ekspres': '9B59B6', 'havalimani': 'E74C3C', 'ilce': '1ABC9C', 'teleferik': 'E91E63', 'tekne': '3498DB'}.get(h['tip'], '1877F2')
-                r_short = str(h['short_name']).strip() if h.get('short_name') else h['code']
-                routes_txt += f"{h['code']},samulas,{r_short},{h['name']},{route_type},{color},FFFFFF\n"
-            zf.writestr("routes.txt", routes_txt)
+            # 2. feed_info.txt (GTFS validator fix)
+            feed_info_txt = "feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version,feed_contact_email,feed_contact_url\n"
+            feed_info_txt += f"Samulaş A.Ş.,https://samulas.com.tr,tr,20240101,20261231,2.5,{email},https://samulas.com.tr/iletisim\n"
+            zf.writestr("feed_info.txt", feed_info_txt)
             
-            # 3. stops.txt
-            stops_txt = "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type\n"
-            # Fixed the query to pull from durak directly to avoid SQL column error
-            duraklar = db.get("SELECT DISTINCT code as durak_id, kod, ad, lat, lon FROM (SELECT d.id as code, d.kod, d.ad, d.lat, d.lon FROM durak d WHERE d.lat IS NOT NULL)")
-            durak_dict = {}
-            for d in duraklar:
-                durak_dict[d['durak_id']] = (d['lat'], d['lon'])
-                ad_clean = str(d['ad']).replace(',', ' ')
-                stops_txt += f"{d['durak_id']},{d['kod']},{ad_clean},{d['lat']},{d['lon']},0\n"
-            zf.writestr("stops.txt", stops_txt)
+            # 3. routes.txt — DB'deki GTFS sütunlarını kullan
+            routes_txt = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n"
+            hatlar = db.get("SELECT code, gtfs_route_id, gtfs_route_short_name, gtfs_route_long_name, gtfs_route_type, gtfs_route_color FROM hat")
+            route_id_map = {}
+            for h in hatlar:
+                rid = h['gtfs_route_id'] or sanitize_id(h['code'])
+                route_id_map[h['code']] = rid
+                r_short = h['gtfs_route_short_name'] or h['code'][:12]
+                r_long = h['gtfs_route_long_name'] or h['code']
+                r_type = h['gtfs_route_type'] or '3'
+                r_color = h['gtfs_route_color'] or '1877F2'
+                routes_txt += f"{rid},samulas,{r_short},{r_long},{r_type},{r_color},FFFFFF\n"
+            zf.writestr("routes.txt", routes_txt)
             
             # 4. calendar.txt
             calendar_txt = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n"
-            calendar_txt += "1,1,1,1,1,1,0,0,20240101,20261231\n" # Haftaiçi
-            calendar_txt += "2,0,0,0,0,0,1,0,20240101,20261231\n" # Cumartesi
-            calendar_txt += "3,0,0,0,0,0,0,1,20240101,20261231\n" # Pazar
-            calendar_txt += "4,1,1,1,1,1,1,1,20240101,20261231\n" # Her Gün
+            calendar_txt += "1,1,1,1,1,1,0,0,20240101,20261231\n"
+            calendar_txt += "2,0,0,0,0,0,1,0,20240101,20261231\n"
+            calendar_txt += "3,0,0,0,0,0,0,1,20240101,20261231\n"
+            calendar_txt += "4,1,1,1,1,1,1,1,20240101,20261231\n"
             zf.writestr("calendar.txt", calendar_txt)
             
-            # 5. trips.txt & 6. stop_times.txt
+            # 5. trips.txt & stop_times.txt — GTFS sütunlarını kullan + filtreler
             trips_txt = "route_id,service_id,trip_id,trip_headsign,direction_id\n"
             stop_times_txt = "trip_id,arrival_time,departure_time,stop_id,stop_sequence\n"
             
-            seferler = db.get("SELECT id, hat, saat, yon, gun FROM sefer")
+            # Durak koordinat cache
+            durak_dict = {}
+            for d in db.get("SELECT id, gtfs_stop_id, lat, lon FROM durak WHERE lat IS NOT NULL"):
+                durak_dict[d['id']] = (d['lat'], d['lon'], d['gtfs_stop_id'] or sanitize_id(d['id']))
+            
+            used_stop_ids = set()  # Kullanılan durakları takip et
+            skipped = 0
+            
+            seferler = db.get("SELECT id, hat, saat, yon, gun, gtfs_trip_id, gtfs_route_id, gtfs_service_id FROM sefer")
             for s in seferler:
-                route_id = s['hat']
-                trip_id = f"T_{s['id']}"
-                headsign = str(s['yon']).replace(',', ' ')
+                route_id_orig = s['hat']
+                route_id = s['gtfs_route_id'] or route_id_map.get(route_id_orig, sanitize_id(route_id_orig))
+                trip_id = s['gtfs_trip_id'] or sanitize_id(f"T_{s['id']}")
+                headsign = title_case_tr(str(s['yon']).replace(',', ' '))
+                service_id = s['gtfs_service_id'] or gun_to_service(s['gun'])
+                direction_id = "0" if "GİDİŞ" in str(s['yon']).upper() or s['yon'] == 'G' else "1"
                 
-                gun_str = str(s['gun']).lower()
-                service_id = "4"
-                if "hafta" in gun_str: service_id = "1"
-                elif "cumartesi" in gun_str: service_id = "2"
-                elif "pazar" in gun_str: service_id = "3"
+                route_duraklar = db.get("SELECT durak_id, sira FROM hat_durak WHERE hat=? ORDER BY sira ASC", (route_id_orig,))
                 
-                direction_id = "0" if "GİDİŞ" in str(s['yon']).upper() else "1"
+                # Unusable trip filtresi
+                if len(route_duraklar) <= 1:
+                    skipped += 1
+                    continue
+                
                 trips_txt += f"{route_id},{service_id},{trip_id},{headsign},{direction_id}\n"
                 
-                route_duraklar = db.get("SELECT durak_id, sira FROM hat_durak WHERE hat=? ORDER BY sira ASC", (route_id,))
                 try:
                     h, m = map(int, s['saat'].split(':')[:2])
                     current_minutes = h * 60 + m
@@ -2700,18 +2871,21 @@ def create_app(db, col):
                 prev_lat, prev_lon = None, None
                 for idx, rd in enumerate(route_duraklar):
                     sira = int(rd['sira'])
-                    stop_id = rd['durak_id']
+                    stop_id_orig = rd['durak_id']
+                    dd = durak_dict.get(stop_id_orig)
+                    stop_id = dd[2] if dd else sanitize_id(stop_id_orig)
+                    
+                    used_stop_ids.add(stop_id_orig)
                     
                     added_mins = 0
-                    if idx > 0:
-                        lat, lon = durak_dict.get(stop_id, (None, None))
+                    if idx > 0 and dd:
+                        lat, lon = dd[0], dd[1]
                         if lat and lon and prev_lat and prev_lon:
                             dist = haversine(prev_lat, prev_lon, lat, lon)
-                            saniye_farki = (dist / 6.1) + 35 # 22km/h speed + 35s traffic light overhead
-                            added_mins = saniye_farki / 60.0
+                            added_mins = ((dist / 6.1) + 35) / 60.0
                         else:
                             added_mins = 1.5
-                            
+                    
                     current_minutes += added_mins
                     arr_h = int(current_minutes // 60)
                     arr_m = int(current_minutes % 60)
@@ -2719,12 +2893,23 @@ def create_app(db, col):
                     time_str = f"{arr_h:02d}:{arr_m:02d}:{arr_s:02d}"
                     
                     stop_times_txt += f"{trip_id},{time_str},{time_str},{stop_id},{sira}\n"
-                    lat, lon = durak_dict.get(stop_id, (None, None))
-                    if lat and lon: prev_lat, prev_lon = lat, lon
+                    
+                    if dd: prev_lat, prev_lon = dd[0], dd[1]
             
             zf.writestr("trips.txt", trips_txt)
             zf.writestr("stop_times.txt", stop_times_txt)
             
+            # 6. stops.txt — sadece kullanılan duraklar (stop_without_stop_time fix)
+            stops_txt = "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type\n"
+            duraklar = db.get("SELECT id, kod, gtfs_stop_id, gtfs_stop_name, lat, lon FROM durak WHERE lat IS NOT NULL")
+            for d in duraklar:
+                if d['id'] not in used_stop_ids:
+                    continue
+                sid = d['gtfs_stop_id'] or sanitize_id(d['id'])
+                sname = d['gtfs_stop_name'] or d['id']
+                stops_txt += f"{sid},{d['kod'] or ''},{sname},{d['lat']},{d['lon']},0\n"
+            zf.writestr("stops.txt", stops_txt)
+        
         zip_buffer.seek(0)
         return Response(zip_buffer.getvalue(), media_type="application/zip", headers={'Content-Disposition': 'attachment; filename="samsun_gtfs.zip"'})
     

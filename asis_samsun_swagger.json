@@ -131,6 +131,11 @@
               }
             }
           }
+        },
+        "x-gtfs-mapping": {
+          "stopId": "→ durak.id (orijinal) / durak.gtfs_stop_id (GTFS ASCII-safe)",
+          "stopName": "→ durak.ad (orijinal) / durak.gtfs_stop_name (GTFS Title Case)",
+          "latitude/longitude": "→ durak.lat / durak.lon (GTFS stop_lat / stop_lon)"
         }
       }
     },
@@ -305,6 +310,12 @@
             }
           }
         }
+      },
+      "x-gtfs-mapping": {
+        "DepartureTime": "→ sefer.saat (orijinal) / GTFS stop_times.arrival_time",
+        "lineCode→hat": "→ sefer.hat (orijinal) / sefer.gtfs_route_id (ASCII-safe)",
+        "gun": "→ sefer.gun (orijinal) / sefer.gtfs_service_id (1=Hİ, 2=CMT, 3=PZR, 4=HerGün)",
+        "trip": "→ sefer.gtfs_trip_id (auto-generated T_{id})"
       }
     },
     "/?method=getGuestToken": {
@@ -584,6 +595,12 @@
           }
         }
       }
+    },
+    "x-gtfs-mapping": {
+      "lineCode": "→ hat.code (orijinal) / hat.gtfs_route_id (GTFS ASCII-safe)",
+      "lineName": "→ hat.name (orijinal) / hat.gtfs_route_long_name (GTFS Title Case)",
+      "shortLineName": "→ hat.short_name (orijinal) / hat.gtfs_route_short_name (≤12 char)",
+      "tip": "→ hat.tip (orijinal) / hat.gtfs_route_type (0=tram, 3=bus, 4=ferry, 6=cable)"
     }
   },
   "components": {}
