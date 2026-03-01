@@ -193,7 +193,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showDurakSheet(Map<String, dynamic> durak) async {
-    final durakKod = durak['kod']?.toString() ?? '';
+    // DB'de kod boşsa, "32302 - KORUPARK" gibi addan baştaki rakamları çek
+    String durakKod = durak['kod']?.toString() ?? '';
+    if (durakKod.isEmpty || durakKod == 'null') {
+      final ad = durak['ad']?.toString() ?? '';
+      final match = RegExp(r'^(\d+)').firstMatch(ad);
+      if (match != null) durakKod = match.group(1)!;
+    }
+    
     showModalBottomSheet(
       context: context, isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -247,17 +254,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           point: _myLocation, width: 36, height: 36,
                           child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
                         ),
-                        ..._duraklar.take(300).map((d) {
-                          double lat = (d['lat'] as num).toDouble();
-                          double lon = (d['lon'] as num).toDouble();
-                          return Marker(
-                            point: LatLng(lat, lon), width: 22, height: 22,
-                            child: GestureDetector(
-                              onTap: () => _showDurakSheet(d),
-                              child: const Icon(Icons.directions_bus, color: Colors.red, size: 18),
-                            ),
-                          );
-                        }),
+                        ...() {
+                          // Sadece konuma en yakın 300 durağı haritada göster (performans için)
+                          var sortedDuraklar = List<Map<String, dynamic>>.from(_duraklar);
+                          sortedDuraklar.sort((a, b) {
+                            double da = _hav(_myLocation.latitude, _myLocation.longitude, (a['lat'] as num).toDouble(), (a['lon'] as num).toDouble());
+                            double db = _hav(_myLocation.latitude, _myLocation.longitude, (b['lat'] as num).toDouble(), (b['lon'] as num).toDouble());
+                            return da.compareTo(db);
+                          });
+                          
+                          return sortedDuraklar.take(300).map((d) {
+                            double lat = (d['lat'] as num).toDouble();
+                            double lon = (d['lon'] as num).toDouble();
+                            return Marker(
+                              point: LatLng(lat, lon), width: 22, height: 22,
+                              child: GestureDetector(
+                                onTap: () => _showDurakSheet(d),
+                                child: const Icon(Icons.directions_bus, color: Colors.indigo, size: 18),
+                              ),
+                            );
+                          });
+                        }(),
                       ]),
                     ],
                   ),
@@ -302,8 +319,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         final d = _yakinDuraklar[i];
                         final dist = (_hav(_myLocation.latitude, _myLocation.longitude,
                             (d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()) * 1000).round();
+                        
+                        // DB'de kod boşsa, "32302 - KORUPARK" gibi addan baştaki rakamları çek
+                        String durakKodu = d['kod']?.toString() ?? '';
+                        if (durakKodu.isEmpty || durakKodu == 'null') {
+                          final ad = d['ad']?.toString() ?? '';
+                          final match = RegExp(r'^(\d+)').firstMatch(ad);
+                          if (match != null) durakKodu = match.group(1)!;
+                        }
+
                         return ListTile(
-                          leading: CircleAvatar(backgroundColor: Colors.red, child: Text(d['kod']?.toString() ?? '?', style: const TextStyle(color: Colors.white, fontSize: 11))),
+                          leading: CircleAvatar(backgroundColor: Colors.indigo, child: Text(durakKodu.isEmpty ? '?' : durakKodu, style: const TextStyle(color: Colors.white, fontSize: 10))),
                           title: Text(d['ad']?.toString() ?? ''),
                           subtitle: Text("$dist metre uzakta"),
                           trailing: const Icon(Icons.chevron_right),
