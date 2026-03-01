@@ -62,6 +62,24 @@ class DBService {
     return null;
   }
 
+  Future<List<Map<String, dynamic>>> getOdaklar() async {
+    final db = await database;
+    return await db.query('odak');
+  }
+
+  Future<List<Map<String, dynamic>>> getOdakDuraklari(String hatId) async {
+    final db = await database;
+    return await db.query('odak_durak', where: 'hat = ?', whereArgs: [hatId], orderBy: 'sira ASC');
+  }
+
+  Future<List<Map<String, dynamic>>> getSeferler(String hatCode, {String? gun}) async {
+    final db = await database;
+    if (gun != null) {
+      return await db.query('sefer', where: 'hat = ? AND gun = ?', whereArgs: [hatCode, gun], orderBy: 'saat ASC');
+    }
+    return await db.query('sefer', where: 'hat = ?', whereArgs: [hatCode], orderBy: 'saat ASC');
+  }
+
   // --- FAZ 6: Tam Bağımsız Offline Rota Hesaplama Motoru --- 
 
   // Haversine method for offline distance calculation between coordinates
