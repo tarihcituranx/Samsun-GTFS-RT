@@ -59,6 +59,22 @@ class SynchronizationService {
     return [];
   }
 
+  Future<List<dynamic>> _ybsApiCall(String module, String method, {Map<String, String>? params}) async {
+    try {
+      final uri = Uri.parse('$YBS_BASE/$module/$method').replace(queryParameters: params);
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+      });
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        var decoded = json.decode(response.body);
+        return (decoded is Map && decoded.containsKey('data')) ? decoded['data'] : (decoded is List ? decoded : []);
+      }
+    } catch (e) {
+      print('YBS API Hatası ($module/$method): $e');
+    }
+    return [];
+  }
+
   // --- Veri Çekme ve İşleme Fonksiyonları (samsun.py'nin Collector metotları) ---
 
   Future<void> _fetchAndSaveHats() async {
@@ -198,6 +214,191 @@ class SynchronizationService {
     print('✅ Güzergahlar tamamlandı.');
   }
 
+  Future<void> _fetchAndSaveSeferler() async {
+    print('📥 Seferler çekiliyor...');
+    final db = await dbHelper.database;
+    final hats = await db.query(DatabaseHelper.tableHat, columns: ['code']);
+    
+    final now = DateTime.now();
+    final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+    int count = 0;
+    for (var hat in hats) {
+      String code = hat['code'] as String;
+      List<dynamic> schedules = await _asisApiCall('Schedules', params: {'lineCode': code, 'scheduleDate': todayStr});
+      
+      if (schedules.isNotEmpty) {
+        final batch = db.batch();
+        for (var d in schedules) {
+          String saat = d['time']?.toString() ?? d['saat']?.toString() ?? '';
+          String yon = d['yon']?.toString() ?? '';
+          if (saat.isNotEmpty) {
+            batch.insert(DatabaseHelper.tableSefer, {
+              'hat': code,
+              'saat': saat,
+              'yon': yon,
+              'gun': 'hergun'
+            });
+            count++;
+          }
+        }
+        await batch.commit(noResult: true);
+      }
+    }
+    print('✅ $count sefer kaydedildi.');
+  }
+
+  Future<void> _fetchAndSaveOdak() async {
+    print('📥 Odak Turistik Hatlar çekiliyor...');
+    final db = await dbHelper.database;
+    List<dynamic> odakHatlar = await _ybsApiCall('odak_otobus_public', 'HatlarList');
+    int dCount = 0;
+
+    if (odakHatlar.isNotEmpty) {
+      final hatBatch = db.batch();
+      for (var h in odakHatlar) {
+        String code = h['kodu']?.toString() ?? '';
+        String name = h['adi']?.toString() ?? '';
+        String g_code = "G_$code";
+        
+        hatBatch.insert(DatabaseHelper.tableOdak, {
+          'id': code,
+          'ad': name,
+          'kod': g_code,
+          'gunler': h['gunler']?.toString() ?? ''
+        });
+
+        // Also add to main Hat table for generic searching
+        hatBatch.insert(DatabaseHelper.tableHat, {
+          'code': g_code,
+          'name': name,
+          'tip': 'odak',
+          'kat': 'odak',
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
+        // Fetch Duraklar for this Odak
+        List<dynamic> duraklar = await _ybsApiCall('odak_otobussefer_public', 'DuraklarByKodu', params: {'kodu': code});
+        if (duraklar.isNotEmpty) {
+           final dBatch = db.batch();
+           for (var i = 0; i < duraklar.length; i++) {
+              var d = duraklar[i];
+              double lat = double.tryParse(d['lat']?.toString() ?? '0') ?? 0;
+              double lon = double.tryParse(d['lon']?.toString() ?? '0') ?? 0;
+              dBatch.insert(DatabaseHelper.tableOdakDurak, {
+                  'hat': g_code,
+                  'ad': d['durak_adi']?.toString() ?? '',
+                  'kod': d['durak_kodu']?.toString() ?? '',
+                  'sira': i+1,
+                  'lat': lat,
+                  'lon': lon,
+                  'fiyat': d['fiyat']?.toString() ?? '',
+                  'fiyat_ogr': d['fiyat_ogr']?.toString() ?? ''
+              });
+              dCount++;
+           }
+           await dBatch.commit(noResult: true);
+        }
+      }
+      await hatBatch.commit(noResult: true);
+      print('✅ ${odakHatlar.length} Odak Hattı ve $dCount Odak Durağı eklendi.');
+    }
+  }
+
+  Future<void> _fetchAndSaveSamair() async {
+    print('📥 Samair Havalimanı Hatları çekiliyor...');
+    final db = await dbHelper.database;
+    List<dynamic> hatlar = await _ybsApiCall('samair_ucaksefersaatleri_public', 'LokasyonlarList');
+    
+    int hatCount = 0;
+    int seferCount = 0;
+
+    if (hatlar.isNotEmpty) {
+      final batch = db.batch();
+      for (var h in hatlar) {
+         String name = h['adi']?.toString() ?? '';
+         String id = h['id']?.toString() ?? '';
+         
+         batch.insert(DatabaseHelper.tableSamair, {
+           'id': int.tryParse(id) ?? 0,
+           'ad': name,
+           'kod': "H_$id"
+         });
+
+         batch.insert(DatabaseHelper.tableHat, {
+           'code': "H_$id",
+           'name': name,
+           'tip': 'havalimani',
+           'kat': 'havalimani',
+         }, conflictAlgorithm: ConflictAlgorithm.ignore);
+         
+         hatCount++;
+
+         List<dynamic> seferler = await _ybsApiCall('samair_ucaksefersaatleri_public', 'HatlarList', params: {'hatid': id});
+         if (seferler.isNotEmpty) {
+             final sfBatch = db.batch();
+             for (var sf in seferler) {
+                 sfBatch.insert(DatabaseHelper.tableSamairSefer, {
+                     'hat': int.tryParse(id) ?? 0,
+                     'saat': sf['saat']?.toString() ?? '',
+                     'varis': sf['varis_saati']?.toString() ?? '',
+                     'firma': sf['ucak_firmasi']?.toString() ?? '',
+                     'ucak_saat': sf['ucak_saatleri']?.toString() ?? '',
+                     'tarih': sf['tarih']?.toString() ?? '',
+                     'gun_format': sf['formatted_date']?.toString() ?? ''
+                 });
+                 seferCount++;
+             }
+             await sfBatch.commit(noResult: true);
+         }
+      }
+      await batch.commit(noResult: true);
+      print('✅ $hatCount Samair Hattı ve $seferCount Samair Seferi Eklendi.');
+    }
+  }
+
+  Future<void> _injectFixedPrices() async {
+    print('💰 Sabit Fiyatlar Ekleniyor...');
+    final db = await dbHelper.database;
+    final now = DateTime.now().toIso8601String();
+    
+    final batch = db.batch();
+
+    void addPrice(String name, String code, double tam, double indirimli) {
+      batch.insert(DatabaseHelper.tableFiyat, {
+        'kaynak': 'fixed',
+        'hat_adi': name,
+        'hat_code': code,
+        'tam_fiyat': tam,
+        'ogrenci_fiyat': indirimli,
+        'guncelleme': now
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+
+    addPrice('Tramvay', 'SAMULAŞ - TRAMVAY', 26.50, 16.50);
+    addPrice('Teleferik', 'TELEFERİK', 25.00, 15.00);
+
+    final ringler = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'R%' OR name LIKE 'RING%'");
+    for (var r in ringler) addPrice(r['name'] as String, r['code'] as String, 17.00, 12.00);
+
+    final ekspres = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'E%' OR name LIKE 'E%'");
+    for (var e in ekspres) addPrice(e['name'] as String, e['code'] as String, 23.50, 15.00);
+
+    final tekneler = await db.rawQuery("SELECT code, name FROM hat WHERE name LIKE '%SAMSUNUM%' OR name LIKE '%GEMİ%'");
+    for (var t in tekneler) addPrice(t['name'] as String, t['code'] as String, 200.00, 150.00);
+
+    final samair = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'H_%'");
+    for (var s in samair) addPrice(s['name'] as String, s['code'] as String, 120.00, 60.00);
+
+    final odak = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'G_%'");
+    for (var o in odak) addPrice(o['name'] as String, o['code'] as String, 250.00, 200.00);
+
+    final ilce = await db.rawQuery("SELECT code, name FROM hat WHERE tip='ilce'");
+    for (var i in ilce) addPrice(i['name'] as String, i['code'] as String, 60.00, 30.00);
+
+    await batch.commit(noResult: true);
+    print('✅ Sabit Fiyatlar eklendi.');
+  }
+
   // --- Ana Senkronizasyon Fonksiyonu ---
 
   Future<void> runFullSynchronization({bool force = false}) async {
@@ -221,12 +422,21 @@ class SynchronizationService {
     await db.delete(DatabaseHelper.tableHat);
     await db.delete(DatabaseHelper.tableDurak);
     await db.delete(DatabaseHelper.tableHatDurak);
-    // Diğer tablolar... (sefer, fiyat vb. eklenecek)
+    await db.delete(DatabaseHelper.tableSefer);
+    await db.delete(DatabaseHelper.tableFiyat);
+    await db.delete(DatabaseHelper.tableOdak);
+    await db.delete(DatabaseHelper.tableOdakDurak);
+    await db.delete(DatabaseHelper.tableSamair);
+    await db.delete(DatabaseHelper.tableSamairDurak);
+    await db.delete(DatabaseHelper.tableSamairSefer);
 
     await _fetchAndSaveHats();
     await _fetchAndSaveDuraklar();
     await _fetchAndSaveGuzergahlar();
-    // Diğer _fetch fonksiyonları buraya gelecek
+    await _fetchAndSaveSeferler();
+    await _fetchAndSaveOdak();
+    await _fetchAndSaveSamair();
+    await _injectFixedPrices();
     
     // Güncelleme zamanını kaydet
     await db.insert(DatabaseHelper.tableMeta, 
