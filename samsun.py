@@ -2765,7 +2765,8 @@ def create_app(db, col):
                 return JSONResponse(data['data'])
             return JSONResponse([])
         except Exception as e:
-            return JSONResponse({"error": str(e)}, status_code=500)
+            log.error(f"YBS Proxy Odak Hatası (WAF/Timeout): {e}")
+            return JSONResponse([])
 
     @app.get("/api/proxy_samair_saatler")
     async def proxy_samair_saatler(hatid: int):
@@ -2785,7 +2786,8 @@ def create_app(db, col):
             if data.get('root'): return JSONResponse(data['root'])
             return JSONResponse([])
         except Exception as e:
-            return JSONResponse({"error": str(e)}, status_code=500)
+            log.error(f"YBS Proxy SamAir Saatler Hatası (WAF/Timeout): {e}")
+            return JSONResponse([])
 
     @app.get("/api/proxy_samair_araclar")
     async def proxy_samair_araclar():
@@ -2804,7 +2806,8 @@ def create_app(db, col):
             if data.get('data'): return JSONResponse(data['data'])
             return JSONResponse([])
         except Exception as e:
-            return JSONResponse({"error": str(e)}, status_code=500)
+            log.error(f"YBS Proxy SamAir Araclar Hatası (WAF/Timeout): {e}")
+            return JSONResponse([])
 
     # ==========================================
 
@@ -3228,12 +3231,18 @@ db = Database()
 db.connect()
 col = Collector(db, Http())
 
-# Veritabanını ilk açılışta güncelle
-try:
-    col.veri_cek()
-    col.samair_seferler_guncelle()
-except Exception as e:
-    log.error(f"Başlangıç veri çekme hatası: {e}")
+# Veritabanını ilk açılışta güncelle (Background Thread içerisinde çalıştır, yoksa Render port dinlemeyi engeller!)
+def initial_data_loader():
+    try:
+        log.info("🚀 Arka plan veri önbellekleme (veri_cek) başlatılıyor...")
+        col.veri_cek()
+        col.samair_seferler_guncelle()
+        log.info("✅ Arka plan veri önbellekleme tamamlandı.")
+    except Exception as e:
+        log.error(f"Başlangıç veri çekme hatası: {e}")
+
+loader_thread = threading.Thread(target=initial_data_loader, daemon=True)
+loader_thread.start()
 
 # FastAPI uygulamasını oluştur
 app = create_app(db, col)
