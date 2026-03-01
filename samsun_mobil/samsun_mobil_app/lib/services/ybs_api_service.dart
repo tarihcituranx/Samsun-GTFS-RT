@@ -26,6 +26,7 @@ class YbsApiService {
       }
     }
 
+    try {
       print("--- YBS API REQUEST ---");
       print("POST $_baseUrl");
       print("Body: {'method': 'getGuestToken'}");
@@ -62,6 +63,7 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
+      final uri = Uri.parse("$_baseUrl?method=odakSamsun_Crud&token=$token");
       print("--- YBS ODAK REQUEST ---");
       print("GET $uri");
       
@@ -95,6 +97,7 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
+      final uri = Uri.parse("$_baseUrl?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid=$hatId&token=$token");
       print("--- YBS SAMAIR SAATLER REQUEST ---");
       print("GET $uri");
       
@@ -122,6 +125,7 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
+      final uri = Uri.parse("$_baseUrl?method=samair_duraklar_public&submethod=araclar&token=$token");
       print("--- YBS SAMAIR ARACLAR REQUEST ---");
       print("GET $uri");
       
