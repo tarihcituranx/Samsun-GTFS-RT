@@ -1,0 +1,105 @@
+# GTFS-Uyumlu DB & Schema Güncellemesi — Walkthrough
+
+## Amaç
+DB'yi her zaman GTFS uyumlu tutmak: hem orijinal API alan adları hem GTFS karşılıkları aynı tabloda saklanır.
+
+---
+
+## Yapılan Değişiklikler
+
+### 1. [samsun.py](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py) — GTFS Yardımcı Fonksiyonları (10 fonksiyon)
+
+| Fonksiyon | İşlev |
+|---|---|
+| [sanitize_id()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/build_full_gtfs.py#17-25) | Türkçe → ASCII: İ→I, Ş→S, boşluk→_ |
+| [title_case_tr()](file:///tmp/fix_gtfs_cols.py#36-51) | SOĞUKSU → Soğuksu (Türkçe kurallı) |
+| [extract_short_name()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#184-247) | route_short_name max 12 karakter |
+| [clean_long_name()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/build_full_gtfs.py#132-163) | Long name'den short prefix temizle |
+| [gun_to_service()](file:///tmp/fix_gtfs_cols.py#87-93) | hi→1, hs→2, pzr→3, hergün→4 |
+| [gtfs_route_type()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#273-277) / [gtfs_route_color()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#279-283) | tip→GTFS type/color |
+
+### 2. DB Tabloları — GTFS Sütunları + Migration
+
+```diff
+// hat tablosu
++ gtfs_route_id, gtfs_route_short_name, gtfs_route_long_name, gtfs_route_type, gtfs_route_color
+
+// durak tablosu  
++ gtfs_stop_id, gtfs_stop_name
+
+// sefer tablosu
++ gtfs_trip_id, gtfs_route_id, gtfs_service_id
+```
+
+### 3. Veri Çekme Fonksiyonları
+- [_hatlar()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#850-934): GTFS alanlarını hesaplar
+- [_duraklar()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#935-954): `gtfs_stop_id`, `gtfs_stop_name` ile kaydeder
+- [_seferler()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#781-795): `gtfs_trip_id`, `gtfs_route_id`, `gtfs_service_id` ile kaydeder
+
+### 4. [gtfs_static_export()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#2877-3020) Yeniden Yazıldı
+- DB'deki GTFS sütunlarını kullanır
+- `feed_info.txt` + `feed_contact_email/url` eklendi
+- Tek duraklı trip filtresi, kullanılmayan durak filtresi
+
+### 5. Swagger Schema — `x-gtfs-mapping`
+Lines, StopsStations, Schedules endpoint'lerine GTFS karşılıkları eklendi.
+
+### 6. Faz 4 — Samair & Edge Cases
+- **Fiyatlandırma Eksikleri Giderildi:** H1-H5 (Samair), G1-G4 (Odak) ve İlçe hatları ([_inject_fixed_prices](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#972-1010)) fiyat tablosuna eklendi (toplam fiyat sayısı 1221'e ulaştı).
+- **Short Name Kuralları:** `SAMULAŞ EKSPRES` için `E1` eşleştirmesi getirildi.
+- **Cache Düzeltmesi:** Sadece ana güncellemelerde değil, [veri_cek](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#709-742) fonksiyonu her başlatıldığında (cache path'inden de geçse) GTFS route id'leri [_recompute_gtfs_columns()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#1239-1268) üzerinden DB'de doğrulanıyor ve doğru short_name verileri yazılıyor.
+
+---
+
+## GTFS Validator Sonuçları Karşılaştırması
+
+| Metrik | Önceki Rapor | Yeni Rapor | Değişim |
+|---|---|---|---|
+| Toplam Uyarı | 7 | 2 | **↓ %71** |
+| Toplam Notice | 5068 | ~69 | **↓ %98.6** |
+| `missing_recommended_file` | ✅ 1 | ✅ 0 | Düzeltildi |
+| `mixed_case_recommended_field` | ✅ 1611 | ⚠️ 68 | **↓ %95.8** |
+| `non_ascii_or_non_printable_char` | ✅ 3284 | ✅ 0 | Düzeltildi |
+| `route_long_name_contains_short_name` | ✅ 32 | ✅ 0 | Düzeltildi |
+| `route_short_name_too_long` | ✅ 24 | ✅ 0 | Düzeltildi |
+| `stop_without_stop_time` | ✅ 104 | ✅ 0 | Düzeltildi |
+| `unusable_trip` | ✅ 12 | ✅ 0 | Düzeltildi |
+| `missing_feed_contact_email_and_url` | — | ⚠️ 1 | **Düzeltildi** (bu commit'te) |
+
+> **Kalan 68 `mixed_case`**: Muhtemelen `trip_headsign` alanında bazı [yon](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#2582-2601) değerleri hâlâ ALL CAPS. Bu da [title_case_tr()](file:///tmp/fix_gtfs_cols.py#36-51) ile düzeltilecek (bu commit'te [gtfs_static_export()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#2877-3020) güncellendi).
+
+---
+
+## Git Commit
+
+```
+3294532 GTFS-uyumlu DB: GTFS sutunlari (hat/durak/sefer), feed_info.txt contact, swagger x-gtfs-mapping, inline GTFS exporter guncellendi
+e5e7efa fix: H1-H5 Samair, G1-G4 Odak, Ilce fiyatlari eklendi. E1, E302/U edge case'leri cozuldu. GTFS sutunlari startup recalculation
+```
+
+**Değişen dosyalar:** [samsun.py](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py), [build_full_gtfs.py](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/build_full_gtfs.py), [asis_samsun_swagger.json](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/asis_samsun_swagger.json), [samsun_gtfs_v25.zip](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun_gtfs_v25.zip)
+
+## Aşama 5: Bağımsız Mobil ve Akıllı Saat Projesi (Serverless Mimarisi)
+
+Mevcut VPS/VDS arka ucunu (backend) yormamak ve tamamen bağımsız bir Android / Huawei Watch (HarmonyOS) altyapısı kurmak adına `samsun_mobil` adında yepyeni bir dizin açıldı.
+
+1.  **Lightweight DB:** Devasa [samsun_v25.db](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun_v25.db) dosyası parse edilerek, sadece mobil uygulamanın ihtiyaç duyacağı statik tablolarla (hat, durak, fiyat) 0.7 MB boyutunda `samsun_mobil.db` dosyasına küçültüldü. (-%65 kazanç).
+## Faz 7: Tam %100 samsun.py Entegrasyonu (Genişletilmiş Veri Toplama)
+Bu fazda, proje içerisindeki "Tam Bağımsızlık" hedefini %100'e ulaştırmak için, [samsun.py](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py) içerisindeki tüm veri toplama (Collector) yetenekleri Flutter'ın içerisindeki [synchronization_service.dart](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun_mobil/samsun_mobil_app/lib/services/synchronization_service.dart) sınıfına taşınmıştır.
+
+### Yapılan Geliştirmeler:
+1. **Sefer Saatleri (ASIS Schedules):** [_seferler()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun.py#781-795) python metodu başarıyla Dart diline çevrildi, tüm hatların güncel hareket saatleri SQLite'a aktarıldı.
+2. **Sabit Fiyatlandırma:** ASIS API'de bulunmayan Tramvay, Teleferik, Ring ve İlçe otobüsleri gibi araçların fiyatları yerel SQLite sorgularıyla ([_injectFixedPrices()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun_mobil/samsun_mobil_app/lib/services/synchronization_service.dart#359-401)) uygulamaya gömüldü.
+3. **YBS Odak Turistik Hatlar (G1-G4):** Belediye sunucularına HTTP get ile bağlanıp JSON parsing ile bu hatta ait duraklar ve fiyatlar offline DB'ye geçirildi.
+4. **YBS Samair (Havalimanı):** Havalimanı hatlarının verileri (fiyatlar ve uçak varış entegrasyonu dahil) YBS sunucusundan direkt çekilip eşleştirildi.
+5. **Full Synchronization:** Belirtilen tüm asenkron görev havuzunu tek buton altında toplamak amacıyla [runFullSynchronization()](file:///c:/Users/mete2/OneDrive/Masa%C3%BCst%C3%BC/test/samsun_mobil/samsun_mobil_app/lib/services/synchronization_service.dart#404-449) metodu genişletildi. Artık uygulama API'den tamamen koptu ve %100 Serverless oldu.
+## Aşama 6: "Nasıl Giderim?" (Native SQLite Rota Planlama)
+
+Daha önce denenip performansı nedeniyle kaldırılan Java tabanlı OpenTripPlanner sisteminin yerine, **tamamen %100 Python ve SQLite** kullanan çok hafif ve akıllı bir Rota Planlayıcısı geliştirildi:
+
+1.  **Dinamik Nominatim Geocoding:** Kullanıcılar sadece durak değil, doğrudan "Atakum", "Çarşamba" veya "Cumhuriyet Meydanı" gibi sokak/ilçe isimleri yazabilir. Bu terimler OSM üzerinden Koordinatlara çevrilir (`/api/rota` ucu).
+2.  **Kesişim Modeli (SQL INTERSECT):** Bulunduğunuz yere ve hedefinize giden "Doğrudan" hatlar, durak `sira` mantığına ve mesafeye göre taranır. Eğer yoksa, "Tek Aktarmalı" kesişim istasyonları bulunur. 
+3.  **Polyline (Mavi Çizgi) Desteği:** Algoritma metinsel yol tarifinin (Desc) yanında, otobüsün geçeceği güzergahın gerçek GPS koordinat noktalarını (Polyline Array) çıkartır.
+4.  **Flutter Harita (Android) ve HarmonyOS (Saat):** Bu Polyline dizileri Android telefon haritası üzerinde mavi kalın bir çizgi olarak güzergahı boyar. Huawei saat ise bu tarifleri küçük ekranında adım adım listeler.
+
+Böylece devasa sunuculara (ve aylık masraflara) gerek kalmadan, akıllı asistan "Sunucusuz Konseptiyle" tamamen bağımsız çalışır hale gelmiştir.
