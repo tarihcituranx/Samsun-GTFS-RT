@@ -73,125 +73,126 @@ class DBService {
     return 12742 * math.asin(math.sqrt(a)); // 2 * R; R = 6371 km
   }
 
-  // Pure SQLite/Dart Routing Algorithm
+  // Pure SQLite/Dart Routing Algorithm - Tüm tip dönüşüm hataları düzeltildi
   Future<List<Map<String, dynamic>>> calculateRouteLocally(double startLat, double startLon, double destLat, double destLon, {double radiusParams = 1.0}) async {
     final db = await database;
     List<Map<String, dynamic>> allRoutes = [];
-    
-    // 1. Find Stops near Start location (Set A)
+
+    // 1. Find Stops near Start and End locations
     final allStops = await db.query('durak');
-    List<int> startStops = [];
-    List<int> endStops = [];
-    
+    List<String> startStops = [];
+    List<String> endStops = [];
+
     for (var d in allStops) {
-      double lat = d['lat'] as double;
-      double lon = d['lon'] as double;
+      // lat/lon SQLite'tan REAL olarak gelir ama güvenli parse edelim
+      final lat = (d['lat'] as num?)?.toDouble() ?? 0.0;
+      final lon = (d['lon'] as num?)?.toDouble() ?? 0.0;
+      final id = d['id']?.toString() ?? '';
+      if (id.isEmpty) continue;
+
       if (_calculateDistance(startLat, startLon, lat, lon) <= radiusParams) {
-        startStops.add(d['id'] as int);
+        startStops.add("'$id'");
       }
       if (_calculateDistance(destLat, destLon, lat, lon) <= radiusParams) {
-        endStops.add(d['id'] as int);
+        endStops.add("'$id'");
       }
     }
 
-    if (startStops.isEmpty || endStops.isEmpty) {
-       return []; // Target or Start doesn't have any nearby bus stops
-    }
+    if (startStops.isEmpty || endStops.isEmpty) return [];
 
-    String startSet = startStops.join(',');
-    String endSet = endStops.join(',');
+    final startSet = startStops.join(',');
+    final endSet = endStops.join(',');
 
-    // 2. Direct Routes (SQL INTERSECT)
-    String directQuery = """
-      SELECT h1.hat as code, 
-             h1.durak_ad as s_ad, h1.sira as s_sira, h1.durak_id as s_id,
-             h2.durak_ad as e_ad, h2.sira as e_sira, h2.durak_id as e_id,
+    // 2. Direct Routes - Schema'ya uygun (hat_durak kolonları: hat, durak_id, ad, sira, lat, lon)
+    final directQuery = """
+      SELECT h1.hat as code,
+             h1.ad as s_ad, h1.sira as s_sira,
+             h2.ad as e_ad, h2.sira as e_sira,
              (h2.sira - h1.sira) as stop_diff
       FROM hat_durak h1
-      JOIN hat_durak h2 ON h1.hat = h2.hat AND h1.direction_id = h2.direction_id
-      WHERE h1.durak_id IN ($startSet) 
+      JOIN hat_durak h2 ON h1.hat = h2.hat
+      WHERE h1.durak_id IN ($startSet)
         AND h2.durak_id IN ($endSet)
         AND h1.sira < h2.sira
       ORDER BY stop_diff ASC
-      LIMIT 10
+      LIMIT 5
     """;
 
     try {
       final directResults = await db.rawQuery(directQuery);
-      
       for (var r in directResults) {
-        // Calculate basic Polyline path for rendering
-        int pMin = r['s_sira'] as int;
-        int pMax = r['e_sira'] as int;
-        String lineCode = r['code'] as String;
-        
+        final pMin = (r['s_sira'] as num?)?.toInt() ?? 0;
+        final pMax = (r['e_sira'] as num?)?.toInt() ?? 0;
+        final lineCode = r['code']?.toString() ?? '';
+
         final pathRows = await db.rawQuery(
           "SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira",
           [lineCode, pMin, pMax]
         );
-        
-        List<List<double>> coords = pathRows.map((row) => [row['lat'] as double, row['lon'] as double]).toList();
 
+        final coords = pathRows.map((row) => [
+          (row['lat'] as num?)?.toDouble() ?? 0.0,
+          (row['lon'] as num?)?.toDouble() ?? 0.0,
+        ]).toList();
+
+        final stopDiff = (r['stop_diff'] as num?)?.toInt() ?? 99;
         allRoutes.add({
           'type': 'DIRECT',
-          'total_score': r['stop_diff'], // Less stops = better score
+          'total_score': stopDiff,
           'polyline': coords,
-          'desc': "Mevcut konumunuzdan doğrudan $lineCode hattına binin. ${r['s_ad']} durağından binip ${r['e_ad']} durağında inin.",
-          'details': r
+          'desc': "🚌 $lineCode hattına ${r['s_ad']} durağından binin → ${r['e_ad']} durağında inin. ($stopDiff durak)",
         });
       }
-    } catch(e) {
-      print("Offline Direct Route Error: \$e");
+    } catch (e) {
+      print("Direct Route Error: $e");
     }
 
-    // 3. One-Transfer Routes (If no direct route)
+    // 3. One-Transfer Routes (if no direct route found)
     if (allRoutes.isEmpty) {
-      String transferQuery = """
-        SELECT h1.hat as hat1, h1.durak_ad as s1_ad, h1.sira as s1_sira, h1.durak_id as s1_id,
-               h2.durak_ad as t1_ad, h2.sira as t1_sira, h2.durak_id as t1_id,
-               h3.hat as hat2, h3.durak_ad as t2_ad, h3.sira as t2_sira, h3.durak_id as t2_id,
-               h4.durak_ad as e_ad, h4.sira as e_sira, h4.durak_id as e_id
+      final transferQuery = """
+        SELECT h1.hat as hat1, h1.ad as s_ad, h1.sira as s_sira,
+               h2.ad as t_ad, h2.sira as t_sira, h2.durak_id as t_durak,
+               h3.hat as hat2, h3.sira as t2_sira,
+               h4.ad as e_ad, h4.sira as e_sira
         FROM hat_durak h1
-        JOIN hat_durak h2 ON h1.hat = h2.hat AND h1.direction_id = h2.direction_id
+        JOIN hat_durak h2 ON h1.hat = h2.hat
         JOIN hat_durak h3 ON h2.durak_id = h3.durak_id AND h1.hat != h3.hat
-        JOIN hat_durak h4 ON h3.hat = h4.hat AND h3.direction_id = h4.direction_id
+        JOIN hat_durak h4 ON h3.hat = h4.hat
         WHERE h1.durak_id IN ($startSet)
           AND h4.durak_id IN ($endSet)
           AND h1.sira < h2.sira
           AND h3.sira < h4.sira
-        LIMIT 5
+        LIMIT 3
       """;
-      
+
       try {
         final transferResults = await db.rawQuery(transferQuery);
-        // Map transfer results similarly...
         for (var r in transferResults) {
-             List<List<double>> coords = [];
-             // Leg 1
-             final p1Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira",
-                [r['hat1'], r['s1_sira'], r['t1_sira']]);
-             coords.addAll(p1Rows.map((row) => [row['lat'] as double, row['lon'] as double]).toList());
-             // Leg 2
-             final p2Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira",
-                [r['hat2'], r['t2_sira'], r['e_sira']]);
-             coords.addAll(p2Rows.map((row) => [row['lat'] as double, row['lon'] as double]).toList());
+          final s1 = (r['s_sira'] as num?)?.toInt() ?? 0;
+          final t1 = (r['t_sira'] as num?)?.toInt() ?? 0;
+          final t2 = (r['t2_sira'] as num?)?.toInt() ?? 0;
+          final e  = (r['e_sira'] as num?)?.toInt() ?? 0;
+          List<List<double>> coords = [];
 
-             allRoutes.add({
-                'type': 'TRANSFER',
-                'total_score': ((r['t1_sira'] as int) - (r['s1_sira'] as int)) + ((r['e_sira'] as int) - (r['t2_sira'] as int)) + 15,
-                'polyline': coords,
-                'desc': "Önce ${r['s1_ad']} durağından ${r['hat1']} nolu hatta binin. ${r['t1_ad']} durağında inin ve ${r['hat2']} hattına aktarma yapın. ${r['e_ad']} durağında inin.",
-                'details': r
-             });
+          final p1Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", [r['hat1'], s1, t1]);
+          coords.addAll(p1Rows.map((row) => [(row['lat'] as num?)?.toDouble() ?? 0.0, (row['lon'] as num?)?.toDouble() ?? 0.0]));
+          final p2Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", [r['hat2'], t2, e]);
+          coords.addAll(p2Rows.map((row) => [(row['lat'] as num?)?.toDouble() ?? 0.0, (row['lon'] as num?)?.toDouble() ?? 0.0]));
+
+          allRoutes.add({
+            'type': 'TRANSFER',
+            'total_score': (t1 - s1) + (e - t2) + 15,
+            'polyline': coords,
+            'desc': "🚌 ${r['hat1']} hattına ${r['s_ad']} durağından binin → ${r['t_ad']} durağında inin.\n🔄 ${r['hat2']} hattına aktarın → ${r['e_ad']} durağında inin.",
+          });
         }
-      } catch(e) {
-        print("Offline Transfer Route Error: \$e");
+      } catch (e) {
+        print("Transfer Route Error: $e");
       }
     }
 
-    // Sort by score
     allRoutes.sort((a, b) => (a['total_score'] as int).compareTo(b['total_score'] as int));
-    
     return allRoutes;
   }
 }
+
