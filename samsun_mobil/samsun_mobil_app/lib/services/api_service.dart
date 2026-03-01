@@ -1,13 +1,49 @@
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String ASIS_BASE = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
 
-  // Belirli bir durağa (örneğin 5065) yaklaşan araçları (RealTimeData/SmartStations) sunucusuz çeker
+  // --- samsun.py'den Port Edilen Veri Temizleme Mantığı ---
+
+  // API'den gelen bozuk Türkçe karakterleri düzelten harita
+  static final Map<String, String> _turkishCharacterFixes = {
+    '¦': 'İ', '‹': 'İ', 'Ý': 'İ',
+    '▄': 'Ü', 
+    'Ì': 'Ş', '™': 'Ş', 'Þ': 'Ş',
+    'Ã': 'Ç', '˙': 'Ç', 'Æ': 'Ç',
+    'º': 'Ğ', '°': 'Ğ', 'Ð': 'Ğ',
+    'Í': 'Ö', 'Ô': 'Ö',
+    'ý': 'ı', '²': 'ı', 
+    'Ó': 'ö',
+    'ã': 'ü',
+    'þ': 'ş', '³': 'ş',
+    'ð': 'ğ', 'Ï': 'ğ',
+    '®': 'ç', 'æ': 'ç',
+  };
+
+  // Gösterilmesini istemediğimiz, alakasız hat isimlerini içeren anahtar kelimeler
+  static final List<String> _skipKeywords = [
+    'OTOPARK', 'KENT MÜZESİ', 'GÖREVLİ', 'BAŞVURU', 'İADE', 'IADE', 
+    'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ'
+  ];
+
+  // API'den gelen metni temizler
+  static String _fixAndCleanText(String text) {
+    String fixedText = text;
+    // 1. Bozuk Türkçe karakterleri düzelt
+    _turkishCharacterFixes.forEach((key, value) {
+      fixedText = fixedText.replaceAll(key, value);
+    });
+    return fixedText.trim();
+  }
+
+  // --- Ana API Fonksiyonu ---
+
+  // Belirli bir durağa yaklaşan araçları ZEKİ FİLTRELEME ile çeker
   static Future<List<dynamic>> getDuragaYaklasanAraclar(String stopId) async {
     try {
-      // WAF'ı aşmak için standart bir mobil tarayıcı User-Agent Header'ı ekliyoruz
       final headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
         'Accept': 'application/json',
@@ -16,24 +52,43 @@ class ApiService {
       final url = Uri.parse('$ASIS_BASE/SmartStations?stationId=$stopId');
       final response = await http.get(url, headers: headers);
 
-      // 200 OK yanıtı olsa bile, body'nin boş veya geçersiz olmadığından emin ol
       if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final List<dynamic> data;
         try {
-          final data = json.decode(response.body);
-          // Gelen verinin bir liste olduğundan emin ol, değilse listeye çevir
-          return data is List ? data : [data];
+          var decodedData = json.decode(response.body);
+          data = decodedData is List ? decodedData : [decodedData];
         } catch (e) {
-          // JSON parse hatası olursa, bu da bir API sorunudur. Boş liste döndür.
           print("API Hatası (JSON Ayrıştırma): $e");
           return [];
         }
+
+        // --- VERİYİ İŞLEME VE TEMİZLEME (samsun.py Mantığı) ---
+        List<dynamic> cleanedData = [];
+        for (var item in data) {
+          if (item is Map<String, dynamic> && item.containsKey('BusLineCode')) {
+            String busLineCode = _fixAndCleanText(item['BusLineCode'] as String);
+
+            // 2. İstenmeyen hatları filtrele
+            bool shouldSkip = _skipKeywords.any((keyword) => busLineCode.toUpperCase().contains(keyword));
+            if (shouldSkip) {
+              continue; // Bu otobüsü atla ve listeye ekleme
+            }
+
+            // Diğer alanları da temizle (Örn: plaka, kalan süre vb. - şimdilik sadece hat kodu)
+            item['BusLineCode'] = busLineCode;
+            
+            // Temizlenmiş ve filtrelenmiş veriyi yeni listeye ekle
+            cleanedData.add(item);
+          }
+        }
+        
+        return cleanedData;
+
       } else {
-        // Başarısız veya boş yanıt durumunda boş liste döndür
         print("API Hatası (Yanıt Kodu: ${response.statusCode} veya Boş İçerik)");
         return [];
       }
     } catch (e) {
-      // Genel ağ veya diğer hatalar için boş liste döndür
       print("API Hatası (Genel Bağlantı): $e");
       return [];
     }
