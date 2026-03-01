@@ -141,6 +141,18 @@ class _HatlarScreenState extends State<HatlarScreen> {
                   final color = _getKatColor(kat);
                   final icon = _getKatIcon(kat);
 
+                  Widget leadingIcon;
+                  if (kat == 'havalimani') {
+                    leadingIcon = Image.asset('assets/samair.png', width: 28, height: 28, fit: BoxFit.contain);
+                  } else if (kat == 'tekne') {
+                    leadingIcon = Text(icon, style: const TextStyle(fontSize: 20)); // Tekne için samulas logosu tam uymayabilir, emoji kalabilir veya logo.png eklenebilir.
+                  } else if (kat == 'otobus' || kat == 'ring' || kat == 'ekspres' || kat == 'tramvay') {
+                    // Ana Samulas taşıtları için logo
+                    leadingIcon = Image.asset('assets/logo.png', width: 28, height: 28, fit: BoxFit.contain, color: Colors.white, colorBlendMode: BlendMode.srcIn); // Beyazlatılmış Icon tarzı kullanım için
+                  } else {
+                    leadingIcon = Text(icon, style: const TextStyle(fontSize: 20));
+                  }
+
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                     decoration: BoxDecoration(
@@ -155,7 +167,7 @@ class _HatlarScreenState extends State<HatlarScreen> {
                           gradient: LinearGradient(colors: [color, color.withOpacity(0.6)]),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(child: Text(icon, style: const TextStyle(fontSize: 20))),
+                        child: Center(child: leadingIcon),
                       ),
                       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
                       subtitle: Text(code, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11)),

@@ -43,15 +43,30 @@ class _OdakScreenState extends State<OdakScreen> {
     return Column(children: [
       // Header
       Container(
-        width: double.infinity, padding: const EdgeInsets.all(20),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: const BoxDecoration(
-          gradient: LinearGradient(colors: [Color(0xFF004D40), Color(0xFF00695C), Color(0xFF00897B)]),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+            colors: [Color(0xFF2979FF), Color(0xFF0D47A1)],
+          ),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
         ),
-        child: Column(children: [
-          const Text("🎯 Odak Samsun", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-          const SizedBox(height: 4),
-          Text("Turistik ve Özel Güzergahlar", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-        ]),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("📍 ODAK Samsun", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  const SizedBox(height: 8),
+                  Text("Şehrin turistik ve kültürel rotalarını keşfedin.", style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14)),
+                ],
+              ),
+            ),
+            Image.asset('assets/odak.png', width: 60, height: 60, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const SizedBox(width: 60)),
+          ],
+        ),
       ),
 
       // Uyarı

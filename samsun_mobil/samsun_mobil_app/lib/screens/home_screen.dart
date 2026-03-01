@@ -415,18 +415,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: const Center(child: Icon(Icons.flag, color: Colors.white, size: 18)),
               )),
-            // Canlı araçlar
             ..._liveVehicles.map((v) => Marker(
               point: LatLng(v['lat'] as double, v['lon'] as double),
-              width: 38, height: 38,
+              width: 44, height: 44,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFD50000)]),
+                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFF5252), Color(0xFFD50000)]),
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 8)],
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.6), blurRadius: 10, spreadRadius: 2)],
                 ),
-                child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 18)),
+                child: Center(
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/logo.png', // Logo veya başka bir uygun görsel
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => 
+                        const Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ),
               ),
             )).toList(),
             // Duraklar (en yakın 300)
@@ -440,8 +448,29 @@ class _HomeScreenState extends State<HomeScreen> {
               return sorted.take(300).map((d) {
                 double lat = (d['lat'] as num).toDouble();
                 double lon = (d['lon'] as num).toDouble();
-                return Marker(point: LatLng(lat, lon), width: 22, height: 22,
-                  child: GestureDetector(onTap: () => _showDurakSheet(d), child: Icon(Icons.circle, color: const Color(0xFF2979FF).withOpacity(0.8), size: 10)));
+                return Marker(
+                  point: LatLng(lat, lon), 
+                  width: 32, height: 32,
+                  child: GestureDetector(
+                    onTap: () => _showDurakSheet(d), 
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        border: Border.all(color: const Color(0xFF2979FF), width: 1.5),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                      ),
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/samulas.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => 
+                            const Icon(Icons.directions_bus, size: 16, color: Color(0xFF2979FF)),
+                        ),
+                      ),
+                    ),
+                  )
+                );
               });
             }(),
           ]),
