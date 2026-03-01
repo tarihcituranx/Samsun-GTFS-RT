@@ -2825,11 +2825,15 @@ def create_app(db, col):
             url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&limit=1&viewbox=35.0,41.6,37.0,41.0&bounded=1"
             headers = {"User-Agent": "SamsunTransitApp/1.0"}
             try:
-                # Synchronous request because it's simple, but we should run it async in a real prod app
                 import requests
-                resp = requests.get(url, headers=headers, timeout=5).json()
-                if resp and len(resp) > 0:
-                    return float(resp[0]['lat']), float(resp[0]['lon'])
+                resp = await asyncio.wait_for(
+                    asyncio.to_thread(requests.get, url, headers=headers, timeout=5),
+                    timeout=6.0
+                )
+                if resp.ok:
+                    data = resp.json()
+                    if data and len(data) > 0:
+                        return float(data[0]['lat']), float(data[0]['lon'])
             except:
                 pass
             return None, None
@@ -2965,11 +2969,17 @@ def create_app(db, col):
         
         if samair_hat:
             # Samair hattıysa tüm varyantlardan araç bul
-            araclar = col.canli(samair_hat)
+            try:
+                araclar = await asyncio.wait_for(asyncio.to_thread(col.canli, samair_hat), timeout=4.0)
+            except Exception:
+                araclar = []
             duraklar = db.get("SELECT * FROM samair_durak WHERE hat IN (SELECT id FROM samair WHERE kod LIKE ?) ORDER BY sira", (f'%{c}%',))
         else:
             # Normal hat
-            araclar = col.canli(c)
+            try:
+                araclar = await asyncio.wait_for(asyncio.to_thread(col.canli, c), timeout=4.0)
+            except Exception:
+                araclar = []
             duraklar = db.get("SELECT * FROM hat_durak WHERE hat LIKE ? ORDER BY sira", (c+'%',))
         
         for a in araclar: 
@@ -2994,7 +3004,11 @@ def create_app(db, col):
     @app.get("/api/samair/{id}/sefer")
     async def api_samair_sefer(id: int):
         count = db.one("SELECT COUNT(*) c FROM samair_sefer WHERE hat=?", (id,))['c']
-        col.samair_seferler_guncelle(force=(count==0))
+        if count == 0:
+            try:
+                await asyncio.wait_for(asyncio.to_thread(col.samair_seferler_guncelle, True), timeout=5.0)
+            except Exception as e:
+                log.error(f"Samair sefer guncelleme timeout/error: {e}")
         today = datetime.now().strftime("%Y-%m-%d")
         rows = db.get("SELECT * FROM samair_sefer WHERE hat=? AND tarih >= ? ORDER BY tarih, saat", (id, today))
         return JSONResponse({"data": rows, "last_update": db.get_meta('samair_last_update_str')})
