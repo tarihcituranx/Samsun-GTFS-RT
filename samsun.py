@@ -1639,11 +1639,23 @@ class Collector:
                 # Google Maps Linkleri
                 map_walk_start = f"https://www.google.com/maps/dir/?api=1&destination={r['s_ad'].replace(' ', '+')}&travelmode=walking"
                 
-                icon = "🚋" if r['kat'] == 'tramvay' else ("🚌💨" if r['kat'] == 'ekspres' else "🚌")
-                
+                # Polyline path generation (Direct Route)
+                path_coords = []
+                try:
+                    p_min = min(r['s_sira'], r['e_sira'])
+                    p_max = max(r['s_sira'], r['e_sira'])
+                    path_rows = self.db.get("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", (r['code'], p_min, p_max))
+                    if path_rows:
+                        # Order properly if the bus travels in reverse sequence in the table logically
+                        if r['s_sira'] > r['e_sira']: path_rows.reverse()
+                        path_coords = [[pr['lat'], pr['lon']] for pr in path_rows]
+                except Exception as e:
+                    print("Direct path error:", e)
+
                 all_routes.append({
                     'total_score': puan,
                     'type': 'DIRECT',
+                    'polyline': path_coords,
                     'desc': f"""
                     <div class="route-card direct">
                         <div class="route-header">
@@ -1756,9 +1768,31 @@ class Collector:
                 icon1 = "🚋" if r['kat1'] == 'tramvay' else "🚌"
                 icon2 = "🚋" if r['kat2'] == 'tramvay' else "🚌"
                 
+                # Polyline path generation (Transfer Route)
+                path_coords = []
+                try:
+                    # Leg 1
+                    p1_min = min(r['s1_sira'], r['t1_sira'])
+                    p1_max = max(r['s1_sira'], r['t1_sira'])
+                    path1_rows = self.db.get("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", (r['hat1'], p1_min, p1_max))
+                    if path1_rows:
+                        if r['s1_sira'] > r['t1_sira']: path1_rows.reverse()
+                        path_coords.extend([[pr['lat'], pr['lon']] for pr in path1_rows])
+                    
+                    # Leg 2
+                    p2_min = min(r['t2_sira'], r['e_sira'])
+                    p2_max = max(r['t2_sira'], r['e_sira'])
+                    path2_rows = self.db.get("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", (r['hat2'], p2_min, p2_max))
+                    if path2_rows:
+                        if r['t2_sira'] > r['e_sira']: path2_rows.reverse()
+                        path_coords.extend([[pr['lat'], pr['lon']] for pr in path2_rows])
+                except Exception as e:
+                    print("Transfer path error:", e)
+
                 all_routes.append({
                     'total_score': puan,
                     'type': 'TRANSFER',
+                    'polyline': path_coords,
                     'desc': f"""
                     <div class="route-card transfer">
                         <div class="route-header">
@@ -2687,7 +2721,39 @@ def create_app(db, col):
         return JSONResponse(col.durak_bilgi(kod))
 
     @app.get("/api/rota")
-    async def api_rota(lat1: float, lon1: float, lat2: float, lon2: float):
+    async def api_rota(start: str = None, lat1: float = None, lon1: float = None, 
+                       end: str = None, lat2: float = None, lon2: float = None):
+        """
+        Rotayı hesaplar.
+        İstenirse koordinat (lat1, lon1 vs) verilir, istenirse yer ismi (start=Atakum, end=Meydan) verilir.
+        Yer ismi verilirse OSM Nominatim ile koordinata çevrilir. (Samsun bounds restriction ile)
+        """
+        async def geocode(query: str):
+            if not query: return None, None
+            # Samsun Bounding Box: 35.0, 41.0, 37.0, 41.6
+            url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&limit=1&viewbox=35.0,41.6,37.0,41.0&bounded=1"
+            headers = {"User-Agent": "SamsunTransitApp/1.0"}
+            try:
+                # Synchronous request because it's simple, but we should run it async in a real prod app
+                import requests
+                resp = requests.get(url, headers=headers, timeout=5).json()
+                if resp and len(resp) > 0:
+                    return float(resp[0]['lat']), float(resp[0]['lon'])
+            except:
+                pass
+            return None, None
+
+        # Resolve Start
+        if start and (lat1 is None or lon1 is None):
+            lat1, lon1 = await geocode(start)
+        
+        # Resolve End
+        if end and (lat2 is None or lon2 is None):
+            lat2, lon2 = await geocode(end)
+            
+        if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
+            return JSONResponse({"error": "Konum bulunamadı. Lütfen daha açık bir adres girin."}, status_code=400)
+            
         return JSONResponse(col.yol_tarifi(lat1, lon1, lat2, lon2))
 
     # --- Health Check ---
