@@ -239,17 +239,21 @@ def build_full_gtfs():
             routes_txt += f"{route_id},samulas,{r_short},{long_name},{route_type},{color},FFFFFF\n"
         zf.writestr("routes.txt", routes_txt)
         
-        # 4. calendar.txt
+        # 4. calendar.txt — dinamik tarih
+        from datetime import date as dt_date
+        bugun = dt_date.today()
+        cal_start = bugun.strftime('%Y%m%d')
+        cal_end = bugun.replace(year=bugun.year + 2).strftime('%Y%m%d')
         calendar_txt = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n"
-        calendar_txt += "1,1,1,1,1,1,0,0,20240101,20261231\n"  # Haftaiçi
-        calendar_txt += "2,0,0,0,0,0,1,0,20240101,20261231\n"  # Cumartesi
-        calendar_txt += "3,0,0,0,0,0,0,1,20240101,20261231\n"  # Pazar
-        calendar_txt += "4,1,1,1,1,1,1,1,20240101,20261231\n"  # Her Gün
+        calendar_txt += f"1,1,1,1,1,1,0,0,{cal_start},{cal_end}\n"
+        calendar_txt += f"2,0,0,0,0,0,1,0,{cal_start},{cal_end}\n"
+        calendar_txt += f"3,0,0,0,0,0,0,1,{cal_start},{cal_end}\n"
+        calendar_txt += f"4,1,1,1,1,1,1,1,{cal_start},{cal_end}\n"
         zf.writestr("calendar.txt", calendar_txt)
         
         # 5. trips.txt + stop_times.txt
-        trips_txt = "route_id,service_id,trip_id,trip_headsign,direction_id\n"
-        stop_times_txt = "trip_id,arrival_time,departure_time,stop_id,stop_sequence\n"
+        trips_lines = ["route_id,service_id,trip_id,trip_headsign,direction_id"]
+        stop_times_lines = ["trip_id,arrival_time,departure_time,stop_id,stop_sequence"]
         
         import math
         def haversine(lat1, lon1, lat2, lon2):
@@ -266,6 +270,12 @@ def build_full_gtfs():
         durak_dict = {}
         for row in c.execute("SELECT id, lat, lon FROM durak").fetchall():
             durak_dict[row['id']] = (row['lat'], row['lon'])
+        
+        # N+1 sorgu cache — tüm hat_durak'ları tek sorguda al
+        from collections import defaultdict
+        hat_durak_cache = defaultdict(list)
+        for row in c.execute("SELECT hat, durak_id, sira FROM hat_durak ORDER BY hat, sira ASC").fetchall():
+            hat_durak_cache[row['hat']].append(row)
         
         # Kullanılan stop_id'leri takip et (stop_without_stop_time düzeltmesi)
         used_stop_ids = set()
@@ -286,27 +296,25 @@ def build_full_gtfs():
             elif "cumartesi" in gun_str: service_id = "2"
             elif "pazar" in gun_str: service_id = "3"
             
-            direction_id = "0" if "GİDİŞ" in str(s['yon']).upper() or s['yon'] == 'G' else "1"
+            yon_ascii = str(s['yon']).upper().translate(_ASCII_MAP)
+            direction_id = "0" if "GIDIS" in yon_ascii or s['yon'] == 'G' else "1"
             
-            # Route'a ait durakları al
-            route_duraklar = c.execute(
-                "SELECT durak_id, sira FROM hat_durak WHERE hat=? ORDER BY sira ASC",
-                (route_id_orig,)
-            ).fetchall()
+            # Route'a ait durakları cache'den al
+            route_duraklar = hat_durak_cache.get(route_id_orig, [])
             
             # unusable_trip düzeltmesi: tek duraklı trip'leri atla
             if len(route_duraklar) <= 1:
                 skipped_trips += 1
                 continue
             
-            trips_txt += f"{route_id},{service_id},{trip_id},{headsign},{direction_id}\n"
+            trips_lines.append(f"{route_id},{service_id},{trip_id},{headsign},{direction_id}")
             
             # stop_times oluştur
             try:
                 base_saat = s['saat']
-                h, m = map(int, base_saat.split(':')[:2])
-                current_minutes = h * 60 + m
-            except:
+                h_val, m_val = map(int, base_saat.split(':')[:2])
+                current_minutes = h_val * 60 + m_val
+            except (ValueError, AttributeError, TypeError):
                 current_minutes = 360  # 06:00 fallback
             
             prev_lat, prev_lon = None, None
@@ -319,32 +327,30 @@ def build_full_gtfs():
                 
                 # Mesafe bazlı süre tahmini
                 added_mins = 0
-                if idx == 0:
-                    added_mins = 0
-                else:
+                if idx > 0:
                     lat, lon = durak_dict.get(stop_id_orig, (None, None))
                     if lat and lon and prev_lat and prev_lon:
                         dist = haversine(prev_lat, prev_lon, lat, lon)
-                        saniye_farki = (dist / 6.1) + 35
-                        added_mins = saniye_farki / 60.0
+                        added_mins = ((dist / 6.1) + 35) / 60.0
                     else:
                         added_mins = 1.5
                 
                 current_minutes += added_mins
                 
-                arr_h = int(current_minutes // 60)
-                arr_m = int(current_minutes % 60)
-                arr_s = int((current_minutes * 60) % 60)
+                total_sec = int(round(current_minutes * 60))
+                arr_h = total_sec // 3600
+                arr_m = (total_sec % 3600) // 60
+                arr_s = total_sec % 60
                 time_str = f"{arr_h:02d}:{arr_m:02d}:{arr_s:02d}"
                 
-                stop_times_txt += f"{trip_id},{time_str},{time_str},{stop_id},{sira}\n"
+                stop_times_lines.append(f"{trip_id},{time_str},{time_str},{stop_id},{sira}")
                 
                 lat, lon = durak_dict.get(stop_id_orig, (None, None))
                 if lat and lon:
                     prev_lat, prev_lon = lat, lon
 
-        zf.writestr("trips.txt", trips_txt)
-        zf.writestr("stop_times.txt", stop_times_txt)
+        zf.writestr("trips.txt", "\n".join(trips_lines) + "\n")
+        zf.writestr("stop_times.txt", "\n".join(stop_times_lines) + "\n")
         
         # 6. stops.txt (sadece kullanılan duraklar — stop_without_stop_time düzeltmesi)
         stops_txt = "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type\n"

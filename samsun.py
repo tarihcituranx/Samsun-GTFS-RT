@@ -98,7 +98,7 @@ SAMULAS_FIYAT_ESLESTIRME = {
 }
 
 SAMAIR_HATLAR = {
-    # Samair Hat ID Mapping (H1-H4 → YBS hatid)
+    # Samair Hat ID Mapping (H1-H5 → YBS hatid)
     1: {
         'ad': 'H1 OMÜ - HAVALİMANI',
         'asis': ['H1 OMÜ - HAVALİMANI', 'H1 HAVALİMANI - OMÜ'],
@@ -118,6 +118,11 @@ SAMAIR_HATLAR = {
         'ad': 'H4 ÇARŞAMBA - HAVALİMANI',
         'asis': ['H4 ÇARŞAMBA - HAVALİMANI', 'H4 HAVALİMANI - ÇARŞAMBA'],
         'ybs_hatid': [9]
+    },
+    5: {
+        'ad': 'H5 HAVZA - HAVALİMANI',
+        'asis': ['H5 HAVZA - HAVALİMANI', 'H5 HAVALİMANI - HAVZA'],
+        'ybs_hatid': []  # TODO: hat_kesi_sorgu.py çıktısından doldur
     }
 }
 
@@ -2824,24 +2829,33 @@ def create_app(db, col):
                 routes_txt += f"{rid},samulas,{r_short},{r_long},{r_type},{r_color},FFFFFF\n"
             zf.writestr("routes.txt", routes_txt)
             
-            # 4. calendar.txt
+            # 4. calendar.txt — dinamik tarih
+            bugun = date.today()
+            cal_start = bugun.strftime('%Y%m%d')
+            cal_end = bugun.replace(year=bugun.year + 2).strftime('%Y%m%d')
             calendar_txt = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n"
-            calendar_txt += "1,1,1,1,1,1,0,0,20240101,20261231\n"
-            calendar_txt += "2,0,0,0,0,0,1,0,20240101,20261231\n"
-            calendar_txt += "3,0,0,0,0,0,0,1,20240101,20261231\n"
-            calendar_txt += "4,1,1,1,1,1,1,1,20240101,20261231\n"
+            calendar_txt += f"1,1,1,1,1,1,0,0,{cal_start},{cal_end}\n"
+            calendar_txt += f"2,0,0,0,0,0,1,0,{cal_start},{cal_end}\n"
+            calendar_txt += f"3,0,0,0,0,0,0,1,{cal_start},{cal_end}\n"
+            calendar_txt += f"4,1,1,1,1,1,1,1,{cal_start},{cal_end}\n"
             zf.writestr("calendar.txt", calendar_txt)
             
             # 5. trips.txt & stop_times.txt — GTFS sütunlarını kullan + filtreler
-            trips_txt = "route_id,service_id,trip_id,trip_headsign,direction_id\n"
-            stop_times_txt = "trip_id,arrival_time,departure_time,stop_id,stop_sequence\n"
+            trips_lines = ["route_id,service_id,trip_id,trip_headsign,direction_id"]
+            stop_times_lines = ["trip_id,arrival_time,departure_time,stop_id,stop_sequence"]
             
             # Durak koordinat cache
             durak_dict = {}
             for d in db.get("SELECT id, gtfs_stop_id, lat, lon FROM durak WHERE lat IS NOT NULL"):
                 durak_dict[d['id']] = (d['lat'], d['lon'], d['gtfs_stop_id'] or sanitize_id(d['id']))
             
-            used_stop_ids = set()  # Kullanılan durakları takip et
+            # N+1 sorgu cache — tüm hat_durak'ları tek sorguda al
+            from collections import defaultdict
+            hat_durak_cache = defaultdict(list)
+            for row in db.get("SELECT hat, durak_id, sira FROM hat_durak ORDER BY hat, sira ASC"):
+                hat_durak_cache[row['hat']].append(row)
+            
+            used_stop_ids = set()
             skipped = 0
             
             seferler = db.get("SELECT id, hat, saat, yon, gun, gtfs_trip_id, gtfs_route_id, gtfs_service_id FROM sefer")
@@ -2851,21 +2865,22 @@ def create_app(db, col):
                 trip_id = s['gtfs_trip_id'] or sanitize_id(f"T_{s['id']}")
                 headsign = title_case_tr(str(s['yon']).replace(',', ' '))
                 service_id = s['gtfs_service_id'] or gun_to_service(s['gun'])
-                direction_id = "0" if "GİDİŞ" in str(s['yon']).upper() or s['yon'] == 'G' else "1"
+                yon_ascii = str(s['yon']).upper().translate(_ASCII_MAP)
+                direction_id = "0" if "GIDIS" in yon_ascii or s['yon'] == 'G' else "1"
                 
-                route_duraklar = db.get("SELECT durak_id, sira FROM hat_durak WHERE hat=? ORDER BY sira ASC", (route_id_orig,))
+                route_duraklar = hat_durak_cache.get(route_id_orig, [])
                 
                 # Unusable trip filtresi
                 if len(route_duraklar) <= 1:
                     skipped += 1
                     continue
                 
-                trips_txt += f"{route_id},{service_id},{trip_id},{headsign},{direction_id}\n"
+                trips_lines.append(f"{route_id},{service_id},{trip_id},{headsign},{direction_id}")
                 
                 try:
-                    h, m = map(int, s['saat'].split(':')[:2])
-                    current_minutes = h * 60 + m
-                except:
+                    h_val, m_val = map(int, s['saat'].split(':')[:2])
+                    current_minutes = h_val * 60 + m_val
+                except (ValueError, AttributeError, TypeError):
                     current_minutes = 360
                 
                 prev_lat, prev_lon = None, None
@@ -2887,17 +2902,18 @@ def create_app(db, col):
                             added_mins = 1.5
                     
                     current_minutes += added_mins
-                    arr_h = int(current_minutes // 60)
-                    arr_m = int(current_minutes % 60)
-                    arr_s = int((current_minutes * 60) % 60)
+                    total_sec = int(round(current_minutes * 60))
+                    arr_h = total_sec // 3600
+                    arr_m = (total_sec % 3600) // 60
+                    arr_s = total_sec % 60
                     time_str = f"{arr_h:02d}:{arr_m:02d}:{arr_s:02d}"
                     
-                    stop_times_txt += f"{trip_id},{time_str},{time_str},{stop_id},{sira}\n"
+                    stop_times_lines.append(f"{trip_id},{time_str},{time_str},{stop_id},{sira}")
                     
                     if dd: prev_lat, prev_lon = dd[0], dd[1]
             
-            zf.writestr("trips.txt", trips_txt)
-            zf.writestr("stop_times.txt", stop_times_txt)
+            zf.writestr("trips.txt", "\n".join(trips_lines) + "\n")
+            zf.writestr("stop_times.txt", "\n".join(stop_times_lines) + "\n")
             
             # 6. stops.txt — sadece kullanılan duraklar (stop_without_stop_time fix)
             stops_txt = "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type\n"
