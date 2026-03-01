@@ -1,0 +1,24 @@
+<div class="container">
+    <text class="title">Samair & Samsun Ulaşım</text>
+    
+    <div class="fav-section" if="{{!isLoading}}">
+        <text class="subtitle">Favori: T. Özal Yurdu (5065)</text>
+        
+        <list class="bus-list">
+            <list-item for="{{buses}}" class="bus-item">
+                <div class="bus-row">
+                    <text class="bus-code">{{$item.hatKodu}}</text>
+                    <text class="bus-time">{{$item.kalanSure}} dk</text>
+                </div>
+            </list-item>
+        </list>
+        
+        <text class="empty-msg" if="{{buses.length == 0}}">Yaklaşan araç yok</text>
+    </div>
+    
+    <div class="loading" if="{{isLoading}}">
+        <text class="loading-text">Yükleniyor...</text>
+    </div>
+    
+    <button class="btn-refresh" onclick="fetchData">Yenile</button>
+</div>
