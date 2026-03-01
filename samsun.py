@@ -398,17 +398,38 @@ def leaflet_indir():
 
 class Http:
     def __init__(self):
-        self.s = requests.Session()
         _retry = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
+        
+        self.s = requests.Session()
         self.s.mount("http://", HTTPAdapter(max_retries=_retry))
-        self.s.mount("https://", HTTPAdapter(max_retries=_retry))  # TÜM API'ler HTTPS!
+        self.s.mount("https://", HTTPAdapter(max_retries=_retry))
         self.s.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
             'Referer': 'https://samair.samsun.bel.tr/'
         })
+        
+        # ============================================================
+        # 🌐 TÜRK PROXY — Credential'lar ENV VAR'dan okunur (GitHub'a sızmaz!)
+        # Render.com Dashboard > Environment > Aşağıdakileri ekle:
+        #   PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS
+        # ============================================================
+        proxy_host = os.environ.get('PROXY_HOST')
+        proxy_port = os.environ.get('PROXY_PORT')
+        proxy_user = os.environ.get('PROXY_USER')
+        proxy_pass = os.environ.get('PROXY_PASS')
+        
+        if proxy_host and proxy_port and proxy_user:
+            proxy_url = f"http://{proxy_user}:{proxy_pass or ''}@{proxy_host}:{proxy_port}"
+            self.s.proxies = {"http": proxy_url, "https": proxy_url}
+            log.info(f"🌐 Proxy aktif: {proxy_host}:{proxy_port} (Tüm API istekleri)")
+        else:
+            log.warning("⚠️ Proxy ayarlanmamış! PROXY_HOST/PORT/USER env var eksik. Direkt bağlantı kullanılacak.")
+        
+        self.session = self.s  # Alias (proxy endpoint'leri self.session kullanıyor)
+        
         self._tok = {}
-        self._tok_lock = threading.Lock()  # Token thread safety
-        self._cache = {}  # Canlı veri cache {code: (data, timestamp)}
+        self._tok_lock = threading.Lock()
+        self._cache = {}
 
     def asis(self, ep, **p):
         """
@@ -473,7 +494,7 @@ class Http:
             if 'ybs' in self._tok and time.time() - self._tok['ybs']['t'] < 200:
                 return self._tok['ybs']['v']
         try:
-            r = self.s.get(f"{YBS}/?method=getGuestToken", timeout=10)
+            r = self.session.get(f"{YBS}/?method=getGuestToken", timeout=10)
             if r.ok:
                 tok = r.json().get('token')
                 with self._tok_lock:
@@ -490,7 +511,7 @@ class Http:
         if submethod: p['submethod'] = submethod
         p.update(kw)
         try:
-            r = self.s.get(f"{YBS}/", params=p, timeout=30)
+            r = self.session.get(f"{YBS}/", params=p, timeout=30)
             if r.ok:
                 res = r.json()
                 if isinstance(res, dict) and res.get('status') == 'SUCCESS':
