@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
 import '../services/price_service.dart';
+import '../services/offline_service.dart';
 import 'hatlar_screen.dart';
 import 'samair_screen.dart';
 import 'odak_screen.dart';
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingMap = true;
   bool _isLoadingNearby = false;
   bool _isRouting = false;
+  bool _isOffline = false;
 
   String? _activeLineCode;
   Timer? _liveTimer;
@@ -63,16 +66,31 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadDuraklar();
     _getLocation();
     _loadPrices();
+    
+    // Offline Mod Dinleme
+    OfflineService().startMonitoring();
+    OfflineService().offlineStream.listen((offline) {
+      if (mounted) {
+        setState(() => _isOffline = offline);
+        if (offline) {
+          _toastError("⚠️ İnternet bağlantısı kesildi (Çevrimdışı Mod)");
+        } else {
+          _toastSuccess("🌐 İnternet bağlantısı sağlandı");
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _liveTimer?.cancel();
     _hedefCtrl.dispose();
+    OfflineService().stopMonitoring();
     super.dispose();
   }
 
   Future<void> _loadPrices() async {
+    if (_isOffline) return;
     _toastLoading("💰 Fiyat bilgileri güncelleniyor...");
     try {
       final p = await PriceService.fetchPrices();
@@ -86,6 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startLiveTracking(String lineCode) {
+    if (_isOffline) {
+      _toastError("⚠️ Çevrimdışı modda canlı araç takibi yapılamaz");
+      return;
+    }
     _liveTimer?.cancel();
     _activeLineCode = lineCode;
     _toastInfo("📡 $lineCode hattı canlı takip başlatıldı");
@@ -94,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchLiveVehicles() async {
-    if (_activeLineCode == null) return;
+    if (_activeLineCode == null || _isOffline) return;
     try {
       final vehicles = await ApiService.getHattakiAraclar(_activeLineCode!);
       if (mounted) {
@@ -179,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _calculateRouteFromCoords(double destLat, double destLon) async {
-    setState(() { _isRouting = true; _routePolyline = []; _routeResults = []; });
+    setState(() { _isRouting = true; _routePolyline = []; _routeResults = []; _targetLocation = LatLng(destLat, destLon); });
     _toastLoading("🧭 Rota hesaplanıyor...");
     try {
       final routes = await DBService().calculateRouteLocally(
@@ -231,14 +253,23 @@ class _HomeScreenState extends State<HomeScreen> {
     await _calculateRouteFromCoords(destLat, destLon);
   }
 
+  Future<void> _openInGoogleMaps() async {
+    if (_targetLocation == null) return;
+    final url = 'https://www.google.com/maps/dir/?api=1&origin=${_myLocation.latitude},${_myLocation.longitude}&destination=${_targetLocation!.latitude},${_targetLocation!.longitude}';
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri)) {
+      _toastError("❌ Google Haritalar açılamadı");
+    }
+  }
+
   void _showRouteSheet() {
     showModalBottomSheet(
       context: context, isScrollControlled: true,
       backgroundColor: const Color(0xFF152238),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        padding: const EdgeInsets.all(16),
+        height: MediaQuery.of(context).size.height * 0.55,
+        padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 24),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
@@ -276,6 +307,24 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+          const SizedBox(height: 12),
+          // Google Maps Butonu
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _openInGoogleMaps();
+              },
+              icon: const Icon(Icons.map, color: Colors.white),
+              label: const Text("Google Haritalar'da Aç (Navigasyon)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2979FF),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          )
         ]),
       ),
     );
@@ -670,7 +719,23 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => _toastInfo("📞 Samsun içi: 153 • Dışı: 0362 431 10 12")),
         ],
       ),
-      body: IndexedStack(index: _currentIndex, children: screens),
+      body: Column(
+        children: [
+          if (_isOffline)
+            Container(
+              width: double.infinity,
+              color: const Color(0xFFFF5252),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: const Text("⚠️ Çevrimdışı Mod - Canlı veriler kullanılamaz", 
+                style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), 
+                textAlign: TextAlign.center,
+              ),
+            ),
+          Expanded(
+            child: IndexedStack(index: _currentIndex, children: screens),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),

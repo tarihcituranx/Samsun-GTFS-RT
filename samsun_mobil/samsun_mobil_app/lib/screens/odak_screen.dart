@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/db_service.dart';
+import '../services/ybs_api_service.dart';
 
 class OdakScreen extends StatefulWidget {
   const OdakScreen({Key? key}) : super(key: key);
@@ -10,15 +11,29 @@ class OdakScreen extends StatefulWidget {
 }
 
 class _OdakScreenState extends State<OdakScreen> {
-  List<Map<String, dynamic>> _odaklar = [];
+  List<dynamic> _odaklar = [];
   bool _isLoading = true;
+  bool _isOfflineFallback = false;
 
   @override
   void initState() { super.initState(); _loadOdaklar(); }
 
   Future<void> _loadOdaklar() async {
-    final odaklar = await DBService().getOdaklar();
-    if (mounted) setState(() { _odaklar = odaklar; _isLoading = false; });
+    // 1. Önce YBS API'den canlı veriyi çekmeyi dene
+    var dynOdaklar = await YbsApiService().getOdakSamsun();
+    
+    // 2. Başarısız olursa yerel DB'den (çevrimdışı/yedek) yükle
+    if (dynOdaklar.isEmpty) {
+      _isOfflineFallback = true;
+      dynOdaklar = await DBService().getOdaklar();
+    }
+
+    if (mounted) {
+      setState(() {
+        _odaklar = dynOdaklar;
+        _isLoading = false;
+      });
+    }
   }
 
   @override

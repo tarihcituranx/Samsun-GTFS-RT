@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
+import '../services/price_service.dart';
 
 class HatlarScreen extends StatefulWidget {
   const HatlarScreen({Key? key}) : super(key: key);
@@ -204,13 +205,27 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
       DBService().getDurakGuzergahi(widget.code),
       DBService().getFiyat(widget.code),
       DBService().getSeferler(widget.code),
+      PriceService.getPriceForLine(widget.name, widget.kat), // Dinamik Fiyat Çekimi
     ]);
-    if (mounted) setState(() {
-      _duraklar = results[0] as List<Map<String, dynamic>>;
-      _fiyat = results[1] as Map<String, dynamic>?;
-      _seferler = results[2] as List<Map<String, dynamic>>;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _duraklar = results[0] as List<Map<String, dynamic>>;
+        _seferler = results[2] as List<Map<String, dynamic>>;
+        
+        // Fiyat Birleştirme: YBS API (Dinamik) + Yerel Veritabanı (Fallback)
+        final dbPrice = results[1] as Map<String, dynamic>?;
+        final dynPrice = results[3] as Map<String, double>;
+        
+        _fiyat = {};
+        if (dbPrice != null) _fiyat!.addAll(dbPrice);
+        
+        // Github JSON dinamik fiyatlarını önceliklendir (statik ezme)
+        _fiyat!['tam_fiyat'] = dynPrice['tam'];
+        _fiyat!['indirimli_fiyat'] = dynPrice['indirimli'];
+
+        _isLoading = false;
+      });
+    }
   }
 
   void _startLiveTracking() {

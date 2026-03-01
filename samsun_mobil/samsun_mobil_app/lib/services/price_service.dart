@@ -1,50 +1,72 @@
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class PriceService {
-  // samulas.com.tr'den güncel bilet fiyatlarını çeker
-  static Future<Map<String, double>> fetchPrices() async {
-    Map<String, double> prices = {};
+  static const String _pricesUrl = "https://raw.githubusercontent.com/tarihcituranx/Samsun-GTFS-RT/main/prices.json";
+  
+  static Map<String, dynamic>? _cachedPrices;
+  static DateTime? _cacheTime;
+
+  /// GitHub üzerindeki dinamik prices.json dosyasını çeker.
+  /// 1 saat (3600s) boyunca önbellekte tutar.
+  static Future<Map<String, dynamic>> fetchPrices() async {
+    // Cache validasyon (1 saat)
+    if (_cachedPrices != null && _cacheTime != null) {
+      if (DateTime.now().difference(_cacheTime!).inHours < 1) {
+        return _cachedPrices!;
+      }
+    }
+
     try {
-      final response = await http.get(
-        Uri.parse('https://www.samulas.com.tr'),
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-        },
-      ).timeout(const Duration(seconds: 10));
-
+      final response = await http.get(Uri.parse(_pricesUrl)).timeout(const Duration(seconds: 10));
+      
       if (response.statusCode == 200) {
-        final body = response.body;
-
-        // Regex ile fiyat bilgilerini çek
-        // Örn: "17,00", "12,00" gibi değerleri yakala
-        final priceRegex = RegExp(r'(\d+)[,.](\d{2})\s*(?:TL|₺)');
-        final matches = priceRegex.allMatches(body);
-
-        List<double> foundPrices = [];
-        for (var m in matches) {
-          final val = double.tryParse('${m.group(1)}.${m.group(2)}');
-          if (val != null && val > 1 && val < 500) {
-            foundPrices.add(val);
-          }
-        }
-
-        // Hat kodu -> fiyat eşleştirmesi (samsun.py HAT_ALIAS mantığı)
-        if (foundPrices.isNotEmpty) {
-          // Sabit bilinen fiyatlar (DB'den de gelebilir, fallback olarak)
-          prices['TAM'] = foundPrices.isNotEmpty ? foundPrices.first : 17.0;
-          prices['INDIRIMLI'] = foundPrices.length > 1 ? foundPrices[1] : 12.0;
-        }
+        final data = json.decode(response.body);
+        _cachedPrices = data;
+        _cacheTime = DateTime.now();
+        return _cachedPrices!;
       }
     } catch (e) {
-      print("Fiyat çekme hatası: $e");
+      print("Dinamik fiyat çekme hatası: $e");
     }
 
-    // Fallback fiyatlar
-    if (prices.isEmpty) {
-      prices['TAM'] = 17.0;
-      prices['INDIRIMLI'] = 12.0;
-    }
+    // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
+    return _cachedPrices ?? {
+      "default": {"tam": 17.0, "indirimli": 12.0},
+      "tramvay": {"tam": 25.0, "indirimli": 18.0},
+      "teleferik": {"tam": 25.0, "indirimli": 15.0},
+      "ekspres": {"tam": 22.0, "indirimli": 16.0},
+      "SAMSUNUM-1": {"tam": 200.0, "indirimli": 200.0},
+      "ALTINKAYA": {"tam": 15.0, "indirimli": 15.0, "arac": 75.0}
+    };
+  }
 
-    return prices;
+  /// Belirli bir hat veya kategori (kat) için dinamik fiyatı hesaplar
+  static Future<Map<String, double>> getPriceForLine(String name, String kat) async {
+    final prices = await fetchPrices();
+    
+    // Özel isme göre arama
+    for (var key in prices.keys) {
+      if (key != "default" && name.toUpperCase().contains(key.toUpperCase())) {
+        return {
+          "tam": (prices[key]["tam"] ?? 0.0).toDouble(),
+          "indirimli": (prices[key]["indirimli"] ?? 0.0).toDouble()
+        };
+      }
+    }
+    
+    // Kategoriye (kat) göre arama
+    if (prices.containsKey(kat.toLowerCase())) {
+      return {
+        "tam": (prices[kat.toLowerCase()]["tam"] ?? 0.0).toDouble(),
+        "indirimli": (prices[kat.toLowerCase()]["indirimli"] ?? 0.0).toDouble()
+      };
+    }
+    
+    // Default fallback
+    return {
+      "tam": (prices["default"]["tam"] ?? 17.0).toDouble(),
+      "indirimli": (prices["default"]["indirimli"] ?? 12.0).toDouble()
+    };
   }
 }
