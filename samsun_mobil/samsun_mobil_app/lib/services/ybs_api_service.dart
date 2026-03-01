@@ -26,12 +26,19 @@ class YbsApiService {
       }
     }
 
-    try {
+      print("--- YBS API REQUEST ---");
+      print("POST $_baseUrl");
+      print("Body: {'method': 'getGuestToken'}");
+      
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: _headers,
         body: {'method': 'getGuestToken'},
       ).timeout(const Duration(seconds: 10));
+
+      print("--- YBS API RESPONSE ---");
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -55,7 +62,9 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
-      final uri = Uri.parse("$_baseUrl?method=odakSamsun_Crud&token=$token");
+      print("--- YBS ODAK REQUEST ---");
+      print("GET $uri");
+      
       final response = await http.get(
         uri,
         headers: {
@@ -63,6 +72,10 @@ class YbsApiService {
           'Referer': 'https://odak.samsun.bel.tr/'
         },
       ).timeout(const Duration(seconds: 15));
+
+      print("--- YBS ODAK RESPONSE ---");
+      print("Status Code: ${response.statusCode}");
+      print("Response Body (first 200 chars): ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -82,8 +95,14 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
-      final uri = Uri.parse("$_baseUrl?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid=$hatId&token=$token");
+      print("--- YBS SAMAIR SAATLER REQUEST ---");
+      print("GET $uri");
+      
       final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+      print("--- YBS SAMAIR SAATLER RESPONSE ---");
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -103,8 +122,14 @@ class YbsApiService {
     if (token == null) return [];
 
     try {
-      final uri = Uri.parse("$_baseUrl?method=samair_duraklar_public&submethod=araclar&token=$token");
+      print("--- YBS SAMAIR ARACLAR REQUEST ---");
+      print("GET $uri");
+      
       final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
+
+      print("--- YBS SAMAIR ARACLAR RESPONSE ---");
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

@@ -390,7 +390,15 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         children: [
-          TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", userAgentPackageName: 'com.tarihcituran.samsun_mobil_app'),
+          TileLayer(
+            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            tileProvider: NetworkTileProvider(
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://www.openstreetmap.org/',
+              },
+            ),
+          ),
           if (_routePolyline.isNotEmpty)
             PolylineLayer(polylines: [Polyline(points: _routePolyline, strokeWidth: 5.0, color: const Color(0xFF2979FF))]),
           MarkerLayer(markers: [
