@@ -93,4 +93,45 @@ class ApiService {
       return [];
     }
   }
+
+  // Hat bazlı canlı araç takibi (RealTimeData API)
+  static Future<List<Map<String, dynamic>>> getHattakiAraclar(String lineCode) async {
+    try {
+      final headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+        'Accept': 'application/json',
+      };
+
+      final url = Uri.parse('$ASIS_BASE/RealTimeData?lineCode=$lineCode');
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        try {
+          var decodedData = json.decode(response.body);
+          List<dynamic> data = decodedData is List ? decodedData : [decodedData];
+
+          List<Map<String, dynamic>> vehicles = [];
+          for (var item in data) {
+            if (item is Map<String, dynamic> && item.containsKey('Latitude')) {
+              vehicles.add({
+                'lat': double.tryParse(item['Latitude']?.toString() ?? '0') ?? 0.0,
+                'lon': double.tryParse(item['Longitude']?.toString() ?? '0') ?? 0.0,
+                'plate': item['PlateNumber']?.toString() ?? '',
+                'speed': item['Speed']?.toString() ?? '0',
+                'lineCode': _fixAndCleanText(item['LineCode']?.toString() ?? lineCode),
+              });
+            }
+          }
+          return vehicles;
+        } catch (e) {
+          print("Araç Takip JSON Hatası: $e");
+          return [];
+        }
+      }
+      return [];
+    } catch (e) {
+      print("Araç Takip Bağlantı Hatası: $e");
+      return [];
+    }
+  }
 }

@@ -1,4 +1,5 @@
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,6 +7,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
+import '../services/price_service.dart';
+import 'samair_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -27,6 +30,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isRouting = false;
 
   List<dynamic> _yaklasanAraclar = [];
+  List<Map<String, dynamic>> _liveVehicles = [];
+  String? _activeLineCode;
+  Timer? _liveTimer;
+  Map<String, double> _prices = {};
   LatLng _myLocation = const LatLng(41.2867, 36.3300);
 
   final TextEditingController _hedefCtrl = TextEditingController();
@@ -34,16 +41,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadDuraklar();
     _getLocation();
+    _loadPrices();
   }
 
   @override
   void dispose() {
+    _liveTimer?.cancel();
     _tabController.dispose();
     _hedefCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPrices() async {
+    final p = await PriceService.fetchPrices();
+    if (mounted) setState(() => _prices = p);
+  }
+
+  void _startLiveTracking(String lineCode) {
+    _liveTimer?.cancel();
+    _activeLineCode = lineCode;
+    _fetchLiveVehicles();
+    _liveTimer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchLiveVehicles());
+  }
+
+  Future<void> _fetchLiveVehicles() async {
+    if (_activeLineCode == null) return;
+    final vehicles = await ApiService.getHattakiAraclar(_activeLineCode!);
+    if (mounted) setState(() => _liveVehicles = vehicles);
   }
 
   Future<void> _getLocation() async {
@@ -138,6 +165,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             _tabController.animateTo(0);
           }
         });
+        // Rotanın ilk hattı için canlı izlemeyi başlat
+        final firstCode = routes[0]['desc']?.toString() ?? '';
+        final codeMatch = RegExp(r'([A-Z0-9]+) hattına').firstMatch(firstCode);
+        if (codeMatch != null) {
+          _startLiveTracking(codeMatch.group(1)!);
+        }
         _showRouteSheet();
       } else {
         _showError("Bu güzergah için rota bulunamadı. Farklı bir bölge adı deneyin.");
@@ -219,10 +252,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
+          isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.map), text: "Harita"),
             Tab(icon: Icon(Icons.near_me), text: "Yakınım"),
             Tab(icon: Icon(Icons.directions), text: "Nasıl Giderim"),
+            Tab(icon: Icon(Icons.flight_takeoff), text: "SamAIR"),
           ],
         ),
       ),
@@ -254,8 +289,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           point: _myLocation, width: 36, height: 36,
                           child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
                         ),
+                        // Canlı araçları göster
+                        ..._liveVehicles.map((v) => Marker(
+                          point: LatLng(v['lat'] as double, v['lon'] as double),
+                          width: 36, height: 36,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 18)),
+                          ),
+                        )).toList(),
                         ...() {
-                          // Sadece konuma en yakın 300 durağı haritada göster (performans için)
                           var sortedDuraklar = List<Map<String, dynamic>>.from(_duraklar);
                           sortedDuraklar.sort((a, b) {
                             double da = _hav(_myLocation.latitude, _myLocation.longitude, (a['lat'] as num).toDouble(), (a['lon'] as num).toDouble());
@@ -384,25 +431,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 const SizedBox(height: 8),
                 ...List.generate(_routeResults.length, (i) {
                   final r = _routeResults[i];
-                  final isDirect = r['type'] == 'DIRECT';
-                  return Card(
+                   final isDirect = r['type'] == 'DIRECT';
+                   final tamFiyat = _prices['TAM']?.toStringAsFixed(2) ?? '17.00';
+                   return Card(
                     color: isDirect ? Colors.green.shade50 : Colors.amber.shade50,
                     child: ListTile(
-                      leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station,
-                          color: isDirect ? Colors.green : Colors.amber.shade800),
-                      title: Text(isDirect ? "✅ Direkt Hat" : "🔄 Aktarmalı Rota"),
-                      subtitle: Text(r['desc'] ?? ''),
-                      onTap: () {
-                        final coords = r['polyline'] as List;
-                        setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
-                        _tabController.animateTo(0);
-                      },
-                    ),
-                  );
-                }),
-              ],
-            ]),
-          ),
+                       leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station,
+                           color: isDirect ? Colors.green : Colors.amber.shade800),
+                       title: Text(isDirect ? "✅ Direkt Hat" : "🔄 Aktarmalı Rota"),
+                       subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                         Text(r['desc'] ?? ''),
+                         const SizedBox(height: 4),
+                         Text('💰 Ücret: $tamFiyat ₺', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold, fontSize: 12)),
+                       ]),
+                       onTap: () {
+                         final coords = r['polyline'] as List;
+                         setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
+                         _tabController.animateTo(0);
+                       },
+                     ),
+                   );
+                 }),
+               ],
+             ]),
+           ),
+
+           // TAB 4: SAMAIR
            const SamAirScreen(),
         ],
       ),

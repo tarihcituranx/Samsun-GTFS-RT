@@ -136,9 +136,12 @@ class DBService {
         ]).toList();
 
         final stopDiff = (r['stop_diff'] as num?)?.toInt() ?? 99;
+        // Tramvay önceliği: T1, T2 hatlarına puan avantajı
+        final isTram = lineCode.startsWith('T');
+        final tramBonus = isTram ? -20 : 0;
         allRoutes.add({
           'type': 'DIRECT',
-          'total_score': stopDiff,
+          'total_score': stopDiff + tramBonus,
           'polyline': coords,
           'desc': "🚌 $lineCode hattına ${r['s_ad']} durağından binin → ${r['e_ad']} durağında inin. ($stopDiff durak)",
         });
@@ -179,9 +182,14 @@ class DBService {
           final p2Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", [r['hat2'], t2, e]);
           coords.addAll(p2Rows.map((row) => [(row['lat'] as num?)?.toDouble() ?? 0.0, (row['lon'] as num?)?.toDouble() ?? 0.0]));
 
+          // Tramvay önceliği aktarmalı rotalarda da geçerli
+          final hat1Str = r['hat1']?.toString() ?? '';
+          final hat2Str = r['hat2']?.toString() ?? '';
+          final hasTram = hat1Str.startsWith('T') || hat2Str.startsWith('T');
+          final tramBonus2 = hasTram ? -15 : 0;
           allRoutes.add({
             'type': 'TRANSFER',
-            'total_score': (t1 - s1) + (e - t2) + 15,
+            'total_score': (t1 - s1) + (e - t2) + 15 + tramBonus2,
             'polyline': coords,
             'desc': "🚌 ${r['hat1']} hattına ${r['s_ad']} durağından binin → ${r['t_ad']} durağında inin.\n🔄 ${r['hat2']} hattına aktarın → ${r['e_ad']} durağında inin.",
           });
