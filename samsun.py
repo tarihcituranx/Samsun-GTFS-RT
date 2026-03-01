@@ -182,27 +182,68 @@ def title_case_tr(text):
     return ' '.join(result)
 
 def extract_short_name(code, short_name):
-    """route_short_name max 12 karakter. Hat numarasını çıkarır."""
-    raw = str(short_name).strip() if short_name else str(code).strip()
-    m = re.match(r'^(\d+[A-Za-z]?|[A-Za-z]\d+[A-Za-z]?)', raw)
-    if m and len(m.group(1)) <= 12:
-        return m.group(1)
-    special = {'TELEFERIK': 'TLFRK', 'TELEFERİK': 'TLFRK'}
-    for key, val in special.items():
-        if key in raw.upper().translate(_ASCII_MAP): return val
-    if 'SAMSUNUM' in raw.upper().translate(_ASCII_MAP):
-        m2 = re.match(r'SAMSUNUM(\d+)', raw, re.IGNORECASE)
-        if m2: return f'SN{m2.group(1)}'
-    if 'ALTINKAYA' in raw.upper().translate(_ASCII_MAP): return 'AK55'
+    """route_short_name max 12 karakter. Hat numarasını çıkarır.
+    Öncelik: code'dan hat numarası > uygun short_name > fallback.
+    Samulaş V1 bazen short_line_name olarak dahili ID (402, 416) döner;
+    bunlar kullanılmamalı."""
+    code_str = str(code).strip() if code else ''
+    short_str = str(short_name).strip() if short_name else ''
+
+    # 1) code'dan hat numarasını çıkarmayı dene
+    #    Önce harf+sayı: R2, R11B, H1, G3, E6 vb.
+    m_code = re.match(r'^([A-Za-zÇçĞğÖöÜüŞşİı]\d+[A-Za-z]?)', code_str)
+    if m_code and len(m_code.group(1)) <= 12:
+        return m_code.group(1).upper().translate(_ASCII_MAP)
+
+    #    Sonra sayı+harf: 13, 15, 20, 24A, 12/17 vb.
+    m_num = re.match(r'^(\d+(?:/\d+)?[A-Za-z]?)', code_str)
+    if m_num and len(m_num.group(1)) <= 12:
+        extracted = m_num.group(1)
+        # 3 haneli+ numara code'un bir parçası mı yoksa tümü mü?
+        if int(re.match(r'^(\d+)', extracted).group(1)) < 100:
+            return extracted
+
+    # 2) short_name akıllıca kullan —  sadece gerçek rota adıysa
+    if short_str:
+        # Harf+sayı pattern (R2, E6, H1, TRAM vb.) → kullan
+        m_short_alpha = re.match(r'^([A-Za-z]\d+[A-Za-z]?)', short_str)
+        if m_short_alpha and len(m_short_alpha.group(1)) <= 12:
+            return m_short_alpha.group(1).upper().translate(_ASCII_MAP)
+        # Küçük sayı (<100): gerçek hat numarası olabilir
+        m_short_num = re.match(r'^(\d+)', short_str)
+        if m_short_num and int(m_short_num.group(1)) < 100:
+            return short_str[:12]
+
+    # 3) Özel hat isimleri
+    code_ascii = code_str.upper().translate(_ASCII_MAP)
+    combined = f"{code_ascii} {short_str.upper().translate(_ASCII_MAP)}"
+
+    if 'TELEFERIK' in combined: return 'TLFRK'
+    m_sn = re.search(r'SAMSUNUM\s*(\d+)', combined)
+    if m_sn: return f'SN{m_sn.group(1)}'
+    if 'ALTINKAYA' in combined: return 'AK55'
+    if 'TRAMVAY' in combined: return 'TRAM'
+
+    # İlçe hatları
     ilce = [
         (r'SAMSUN\s*-\s*TERME', 'SAM-TRM'), (r'TERME\s*-\s*SAMSUN', 'TRM-SAM'),
-        (r'SAMSUN\s*-\s*[CÇ]AR[SŞ]AMBA', 'SAM-CRS'), (r'[CÇ]AR[SŞ]AMBA\s*-\s*SAMSUN', 'CRS-SAM'),
+        (r'SAMSUN\s*-\s*CARSAMBA', 'SAM-CRS'), (r'CARSAMBA\s*-\s*SAMSUN', 'CRS-SAM'),
+        (r'SAMSUN\s*-\s*BAFRA', 'SAM-BFR'), (r'BAFRA\s*-\s*SAMSUN', 'BFR-SAM'),
+        (r'SAMSUN\s*-\s*HAVZA', 'SAM-HVZ'), (r'HAVZA\s*-\s*SAMSUN', 'HVZ-SAM'),
     ]
-    raw_ascii = raw.upper().translate(_ASCII_MAP)
     for pattern, short in ilce:
-        if re.search(pattern, raw_ascii): return short
-    if 'TRAMVAY' in raw.upper().translate(_ASCII_MAP): return 'TRAM'
-    return raw[:12].rstrip(' -') if len(raw) > 12 else raw
+        if re.search(pattern, combined): return short
+
+    # 4) EKSPRES kısa adı: "SAMULAŞ EKSPRES 6-GİDİŞ" → E6
+    m_eks = re.search(r'EKSPRES\s*(\d+)', combined)
+    if m_eks: return f'E{m_eks.group(1)}'
+    if 'EKSPRES' in combined:
+        m_eks2 = re.search(r'EKSPRES\s*([A-Z])', combined)
+        return f'E{m_eks2.group(1)}' if m_eks2 else 'EXP'
+
+    # 5) Fallback: code'un ilk 12 karakteri
+    fallback = code_str.split(' ')[0] if ' ' in code_str else code_str
+    return fallback[:12].rstrip(' -')
 
 def clean_long_name(gtfs_short, long_name, db_short=''):
     """route_long_name başından short_name prefix'ini kaldır."""
