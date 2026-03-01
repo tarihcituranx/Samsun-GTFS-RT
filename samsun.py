@@ -3122,12 +3122,63 @@ def create_app(db, col):
 
     return app
 
+    return app
+
+# ==========================================
+# GLOABAL ASGI INITIALIZATION (SAMSUN TRANSIT)
+# ==========================================
+# Bu bölüm Render/Vercel gibi ASGI sunucularının 'app' objesini bulabilmesi içindir.
+
+t_start = time.time()
+try:
+    leaflet_indir()
+except Exception as e:
+    log.warning(f"Leaflet indirme hatası (cloud ortamında olabilir): {e}")
+
+# Servisleri başlat
+db = Database()
+db.connect()
+col = Collector(db, Http())
+
+# Veritabanını ilk açılışta güncelle
+try:
+    col.veri_cek()
+    col.samair_seferler_guncelle()
+except Exception as e:
+    log.error(f"Başlangıç veri çekme hatası: {e}")
+
+# FastAPI uygulamasını oluştur
+app = create_app(db, col)
+
+# Arka plan Samair güncelleyici fonksiyonu
+def start_samair_updater():
+    def samair_hourly_update():
+        consecutive_errors = 0
+        while True:
+            time.sleep(3600)  # 1 saat bekle
+            try:
+                log.info("⏰ Samair seferleri güncelleniyor (saatlik)...")
+                col.samair_seferler_guncelle(force=True)
+                consecutive_errors = 0
+            except Exception as e:
+                consecutive_errors += 1
+                log.error(f"Samair güncelleme hatası: {e}")
+                if consecutive_errors >= 3:
+                    log.warning("⚠️ Samair güncelleme başarısız, sonraki döngüye atlanıyor")
+                    consecutive_errors = 0
+
+    update_thread = threading.Thread(target=samair_hourly_update, daemon=True)
+    update_thread.start()
+    log.info("✓ Samair otomatik güncelleme thread'i aktif (her saat)")
+
+# Eğer app oluşturulduysa (örneğin Render 'uvicorn samsun:app' dediğinde) updater'ı başlat.
+if app:
+    start_samair_updater()
+
 def main():
     import sys
     import signal
     import atexit
-    
-    t_start = time.time()
     
     # Windows terminal encoding fix
     if sys.platform == 'win32':
@@ -3137,58 +3188,21 @@ def main():
     print("=" * 55)
     print("  SAMSUN TRANSIT - SUPER APP v25 (MASTER)")
     print("=" * 55)
-    
-    leaflet_indir()
-    db = Database()
-    yeni_db = db.connect()
-    col = Collector(db, Http())
 
-    # Graceful shutdown
+    # Graceful shutdown (sadece lokal CLI için)
     def _shutdown(signum=None, frame=None):
         log.info("\n🚶 Sistem kapatılıyor...")
         try:
             if db.conn:
                 db.conn.close()
                 log.info("  ✅ Veritabanı bağlantısı kapatıldı")
-        except Exception:
-            pass
+        except Exception: pass
         log.info("  👋 Güle güle!")
     
     signal.signal(signal.SIGINT, _shutdown)
     signal.signal(signal.SIGTERM, _shutdown)
     atexit.register(_shutdown)
 
-    log.info("=" * 50)
-    col.veri_cek()
-    
-    # Samair seferlerini açılışta bir kez kontrol et
-    col.samair_seferler_guncelle()
-
-    app = create_app(db, col)
-    if not app: return
-
-    # Saatlik Samair güncelleme thread'i (exponential backoff ile)
-    def samair_hourly_update():
-        import time as t
-        consecutive_errors = 0
-        while True:
-            t.sleep(3600)  # 1 saat bekle
-            try:
-                log.info("⏰ Samair seferleri güncelleniyor (saatlik)...")
-                col.samair_seferler_guncelle(force=True)
-                consecutive_errors = 0  # Başarılı → sayacı sıfırla
-            except Exception as e:
-                consecutive_errors += 1
-                log.error(f"Samair güncelleme hatası ({consecutive_errors}. deneme): {e}")
-                if consecutive_errors >= 3:
-                    log.warning(f"⚠️ Samair güncelleme {consecutive_errors}x başarısız, sonraki döngüye atlanıyor")
-                    consecutive_errors = 0  # Reset edip sonraki saate bırak
-    
-    update_thread = threading.Thread(target=samair_hourly_update, daemon=True)
-    update_thread.start()
-    log.info("✓ Samair otomatik güncelleme aktif (her saat)")
-
-    # Startup benchmark
     startup_secs = time.time() - t_start
     log.info("=" * 50)
     log.info(f"  🚀 Sistem hazır: {startup_secs:.1f}sn")
@@ -3197,6 +3211,7 @@ def main():
     log.info(f"  ❤️ Health: http://localhost:8000/api/health")
     log.info(f"  PID: {os.getpid()}")
     log.info("=" * 50)
+    
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
 
