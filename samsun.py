@@ -1311,8 +1311,17 @@ class Collector:
             
             toplam_durak.sort(key=lambda x: x['sira'])
             for idx, d in enumerate(toplam_durak, 1):
+                price = '120.0'
+                if 'ybs_duraklar' in locals() and ybs_duraklar:
+                    for yd in ybs_duraklar:
+                        ykod = str(yd.get('durak_kodu', ''))
+                        if ykod and str(d['ad']).startswith(ykod + ' -'):
+                            price = clean_price(yd.get('durak_fiyat', '120.0'))
+                            if not price: price = '120.0'
+                            break
+
                 self.db.ex("INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
-                          (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], '120.0'))
+                          (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], price))
             
             log.info(f"      ✈️ H{hid} ({ana_ad}): {len(toplam_durak)} durak")
 
