@@ -84,7 +84,6 @@ class ApiService {
         return cleanedData;
 
       } else {
-      } else {
         throw Exception("API Hatası (Yanıt Kodu: ${response.statusCode}) - İnternet bağlantınızı kontrol edin.");
       }
     } catch (e) {
