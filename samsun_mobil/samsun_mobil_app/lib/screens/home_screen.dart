@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
 import 'alarm_screen.dart';
@@ -42,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _calculateRoute() async {
+    // Tam bağımlılıksız (Offline) Rota Hesaplayıcı
     if (_hedefController.text.isEmpty) return;
     
     setState(() {
@@ -51,41 +50,42 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // API call to the local Python backend
-      // Note: For physical device, change localhost to the PC's IP address (e.g., 192.168.1.x)
-      // For Android emulator, use 10.0.2.2
-      final String start = _baslangicController.text.isNotEmpty ? _baslangicController.text : "Samsun Meydan";
-      final String url = 'http://10.0.2.2:8000/api/rota?start=${Uri.encodeComponent(start)}&end=${Uri.encodeComponent(_hedefController.text)}';
+      // Çevrimiçi Geocoding yerine mobil GPS konumu (Şimdilik Map'in ortası: Meydan)
+      double startLat = 41.2867;
+      double startLon = 36.3300; 
+
+      // Hedef GPS konumu (Şimdilik örnek olarak Atakum/Türkiş GPS'i)
+      // Normal bir uygulamada Offline Tersine-Geocoding kütüphanesi veya 
+      // kullanıcı haritadan pin seçerek bu koordinatları verir.
+      double destLat = 41.3323; 
+      double destLon = 36.2570; 
+
+      if (_hedefController.text.toLowerCase().contains("çarşamba") || _hedefController.text.toLowerCase().contains("carsamba")) {
+        destLat = 41.2009; destLon = 36.7329;
+      }
       
-      final response = await http.get(Uri.parse(url));
-      
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (data.isNotEmpty) {
-          setState(() {
-            _routeResults = List<Map<String, dynamic>>.from(data);
+      final offlineRoutes = await DBService().calculateRouteLocally(
+        startLat, startLon, destLat, destLon, radiusParams: 2.0 // 2km çevresi
+      );
+
+      if (offlineRoutes.isNotEmpty) {
+        setState(() {
+          _routeResults = offlineRoutes;
+          
+          if (_routeResults[0]['polyline'] != null && (_routeResults[0]['polyline'] as List).isNotEmpty) {
+            final List<dynamic> coords = _routeResults[0]['polyline'];
+            _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
             
-            // Extract polyline from the best route (index 0)
-            if (_routeResults[0]['polyline'] != null) {
-              final List<dynamic> coords = _routeResults[0]['polyline'];
-              _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
-              
-              // Move map to the center of the route
-              if (_routePolyline.isNotEmpty) {
-                final bounds = LatLngBounds.fromPoints(_routePolyline);
-                _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
-              }
-            }
-          });
-          _showRouteResultsBottomSheet();
-        } else {
-          _showError("Rota bulunamadı.");
-        }
+            final bounds = LatLngBounds.fromPoints(_routePolyline);
+            _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+          }
+        });
+        _showRouteResultsBottomSheet();
       } else {
-        _showError("Sunucu hatası: ${response.statusCode}");
+        _showError("Bu iki nokta arasında offline rota bulunamadı.");
       }
     } catch (e) {
-      _showError("Bağlantı hatası: Backend çalışmıyor olabilir. ($e)");
+      _showError("Offline Hesaplama hatası: $e");
     } finally {
       setState(() {
         _isRouting = false;
