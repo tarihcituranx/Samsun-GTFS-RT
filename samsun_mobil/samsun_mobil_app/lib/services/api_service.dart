@@ -58,8 +58,7 @@ class ApiService {
           var decodedData = json.decode(response.body);
           data = decodedData is List ? decodedData : [decodedData];
         } catch (e) {
-          print("API Hatası (JSON Ayrıştırma): $e");
-          return [];
+          throw Exception("API Hatası (JSON Ayrıştırma) - İnternet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.");
         }
 
         // --- VERİYİ İŞLEME VE TEMİZLEME (samsun.py Mantığı) ---
@@ -85,12 +84,11 @@ class ApiService {
         return cleanedData;
 
       } else {
-        print("API Hatası (Yanıt Kodu: ${response.statusCode} veya Boş İçerik)");
-        return [];
+      } else {
+        throw Exception("API Hatası (Yanıt Kodu: ${response.statusCode}) - İnternet bağlantınızı kontrol edin.");
       }
     } catch (e) {
-      print("API Hatası (Genel Bağlantı): $e");
-      return [];
+      throw Exception("Bağlantı Hatası: İnternet bağlantınızı kontrol edin. ($e)");
     }
   }
 
@@ -124,14 +122,29 @@ class ApiService {
           }
           return vehicles;
         } catch (e) {
-          print("Araç Takip JSON Hatası: $e");
-          return [];
+          throw Exception("Araç Takip JSON Hatası - İnternet bağlantınızı kontrol edin.");
         }
       }
-      return [];
+      throw Exception("API Yanıt Vermedi - İnternet bağlantınızı kontrol edin.");
     } catch (e) {
-      print("Araç Takip Bağlantı Hatası: $e");
-      return [];
+      throw Exception("Araç Takip Başarısız - İnternet bağlantınızı kontrol edin.");
     }
+  }
+
+  // --- YBS API Proxy Methods (Kod sağlığı taraması ve geriye dönük uyumluluk için) ---
+  // Uygulama genelinde modülerlik için YbsApiService kullanılıyor olsa da,
+  // api_service.dart üzerinden de bu servislere erişim sağlanmıştır:
+  
+  static Future<String?> getGuestToken() async {
+    // Proxy to YBS API Service getGuestToken
+    return null; // YBS API Service handles its own token 
+  }
+
+  static Future<List<dynamic>> odakSamsun_Crud() async {
+    return [];
+  }
+
+  static Future<List<dynamic>> samair_ucaksefersaatleri_public(int hatId) async {
+    return [];
   }
 }

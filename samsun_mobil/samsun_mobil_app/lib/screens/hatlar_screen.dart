@@ -275,8 +275,8 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
                 ),
                 child: Column(children: [
                   Text("Bilet Ücreti", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
-                  Text("₺${(_fiyat!['tam_fiyat'] ?? 17).toStringAsFixed(2)}", style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                  Text("İndirimli: ₺${(_fiyat!['indirimli_fiyat'] ?? 12).toStringAsFixed(2)}", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                  Text("₺${(_fiyat!['tam_fiyat'] ?? '--')}", style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                  Text("İndirimli: ₺${(_fiyat!['indirimli_fiyat'] ?? '--')}", style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
                 ]),
               ),
 
@@ -412,10 +412,10 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
     final name = widget.name.toUpperCase();
     if (name.contains('TRAMVAY')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'Tramvay Hattı', '0362 431 10 12');
     if (name.contains('TELEFERİK')) return _banner(const Color(0xFF2A0020), const Color(0xFFFF4081), '🚠', 'Batıpark - Amisos', '10:30 - 22:00 | 323m hat');
-    if (name.contains('SAMSUNUM-1')) return _banner(const Color(0xFF1A2200), const Color(0xFFFFC400), '⛴️', 'Samsunum-1', '1s 15dk | Tam 200₺');
+    if (name.contains('SAMSUNUM-1')) return _banner(const Color(0xFF1A2200), const Color(0xFFFFC400), '⛴️', 'Samsunum-1', 'Odak turları bölümünden bilgi alınız');
     if (name.contains('SAMSUNUM-2')) return _banner(const Color(0xFF2A0000), const Color(0xFFFF5252), '🛑', 'Çalışmıyor', 'DSİ çalışması nedeniyle askıda');
-    if (name.contains('SAMSUNUM-3')) return _banner(const Color(0xFF001A2A), const Color(0xFF00B0FF), 'ℹ️', 'Samsunum-3', 'Doluluğa göre | Tam 200₺');
-    if (name.contains('ALTINKAYA') || name.contains('FERİBOT')) return _banner(const Color(0xFF1A1A1A), const Color(0xFF546E8A), '⛴️', 'Altınkaya 55', 'Tam 15₺ | Oto 75₺');
+    if (name.contains('SAMSUNUM-3')) return _banner(const Color(0xFF001A2A), const Color(0xFF00B0FF), 'ℹ️', 'Samsunum-3', 'Odak turları bölümünden bilgi alınız');
+    if (name.contains('ALTINKAYA') || name.contains('FERİBOT')) return _banner(const Color(0xFF1A1A1A), const Color(0xFF546E8A), '⛴️', 'Altınkaya 55', 'Fiyat ve sefer saatleri için arayınız');
     return const SizedBox.shrink();
   }
 

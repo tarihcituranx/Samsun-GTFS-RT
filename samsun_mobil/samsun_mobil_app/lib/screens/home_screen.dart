@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (_, i) {
                 final r = _routeResults[i];
                 final isDirect = r['type'] == 'DIRECT';
-                final tamFiyat = _prices['TAM']?.toStringAsFixed(2) ?? '17.00';
+                final tamFiyat = _prices['TAM']?.toStringAsFixed(2) ?? '--';
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
@@ -693,7 +693,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ...List.generate(_routeResults.length, (i) {
             final r = _routeResults[i];
             final isDirect = r['type'] == 'DIRECT';
-            final tamFiyat = _prices['TAM']?.toStringAsFixed(2) ?? '17.00';
+            final tamFiyat = _prices['TAM']?.toStringAsFixed(2) ?? '--';
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
