@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
+import 'alarm_screen.dart';
+import 'offline_wakeup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -49,29 +51,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          height: MediaQuery.of(context).size.height * 0.65,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 durak['ad'],
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
+              
+              // Yeni Eklenen "Kişisel Asistan" Tuşları
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AlarmScreen(durak: durak))),
+                    icon: const Icon(Icons.alarm_on, size: 18),
+                    label: const Text("Sabah Alarmı"),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OfflineWakeUpScreen(durak: durak))),
+                    icon: const Icon(Icons.bedtime, size: 18),
+                    label: const Text("Uyku Modu"),
+                  ),
+                ],
+              ),
+              const Divider(height: 30),
+
+              // Canlı Araçlar
+              const Text("Yaklaşan Araçlar (Canlı):", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+              const SizedBox(height: 10),
+              
               if (araclar.isEmpty)
-                const Text("Yaklaşan araç verisi bulunamadı veya WAF/CORS engeline takıldı.")
+                const Expanded(child: Center(child: Text("Yaklaşan araç verisi bulunamadı.")))
               else
-                ...araclar.map((a) => ListTile(
-                  leading: const Icon(Icons.directions_bus, color: Colors.blue),
-                  title: Text(a['hatKodu'] ?? 'Bilinmeyen Hat'),
-                  trailing: Text("${a['kalanSure'] ?? '?'} dk"),
-                )).toList()
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: araclar.length,
+                    itemBuilder: (context, index) {
+                      final a = araclar[index];
+                      return ListTile(
+                        leading: const Icon(Icons.directions_bus, color: Colors.blue),
+                        title: Text(a['hatKodu'] ?? 'Bilinmeyen Hat'),
+                        trailing: Text("${a['kalanSure'] ?? '?'} dk", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
+                      );
+                    },
+                  ),
+                )
             ],
           ),
         );
