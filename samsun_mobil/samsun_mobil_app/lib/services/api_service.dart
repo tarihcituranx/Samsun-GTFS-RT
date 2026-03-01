@@ -93,48 +93,4 @@ class ApiService {
       return [];
     }
   }
-
-  // Belirli bir hatta anlık sefer yapan tüm araçları çeker (Live Tracking)
-  static Future<List<dynamic>> getHattakiAraclar(String lineCode) async {
-    try {
-      final headers = {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
-        'Accept': 'application/json',
-      };
-
-      final url = Uri.parse('$ASIS_BASE/RealTimeData?lineCode=$lineCode');
-      final response = await http.get(url, headers: headers);
-
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
-        final List<dynamic> data;
-        try {
-          var decodedData = json.decode(response.body);
-          data = decodedData is List ? decodedData : [decodedData];
-        } catch (e) {
-          print("API Hatası (JSON Ayrıştırma - RealTimeData): $e");
-          return [];
-        }
-
-        List<dynamic> cleanedData = [];
-        for (var item in data) {
-          if (item is Map<String, dynamic> && item.containsKey('Latitude') && item.containsKey('Longitude')) {
-            // İstenmeyen hat kontrolü
-            if (item.containsKey('LineCode')) {
-              String lCode = item['LineCode']?.toString() ?? '';
-              bool shouldSkip = _skipKeywords.any((keyword) => lCode.toUpperCase().contains(keyword));
-              if (shouldSkip) continue;
-            }
-            cleanedData.add(item);
-          }
-        }
-        return cleanedData;
-      } else {
-        print("API Hatası (RealTimeData Yanıt Kodu: ${response.statusCode})");
-        return [];
-      }
-    } catch (e) {
-      print("API Hatası (RealTimeData Bağlantı): $e");
-      return [];
-    }
-  }
 }

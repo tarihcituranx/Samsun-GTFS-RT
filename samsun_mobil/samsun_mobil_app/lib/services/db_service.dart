@@ -136,19 +136,11 @@ class DBService {
         ]).toList();
 
         final stopDiff = (r['stop_diff'] as num?)?.toInt() ?? 99;
-        
-        // Tramvay Önceliği Algoritması (Kullanıcı İsteği)
-        int score = stopDiff;
-        if (lineCode.startsWith('T')) {
-          score -= 50; // Tramvay ise skoru ciddi oranda düşürerek önceliklendir
-        }
-        
         allRoutes.add({
           'type': 'DIRECT',
-          'total_score': score,
+          'total_score': stopDiff,
           'polyline': coords,
-          'desc': "Mevcut konumunuza yakın durağa yürüyün.\n🚌 $lineCode hattına ${r['s_ad']} durağından binin → ${r['e_ad']} durağında inin. ($stopDiff durak)",
-          'code': lineCode
+          'desc': "🚌 $lineCode hattına ${r['s_ad']} durağından binin → ${r['e_ad']} durağında inin. ($stopDiff durak)",
         });
       }
     } catch (e) {
@@ -187,18 +179,11 @@ class DBService {
           final p2Rows = await db.rawQuery("SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira", [r['hat2'], t2, e]);
           coords.addAll(p2Rows.map((row) => [(row['lat'] as num?)?.toDouble() ?? 0.0, (row['lon'] as num?)?.toDouble() ?? 0.0]));
 
-          int transferScore = (t1 - s1) + (e - t2) + 15;
-          
-          if (r['hat1'].toString().startsWith('T') || r['hat2'].toString().startsWith('T')) {
-             transferScore -= 30; // Aktarmalarından biri tramvay ise öncelik ver
-          }
-
           allRoutes.add({
             'type': 'TRANSFER',
-            'total_score': transferScore,
+            'total_score': (t1 - s1) + (e - t2) + 15,
             'polyline': coords,
-            'desc': "Mevcut konumunuza yakın durağa yürüyün.\n🚌 ${r['hat1']} hattına ${r['s_ad']} durağından binin → ${r['t_ad']} durağında inin.\n🔄 ${r['hat2']} hattına aktarın → ${r['e_ad']} durağında inin.",
-            'hat1': r['hat1'].toString()
+            'desc': "🚌 ${r['hat1']} hattına ${r['s_ad']} durağından binin → ${r['t_ad']} durağında inin.\n🔄 ${r['hat2']} hattına aktarın → ${r['e_ad']} durağında inin.",
           });
         }
       } catch (e) {

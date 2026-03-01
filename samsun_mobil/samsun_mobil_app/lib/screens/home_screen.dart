@@ -1,4 +1,4 @@
-import 'dart:async';
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,8 +6,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
-import '../services/price_service.dart';
-import 'samair_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -23,11 +21,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<Map<String, dynamic>> _yakinDuraklar = [];
   List<LatLng> _routePolyline = [];
   List<Map<String, dynamic>> _routeResults = [];
-  
-  // Canlı Araç Takibi
-  String? _activeLineCode;
-  Timer? _liveTrackingTimer;
-  List<LatLng> _liveVehicles = [];
 
   bool _isLoadingMap = true;
   bool _isLoadingNearby = false;
@@ -41,48 +34,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadDuraklar();
     _getLocation();
   }
 
   @override
   void dispose() {
-    _liveTrackingTimer?.cancel();
     _tabController.dispose();
     _hedefCtrl.dispose();
     super.dispose();
-  }
-
-  void _startLiveTracking(String lineCode) {
-    _liveTrackingTimer?.cancel();
-    _activeLineCode = lineCode;
-    _fetchLiveVehicles();
-    _liveTrackingTimer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchLiveVehicles());
-  }
-
-  Future<void> _fetchLiveVehicles() async {
-    if (_activeLineCode == null || !mounted) return;
-    
-    // T1, T2 gibi hat isimlerini temizle (ASIS API'de sadece numaralar veya belirli kodlar var)
-    String reqCode = _activeLineCode!;
-    if (reqCode.startsWith('T')) reqCode = reqCode; // Tramvay
-    
-    final araclar = await ApiService.getHattakiAraclar(reqCode);
-    if (!mounted) return;
-    
-    List<LatLng> newVehicles = [];
-    for (var a in araclar) {
-      if (a['Latitude'] != null && a['Longitude'] != null) {
-        newVehicles.add(LatLng(
-          double.tryParse(a['Latitude'].toString()) ?? 0.0,
-          double.tryParse(a['Longitude'].toString()) ?? 0.0,
-        ));
-      }
-    }
-    setState(() {
-      _liveVehicles = newVehicles;
-    });
   }
 
   Future<void> _getLocation() async {
@@ -164,26 +125,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _myLocation.latitude, _myLocation.longitude, destLat, destLon, radiusParams: 2.0
       );
 
-      // Fiyatları çek ve eşleştir
-      Map<String, double> livePrices = {};
-      try {
-        livePrices = await PriceService.fetchPrices();
-      } catch (_) {}
-
       if (routes.isNotEmpty) {
         setState(() {
           _routeResults = routes;
-          
-          // Fiyat entegrasyonu
-          for(var r in _routeResults) {
-            String cCode = r['code']?.toString() ?? r['hat1']?.toString() ?? '';
-            if (cCode.isNotEmpty) {
-               // T1/T2 için T1 kodunu kullan (Aynı fiyat)
-               if (cCode.startsWith('T')) cCode = 'T1';
-               r['price'] = livePrices[cCode] ?? "Bilinmiyor";
-            }
-          }
-
           final coords = routes[0]['polyline'] as List;
           if (coords.isNotEmpty) {
             _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
@@ -234,24 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     subtitle: Text(r['desc'] ?? '', style: const TextStyle(fontSize: 12)),
                     onTap: () {
                       final coords = r['polyline'] as List;
-                      setState(() {
-                        _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
-                        _liveVehicles = [];
-                        _activeLineCode = null;
-                      });
-                      
-                      // Hat kodunu al ve canlı takibi başlat
-                      String? lineCode;
-                      if (isDirect) {
-                         lineCode = r['code']?.toString();
-                      } else {
-                         lineCode = r['hat1']?.toString(); // Aktarmalıda ilk hattı takip et
-                      }
-                      
-                      if (lineCode != null && lineCode.isNotEmpty) {
-                        _startLiveTracking(lineCode);
-                      }
-
+                      setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
                       Navigator.pop(context);
                       _tabController.animateTo(0);
                     },
@@ -292,12 +219,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
-          isScrollable: true,
           tabs: const [
             Tab(icon: Icon(Icons.map), text: "Harita"),
             Tab(icon: Icon(Icons.near_me), text: "Yakınım"),
             Tab(icon: Icon(Icons.directions), text: "Nasıl Giderim"),
-            Tab(icon: Icon(Icons.flight_takeoff), text: "SamAIR"),
           ],
         ),
       ),
@@ -325,19 +250,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           Polyline(points: _routePolyline, strokeWidth: 5.0, color: Colors.blue.shade700),
                         ]),
                       MarkerLayer(markers: [
-                        ..._liveVehicles.map((v) => Marker(
-                          point: v,
-                          width: 40,
-                          height: 40,
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black26)],
-                            ),
-                            child: const Icon(Icons.directions_bus, color: Colors.red, size: 24),
-                          ),
-                        )),
                         Marker(
                           point: _myLocation, width: 36, height: 36,
                           child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
@@ -473,38 +385,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ...List.generate(_routeResults.length, (i) {
                   final r = _routeResults[i];
                   final isDirect = r['type'] == 'DIRECT';
-                  final priceVal = r['price'];
-                  String priceStr = priceVal is double ? '${priceVal.toStringAsFixed(2)} ₺' : priceVal.toString();
-                  
                   return Card(
                     color: isDirect ? Colors.green.shade50 : Colors.amber.shade50,
                     child: ListTile(
                       leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station,
                           color: isDirect ? Colors.green : Colors.amber.shade800),
                       title: Text(isDirect ? "✅ Direkt Hat" : "🔄 Aktarmalı Rota"),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(r['desc'] ?? ''),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.blue.shade200)),
-                            child: Text("Ücret: $priceStr", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue)),
-                          )
-                        ],
-                      ),
+                      subtitle: Text(r['desc'] ?? ''),
                       onTap: () {
                         final coords = r['polyline'] as List;
-                        setState(() {
-                          _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
-                          _liveVehicles = [];
-                          _activeLineCode = null;
-                        });
-                        
-                        String? lineCode = isDirect ? r['code']?.toString() : r['hat1']?.toString();
-                        if (lineCode != null && lineCode.isNotEmpty) _startLiveTracking(lineCode);
-                        
+                        setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
                         _tabController.animateTo(0);
                       },
                     ),
