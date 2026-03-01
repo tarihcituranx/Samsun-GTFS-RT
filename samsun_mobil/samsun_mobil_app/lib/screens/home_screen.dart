@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? _activeLineCode;
   Timer? _liveTimer;
-  Map<String, double> _prices = {};
+  Map<String, dynamic> _prices = {};
   LatLng _myLocation = const LatLng(41.2867, 36.3300);
   LatLng? _targetLocation;
 

@@ -275,7 +275,7 @@ class _SamAirScheduleTabState extends State<_SamAirScheduleTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.flight_off, size: 48, color: Colors.white.withOpacity(0.2)),
+            Icon(Icons.airplanemode_inactive, size: 48, color: Colors.white.withOpacity(0.2)),
             const SizedBox(height: 16),
             Text("Bu hatta ait sefer bulunamadı.", style: TextStyle(color: Colors.white.withOpacity(0.5))),
           ],
