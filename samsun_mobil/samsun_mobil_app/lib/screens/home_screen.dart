@@ -390,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         children: [
-          TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", userAgentPackageName: 'com.example.samsun_transit'),
+          TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", userAgentPackageName: 'com.tarihcituran.samsun_mobil_app'),
           if (_routePolyline.isNotEmpty)
             PolylineLayer(polylines: [Polyline(points: _routePolyline, strokeWidth: 5.0, color: const Color(0xFF2979FF))]),
           MarkerLayer(markers: [
@@ -417,13 +417,13 @@ class _HomeScreenState extends State<HomeScreen> {
               )),
             ..._liveVehicles.map((v) => Marker(
               point: LatLng(v['lat'] as double, v['lon'] as double),
-              width: 44, height: 44,
+              width: 38, height: 38,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF2979FF), width: 2),
-                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.5), blurRadius: 10, spreadRadius: 2)],
+                  border: Border.all(color: const Color(0xFF2979FF), width: 1.5),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
                 ),
                 child: Center(
                   child: ClipOval(
@@ -460,13 +460,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       offset: const Offset(0, -10), // Pin shape translation
                       child: Container(
                         decoration: BoxDecoration(
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 2, offset: const Offset(0, 2))],
                         ),
                         child: Image.asset(
                           'assets/bus_stop.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => 
-                            const Icon(Icons.location_on, size: 30, color: Color(0xFF2979FF)),
+                            const Icon(Icons.location_on, size: 24, color: Color(0xFF2979FF)),
                         ),
                       ),
                     ),

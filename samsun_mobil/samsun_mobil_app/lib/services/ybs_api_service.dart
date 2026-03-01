@@ -12,6 +12,11 @@ class YbsApiService {
   String? _token;
   DateTime? _tokenExpiry;
 
+  static const Map<String, String> _headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+  };
+
   /// Self-caching token pool (200s TTL)
   Future<String?> _getToken() async {
     // Return cached token if valid
@@ -24,6 +29,7 @@ class YbsApiService {
     try {
       final response = await http.post(
         Uri.parse(_baseUrl),
+        headers: _headers,
         body: {'method': 'getGuestToken'},
       ).timeout(const Duration(seconds: 10));
 
@@ -52,7 +58,10 @@ class YbsApiService {
       final uri = Uri.parse("$_baseUrl?method=odakSamsun_Crud&token=$token");
       final response = await http.get(
         uri,
-        headers: {'Referer': 'https://odak.samsun.bel.tr/'}, // Mandatory WAF bypass
+        headers: {
+          ..._headers,
+          'Referer': 'https://odak.samsun.bel.tr/'
+        },
       ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
@@ -74,7 +83,7 @@ class YbsApiService {
 
     try {
       final uri = Uri.parse("$_baseUrl?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid=$hatId&token=$token");
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -95,7 +104,7 @@ class YbsApiService {
 
     try {
       final uri = Uri.parse("$_baseUrl?method=samair_duraklar_public&submethod=araclar&token=$token");
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

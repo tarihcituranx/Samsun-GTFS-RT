@@ -106,7 +106,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
           children: [
             TileLayer(
               urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-              userAgentPackageName: 'com.example.samsun_transit',
+              userAgentPackageName: 'com.tarihcituran.samsun_mobil_app',
             ),
             MarkerLayer(
               markers: [
@@ -214,7 +214,11 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                           return Padding(
                             padding: const EdgeInsets.only(right: 8.0),
                             child: Chip(
-                              avatar: const Icon(Icons.directions_bus, size: 16, color: Colors.white),
+                              avatar: CircleAvatar(
+                                backgroundColor: Colors.white.withOpacity(0.05),
+                                radius: 20,
+                                child: const Icon(Icons.flight_takeoff, color: Colors.white70),
+                              ),
                               label: Text("$plaka - $hizi km/s", style: const TextStyle(color: Colors.white, fontSize: 11)),
                               backgroundColor: const Color(0xFF2979FF),
                               side: BorderSide.none,

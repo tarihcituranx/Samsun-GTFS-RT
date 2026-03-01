@@ -201,7 +201,10 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
                     initialZoom: 12.0,
                   ),
                   children: [
-                    TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+                    TileLayer(
+            urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            userAgentPackageName: 'com.tarihcituran.samsun_mobil_app',
+          ),
                     MarkerLayer(markers: _duraklar.where((d) => (d['lat'] as num?)?.toDouble() != null && (d['lat'] as num).toDouble() > 0).map((d) {
                       final sira = (d['sira'] as num?)?.toInt() ?? 0;
                       return Marker(
