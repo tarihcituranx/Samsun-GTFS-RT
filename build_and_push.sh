@@ -15,7 +15,7 @@ flutter pub get
 echo "🔨 APK derleniyor (release)..."
 flutter build apk --release
 
-echo "📤 APK GitHub'a yükleniyor..."
+echo "📤 Değişiklikler ve APK GitHub'a yükleniyor..."
 cd ~/Samsun-GTFS-RT
 
 # Tarih ve commit hash ile versiyonlu isim
@@ -23,8 +23,13 @@ DATE=$(date +"%Y%m%d_%H%M")
 mkdir -p samsun_mobil/releases/latest
 cp samsun_mobil/samsun_mobil_app/build/app/outputs/flutter-apk/app-release.apk samsun_mobil/releases/latest/app-release.apk
 
-git add samsun_mobil/releases/latest/app-release.apk
-git commit -m "release: APK build ${DATE}"
+# SADECE APK'YI DEĞİL, TÜM DEĞİŞİKLİKLERİ EKLE
+git add .
+
+# Değişiklikleri commit'le
+git commit -m "build: Yeni APK oluşturuldu ve proje dosyaları güncellendi ${DATE}"
+
+# GitHub'a push'la
 git push origin main
 
 echo ""
