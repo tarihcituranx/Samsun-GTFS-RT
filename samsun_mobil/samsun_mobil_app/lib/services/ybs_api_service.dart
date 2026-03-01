@@ -2,28 +2,27 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class YbsApiService {
-  // Yeni Render Cloud Sunucumuz (Python Proxy & GTFS Engine)
-  static const String _baseUrl = "https://samsun-gtfs-rt.onrender.com/api";
+  static const String _ybsUrl = "https://ybs.samsun.bel.tr/service/";
+  static const String _renderUrl = "https://samsun-gtfs-rt.onrender.com/api";
   
   // Singleton Pattern
   static final YbsApiService _instance = YbsApiService._internal();
   factory YbsApiService() => _instance;
   YbsApiService._internal();
 
+  String? _token;
+  DateTime? _tokenExpiry;
+
   static const Map<String, String> _headers = {
-    'User-Agent': 'SamsunMobilApp/2.0 (Android; CloudSync)',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'application/json',
-    'Content-Type': 'application/json',
   };
 
   /// Cloud Sunucusuna (Render) "Şu hatları aktif et" komutu gönderir.
-  /// Sunucu bu komutu alınca uyku modundan çıkar ve sadece bu hatları YBS'den çeker.
   Future<void> setGtfsConfig(List<String> activeLines) async {
     try {
-      final uri = Uri.parse("$_baseUrl/gtfs_config");
+      final uri = Uri.parse("$_renderUrl/gtfs_config");
       print("--- CLOUD GTFS WAKEUP REQUEST ---");
-      print("POST $uri -> active_lines: $activeLines");
-      
       final body = json.encode({
         "enabled": true,
         "active_lines": activeLines
@@ -31,77 +30,109 @@ class YbsApiService {
 
       final response = await http.post(
         uri, 
-        headers: _headers,
+        headers: {
+          'User-Agent': 'SamsunMobilApp/2.0',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
         body: body
       ).timeout(const Duration(seconds: 10));
 
-      print("--- CLOUD GTFS WAKEUP RESPONSE ---");
-      print("Status Code: ${response.statusCode}");
+      print("GTFS Wakeup Status: ${response.statusCode}");
     } catch (e) {
       print("GTFS Wakeup Error: $e");
     }
   }
 
-  /// Odak Samsun turistik lokasyon verilerini çeker (Proxy üzerinden)
-  Future<List<dynamic>> getOdakSamsun() async {
+  /// Self-caching token pool
+  Future<String?> _getToken() async {
+    if (_token != null && _tokenExpiry != null) {
+      if (DateTime.now().isBefore(_tokenExpiry!)) return _token;
+    }
+
     try {
-      // Python sunucusundaki /api/ybs/... uçları Odak için ayarlanmalı veya
-      // Python sunucusu yerine doğrudan odak endpointi yazılmalı.
-      // EĞER SAMSUN.PY YBS PROXY DESTEĞİNE SAHİP DEĞİLSE BU KISIM ŞİMDİLİK STATİK KALIR VEYA 
-      // SAMSUN.PY İÇERİSİNE ODAK/SAMAİR PROXY EKLENİR.
-      // Not: Kullanıcı "samsun.py orada çalışabilir tüm apiler daha rahat çalışır" demişti.
-      // O yüzden bu istekleri doğrudan Render'daki Python projemizin oluşturacağı proxy endpointine atıyoruz.
-      final uri = Uri.parse("$_baseUrl/proxy_odak"); // Varsayımsal Python proxy endpoint'i
-      print("--- CLOUD PROXY ODAK REQUEST ---");
-      
-      final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 15));
-      
+      final response = await http.post(
+        Uri.parse(_ybsUrl),
+        headers: _headers,
+        body: {'method': 'getGuestToken'},
+      ).timeout(const Duration(seconds: 10));
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is List) return data; // Python proxy formatı
-        if (data['data'] != null) return data['data'] as List<dynamic>;
+        if (data != null && data['token'] != null) {
+          _token = data['token'];
+          _tokenExpiry = DateTime.now().add(const Duration(seconds: 180));
+          return _token;
+        }
       }
     } catch (e) {
-      print("Cloud Odak Error: $e");
+      print("YBS Token Error: $e");
+    }
+    return null;
+  }
+
+  /// Odak Samsun turistik lokasyon verilerini çeker
+  Future<List<dynamic>> getOdakSamsun() async {
+    final token = await _getToken();
+    if (token == null) return [];
+
+    try {
+      final uri = Uri.parse("$_ybsUrl?method=odakSamsun_Crud&token=$token");
+      final response = await http.get(
+        uri,
+        headers: {
+          ..._headers,
+          'Referer': 'https://odak.samsun.bel.tr/'
+        },
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'SUCCESS' && data['data'] != null) {
+           return data['data'] as List<dynamic>;
+        }
+      }
+    } catch (e) {
+      print("YBS Odak Error: $e");
     }
     return [];
   }
 
-  /// Belirli bir SamAir hattının sefer saatlerini döner (Proxy üzerinden)
+  /// Belirli bir SamAir hattının sefer saatlerini döner
   Future<List<dynamic>> getSamairSaatleri(int hatId) async {
+    final token = await _getToken();
+    if (token == null) return [];
+
     try {
-      final uri = Uri.parse("$_baseUrl/proxy_samair_saatler?hatid=$hatId");
-      print("--- CLOUD PROXY SAMAIR SAATLER REQUEST ---");
-      
+      final uri = Uri.parse("$_ybsUrl?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid=$hatId&token=$token");
       final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is List) return data;
         if (data['data'] != null) return data['data'] as List<dynamic>;
         if (data['root'] != null) return data['root'] as List<dynamic>;
       }
     } catch (e) {
-      print("Cloud Samair Error for Hat $hatId: $e");
+      print("YBS Samair Error for Hat $hatId: $e");
     }
     return [];
   }
 
-  /// Tüm SamAir araç konumlarını çeker (Proxy üzerinden)
+  /// Tüm SamAir araç konumlarını (harita için) çeker
   Future<List<dynamic>> getSamairAraclar() async {
+    final token = await _getToken();
+    if (token == null) return [];
+
     try {
-      final uri = Uri.parse("$_baseUrl/proxy_samair_araclar");
-      print("--- CLOUD PROXY SAMAIR ARACLAR REQUEST ---");
-      
+      final uri = Uri.parse("$_ybsUrl?method=samair_duraklar_public&submethod=araclar&token=$token");
       final response = await http.get(uri, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is List) return data;
         if (data['data'] != null) return data['data'] as List<dynamic>;
       }
     } catch (e) {
-      print("Cloud Samair Araclar Error: $e");
+      print("YBS Samair Araclar Error: $e");
     }
     return [];
   }
