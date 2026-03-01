@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   List<Map<String, dynamic>> _duraklar = [];
   List<Map<String, dynamic>> _yakinDuraklar = [];
-  List<Map<String, dynamic>> _yaklasanAraclar = [];
+  List<dynamic> _yaklasanAraclar = [];
   List<LatLng> _routePolyline = [];
   List<Map<String, dynamic>> _routeResults = [];
 
