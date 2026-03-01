@@ -2720,6 +2720,94 @@ def create_app(db, col):
     async def api_durak_panel(kod: str):
         return JSONResponse(col.durak_bilgi(kod))
 
+    # ==========================================
+    # YBS PROXY ENDPOINTS (MOBILE APP İÇİN)
+    # ==========================================
+    
+    YBS_TOKEN_CACHE = {"token": None, "expiry": 0}
+    
+    async def get_ybs_token(http_client):
+        now = time.time()
+        if YBS_TOKEN_CACHE["token"] and now < YBS_TOKEN_CACHE["expiry"]:
+            return YBS_TOKEN_CACHE["token"]
+            
+        try:
+            resp = await asyncio.to_thread(
+                http_client.post,
+                "https://ybs.samsun.bel.tr/service/",
+                json={"method": "getGuestToken"},
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+            )
+            data = resp.json()
+            if data and data.get("token"):
+                YBS_TOKEN_CACHE["token"] = data["token"]
+                YBS_TOKEN_CACHE["expiry"] = now + 180 # 3 dakika
+                return data["token"]
+        except Exception as e:
+            log.error(f"YBS Proxy Token Hatası: {e}")
+        return None
+
+    @app.get("/api/proxy_odak")
+    async def proxy_odak():
+        """Mobil uygulama için Odak noktalarını proxy yapar (WAF Aşar)"""
+        http_client = col.http
+        token = await get_ybs_token(http_client.session)
+        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        
+        try:
+            resp = await asyncio.to_thread(
+                http_client.session.get,
+                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&token={token}",
+                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"}
+            )
+            data = resp.json()
+            if data.get('status') == 'SUCCESS' and data.get('data'):
+                return JSONResponse(data['data'])
+            return JSONResponse([])
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    @app.get("/api/proxy_samair_saatler")
+    async def proxy_samair_saatler(hatid: int):
+        """Mobil uygulama için SamAir saatlerini proxy yapar"""
+        http_client = col.http
+        token = await get_ybs_token(http_client.session)
+        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        
+        try:
+            resp = await asyncio.to_thread(
+                http_client.session.get,
+                f"https://ybs.samsun.bel.tr/service/?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid={hatid}&token={token}",
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            data = resp.json()
+            if data.get('data'): return JSONResponse(data['data'])
+            if data.get('root'): return JSONResponse(data['root'])
+            return JSONResponse([])
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    @app.get("/api/proxy_samair_araclar")
+    async def proxy_samair_araclar():
+        """Mobil uygulama için SamAir araç konumlarını proxy yapar"""
+        http_client = col.http
+        token = await get_ybs_token(http_client.session)
+        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        
+        try:
+            resp = await asyncio.to_thread(
+                http_client.session.get,
+                f"https://ybs.samsun.bel.tr/service/?method=samair_duraklar_public&submethod=araclar&token={token}",
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            data = resp.json()
+            if data.get('data'): return JSONResponse(data['data'])
+            return JSONResponse([])
+        except Exception as e:
+            return JSONResponse({"error": str(e)}, status_code=500)
+
+    # ==========================================
+
     @app.get("/api/rota")
     async def api_rota(start: str = None, lat1: float = None, lon1: float = None, 
                        end: str = None, lat2: float = None, lon2: float = None):
@@ -3171,9 +3259,28 @@ def start_samair_updater():
     update_thread.start()
     log.info("✓ Samair otomatik güncelleme thread'i aktif (her saat)")
 
+# YENİ: Render.com Free Tier Uyku Önleyici (Her 14 dakikada bir kendini dürter)
+def start_keep_alive_ping():
+    def pinger():
+        import requests
+        while True:
+            time.sleep(14 * 60) # 14 dakika
+            try:
+                # Render URL'inizi buraya da hardcode edebilirsiniz, ancak env var daha güvenli
+                url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8000")
+                requests.get(f"{url}/api/health", timeout=5)
+                log.info("💓 Keep-Alive ping gönderildi")
+            except Exception:
+                pass
+
+    ping_thread = threading.Thread(target=pinger, daemon=True)
+    ping_thread.start()
+    log.info("✓ Keep-Alive pinger aktif (Her 14dk)")
+
 # Eğer app oluşturulduysa (örneğin Render 'uvicorn samsun:app' dediğinde) updater'ı başlat.
 if app:
     start_samair_updater()
+    start_keep_alive_ping()
 
 def main():
     import sys
