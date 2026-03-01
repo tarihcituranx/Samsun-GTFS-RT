@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- İnternet izni (Harita tiles + ASIS API için ZORUNLU) -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- GPS konum izni (Yakınım sekmesi için) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="samsun_transit"
         android:name="${applicationName}"

@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import '../helpers/database_helper.dart';
+import '../services/db_service.dart';
 import '../services/api_service.dart';
 
-// Ana ekran - Harita, Yakın Duraklar ve Nasıl Giderim tabları
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
   @override
@@ -17,11 +16,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final MapController _mapController = MapController();
-  final dbHelper = DatabaseHelper.instance;
 
   List<Map<String, dynamic>> _duraklar = [];
   List<Map<String, dynamic>> _yakinDuraklar = [];
-  List<dynamic> _yaklasanAraclar = [];
   List<LatLng> _routePolyline = [];
   List<Map<String, dynamic>> _routeResults = [];
 
@@ -29,9 +26,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   bool _isLoadingNearby = false;
   bool _isRouting = false;
 
-  LatLng _myLocation = const LatLng(41.2867, 36.3300); // Samsun Meydan
+  List<dynamic> _yaklasanAraclar = [];
+  LatLng _myLocation = const LatLng(41.2867, 36.3300);
 
-  final TextEditingController _baslangicCtrl = TextEditingController();
   final TextEditingController _hedefCtrl = TextEditingController();
 
   @override
@@ -45,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _tabController.dispose();
-    _baslangicCtrl.dispose();
     _hedefCtrl.dispose();
     super.dispose();
   }
@@ -60,47 +56,45 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         if (permission == LocationPermission.denied) return;
       }
       final pos = await Geolocator.getCurrentPosition();
-      setState(() => _myLocation = LatLng(pos.latitude, pos.longitude));
-      _mapController.move(_myLocation, 14.0);
+      if (mounted) {
+        setState(() => _myLocation = LatLng(pos.latitude, pos.longitude));
+        _mapController.move(_myLocation, 14.0);
+      }
     } catch (_) {}
   }
 
   Future<void> _loadDuraklar() async {
-    final db = await dbHelper.database;
-    final duraklar = await db.query(DatabaseHelper.tableDurak);
-    setState(() {
-      _duraklar = duraklar;
-      _isLoadingMap = false;
-    });
+    // samsun_mobil.db (assets) üzerinden durakları yükle
+    final duraklar = await DBService().getDuraklar();
+    if (mounted) {
+      setState(() {
+        _duraklar = duraklar;
+        _isLoadingMap = false;
+      });
+    }
+  }
+
+  double _hav(double lat1, double lon1, double lat2, double lon2) {
+    var p = 0.017453292519943295;
+    var c = math.cos;
+    var a = 0.5 - c((lat2 - lat1) * p) / 2 +
+        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * math.asin(math.sqrt(a)); // km
   }
 
   Future<void> _loadYakinDuraklar() async {
     setState(() => _isLoadingNearby = true);
-    final db = await dbHelper.database;
+    final allDuraklar = await DBService().getDuraklar();
     double lat = _myLocation.latitude;
     double lon = _myLocation.longitude;
 
-    final nearby = await db.rawQuery(
-      "SELECT kod, ad, lat, lon FROM durak WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
-      [lat - 0.01, lat + 0.01, lon - 0.01, lon + 0.01]
-    );
-
-    double haversine(double lat1, double lon1, double lat2, double lon2) {
-      var p = 0.017453292519943295;
-      var c = math.cos;
-      var a = 0.5 - c((lat2 - lat1) * p) / 2 +
-          c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-      return 12742000 * math.asin(math.sqrt(a)); // metres
-    }
-
-    var result = nearby.where((d) {
-      double dist = haversine(lat, lon, d['lat'] as double, d['lon'] as double);
-      return dist < 1000;
+    var result = allDuraklar.where((d) {
+      return _hav(lat, lon, (d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()) < 1.0;
     }).toList();
 
     result.sort((a, b) {
-      double da = haversine(lat, lon, a['lat'] as double, a['lon'] as double);
-      double db2 = haversine(lat, lon, b['lat'] as double, b['lon'] as double);
+      double da = _hav(lat, lon, (a['lat'] as num).toDouble(), (a['lon'] as num).toDouble());
+      double db2 = _hav(lat, lon, (b['lat'] as num).toDouble(), (b['lon'] as num).toDouble());
       return da.compareTo(db2);
     });
 
@@ -110,197 +104,100 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
-  Future<void> _loadAraclar(String durakKod) async {
-    final araclar = await ApiService.getDuragaYaklasanAraclar(durakKod);
-    setState(() => _yaklasanAraclar = araclar);
-  }
-
   Future<void> _calculateRoute() async {
     if (_hedefCtrl.text.isEmpty) return;
-    setState(() {
-      _isRouting = true;
-      _routePolyline = [];
-      _routeResults = [];
-    });
+    setState(() { _isRouting = true; _routePolyline = []; _routeResults = []; });
 
     try {
-      double startLat = _myLocation.latitude;
-      double startLon = _myLocation.longitude;
-      double destLat = 41.3323;
-      double destLon = 36.2570;
+      double destLat = 41.3323, destLon = 36.2570; // default: Atakum
+      final h = _hedefCtrl.text.toLowerCase();
+      if (h.contains('atakum'))        { destLat = 41.3323; destLon = 36.2570; }
+      else if (h.contains('canik') || h.contains('çanik')) { destLat = 41.2530; destLon = 36.3990; }
+      else if (h.contains('ilkadim') || h.contains('ilkadım')) { destLat = 41.2867; destLon = 36.3300; }
+      else if (h.contains('ondokuz') || h.contains('üniversite') || h.contains('universite')) { destLat = 41.3420; destLon = 36.2260; }
+      else if (h.contains('tekkeköy') || h.contains('tekkekov')) { destLat = 41.2020; destLon = 36.4660; }
+      else if (h.contains('carsamba') || h.contains('çarşamba')) { destLat = 41.2009; destLon = 36.7329; }
+      else if (h.contains('bafra'))    { destLat = 41.5680; destLon = 35.9100; }
+      else if (h.contains('terme'))    { destLat = 41.2100; destLon = 36.9800; }
+      else if (h.contains('meydan'))   { destLat = 41.2867; destLon = 36.3300; }
 
-      // Basit metin → koordinat çözümü
-      final hedef = _hedefCtrl.text.toLowerCase();
-      if (hedef.contains('atakum')) { destLat = 41.3323; destLon = 36.2570; }
-      else if (hedef.contains('canik') || hedef.contains('çanik')) { destLat = 41.2530; destLon = 36.3990; }
-      else if (hedef.contains('ilkadim') || hedef.contains('ilkadım')) { destLat = 41.2867; destLon = 36.3300; }
-      else if (hedef.contains('ondokuz') || hedef.contains('üniversite')) { destLat = 41.3420; destLon = 36.2260; }
-      else if (hedef.contains('tekkeköy') || hedef.contains('trekkekoy')) { destLat = 41.2020; destLon = 36.4660; }
-      else if (hedef.contains('carsamba') || hedef.contains('çarşamba')) { destLat = 41.2009; destLon = 36.7329; }
-
-      final db = await dbHelper.database;
-      final allStops = await db.query(DatabaseHelper.tableDurak);
-
-      double hav(double a1, double b1, double a2, double b2) {
-        var p = 0.017453292519943295;
-        var c = math.cos;
-        var a = 0.5 - c((a2 - a1) * p) / 2 + c(a1 * p) * c(a2 * p) * (1 - c((b2 - b1) * p)) / 2;
-        return 12742 * math.asin(math.sqrt(a));
-      }
-
-      List<String> startSet = [];
-      List<String> endSet = [];
-      for (var d in allStops) {
-        if (hav(startLat, startLon, d['lat'] as double, d['lon'] as double) <= 1.5) {
-          startSet.add("'${d['id']}'");
-        }
-        if (hav(destLat, destLon, d['lat'] as double, d['lon'] as double) <= 1.5) {
-          endSet.add("'${d['id']}'");
-        }
-      }
-
-      if (startSet.isEmpty || endSet.isEmpty) {
-        _showError("Bu bölgede durak bulunamadı.");
-        return;
-      }
-
-      final directResults = await db.rawQuery("""
-        SELECT h1.hat as code, h1.ad as s_ad, h1.sira as s_sira,
-               h2.ad as e_ad, h2.sira as e_sira,
-               (h2.sira - h1.sira) as stop_diff
-        FROM hat_durak h1
-        JOIN hat_durak h2 ON h1.hat = h2.hat
-        WHERE h1.durak_id IN (${startSet.join(',')})
-          AND h2.durak_id IN (${endSet.join(',')})
-          AND h1.sira < h2.sira
-        ORDER BY stop_diff ASC
-        LIMIT 5
-      """);
-
-      List<Map<String, dynamic>> routes = [];
-      for (var r in directResults) {
-        final pathRows = await db.rawQuery(
-          "SELECT lat, lon FROM hat_durak WHERE hat=? AND sira >= ? AND sira <= ? ORDER BY sira",
-          [r['code'], r['s_sira'], r['e_sira']]
-        );
-        List<List<double>> coords = pathRows.map((row) => [row['lat'] as double, row['lon'] as double]).toList();
-        routes.add({
-          'type': 'DIRECT',
-          'total_score': r['stop_diff'],
-          'polyline': coords,
-          'desc': "🚌 ${r['code']} hattına ${r['s_ad']} durağından binin → ${r['e_ad']} durağında inin.",
-        });
-      }
+      final routes = await DBService().calculateRouteLocally(
+        _myLocation.latitude, _myLocation.longitude, destLat, destLon, radiusParams: 2.0
+      );
 
       if (routes.isNotEmpty) {
         setState(() {
           _routeResults = routes;
-          final coords = routes[0]['polyline'] as List<List<double>>;
+          final coords = routes[0]['polyline'] as List;
           if (coords.isNotEmpty) {
-            _routePolyline = coords.map((c) => LatLng(c[0], c[1])).toList();
-            final bounds = LatLngBounds.fromPoints(_routePolyline);
-            _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
-            _tabController.animateTo(0); // Haritaya dön
+            _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
+            if (_routePolyline.length > 1) {
+              final bounds = LatLngBounds.fromPoints(_routePolyline);
+              _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+            }
+            _tabController.animateTo(0);
           }
         });
         _showRouteSheet();
       } else {
-        _showError("Bu güzergah için rota bulunamadı. Daha geniş bir alan deneyin.");
+        _showError("Bu güzergah için rota bulunamadı. Farklı bir bölge adı deneyin.");
       }
     } catch (e) {
-      _showError("Rota hesaplama hatası: $e");
+      _showError("Hata: $e");
     } finally {
       setState(() => _isRouting = false);
     }
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700));
   }
 
   void _showRouteSheet() {
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+      context: context, isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.45,
+        height: MediaQuery.of(context).size.height * 0.5,
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("📍 Bulunan Rotalar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _routeResults.length,
-                itemBuilder: (_, i) {
-                  final r = _routeResults[i];
-                  return Card(
-                    color: Colors.blue.shade50,
-                    child: ListTile(
-                      leading: const Icon(Icons.directions_bus, color: Colors.blue),
-                      title: Text("Doğrudan Hat • ${r['total_score']} durak"),
-                      subtitle: Text(r['desc'] ?? '', style: const TextStyle(fontSize: 12)),
-                      onTap: () {
-                        final coords = r['polyline'] as List<List<double>>;
-                        setState(() => _routePolyline = coords.map((c) => LatLng(c[0], c[1])).toList());
-                        Navigator.pop(context);
-                        _tabController.animateTo(0);
-                      },
-                    ),
-                  );
-                },
-              ),
-            )
-          ],
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text("📍 Bulunan Rotalar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _routeResults.length,
+              itemBuilder: (_, i) {
+                final r = _routeResults[i];
+                final isDirect = r['type'] == 'DIRECT';
+                return Card(
+                  color: isDirect ? Colors.blue.shade50 : Colors.amber.shade50,
+                  child: ListTile(
+                    leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station,
+                        color: isDirect ? Colors.blue : Colors.amber.shade800),
+                    title: Text(isDirect ? "✅ Direkt Hat" : "🔄 Aktarmalı Rota"),
+                    subtitle: Text(r['desc'] ?? '', style: const TextStyle(fontSize: 12)),
+                    onTap: () {
+                      final coords = r['polyline'] as List;
+                      setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
+                      Navigator.pop(context);
+                      _tabController.animateTo(0);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ]),
       ),
     );
   }
 
   void _showDurakSheet(Map<String, dynamic> durak) async {
-    final araclar = await ApiService.getDuragaYaklasanAraclar(durak['kod']?.toString() ?? '');
-    if (!mounted) return;
+    final durakKod = durak['kod']?.toString() ?? '';
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
+      context: context, isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Container(
-        height: MediaQuery.of(context).size.height * 0.55,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              const Icon(Icons.location_on, color: Colors.red),
-              const SizedBox(width: 8),
-              Expanded(child: Text(durak['ad']?.toString() ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-            ]),
-            const Divider(),
-            const Text("🚌 Yaklaşan Araçlar (Canlı):", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-            const SizedBox(height: 6),
-            if (araclar.isEmpty)
-              const Expanded(child: Center(child: Text("Yaklaşan araç verisi bulunamadı.\n(Durak numarası eksik veya servis kapalı)", textAlign: TextAlign.center)))
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: araclar.length,
-                  itemBuilder: (_, i) {
-                    final a = araclar[i];
-                    final lineCode = a['BusLineCode']?.toString() ?? '?';
-                    final remaining = a['RemainingTimeCurr']?.toString() ?? '?';
-                    return ListTile(
-                      leading: CircleAvatar(backgroundColor: Colors.red, child: Text(remaining, style: const TextStyle(color: Colors.white, fontSize: 12))),
-                      title: Text("Hat: $lineCode"),
-                      subtitle: Text("$remaining dakika sonra"),
-                    );
-                  },
-                ),
-              )
-          ],
-        ),
-      ),
+      builder: (_) => _DurakDetailSheet(durak: durak, durakKod: durakKod),
     );
   }
 
@@ -313,6 +210,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
           tabs: const [
             Tab(icon: Icon(Icons.map), text: "Harita"),
             Tab(icon: Icon(Icons.near_me), text: "Yakınım"),
@@ -323,73 +222,91 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       body: TabBarView(
         controller: _tabController,
         children: [
-          // ── TAB 1: HARİTA ──
+          // TAB 1: HARİTA
           _isLoadingMap
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text("Duraklar yükleniyor...")
+                ]))
               : Stack(children: [
                   FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(initialCenter: _myLocation, initialZoom: 13.0),
                     children: [
-                      TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-                      MarkerLayer(markers: [
-                        // Benim konumum
-                        Marker(
-                          point: _myLocation, width: 40, height: 40,
-                          child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
-                        ),
-                        // Duraklar
-                        ..._duraklar.map((d) {
-                          double lat = (d['lat'] as num).toDouble();
-                          double lon = (d['lon'] as num).toDouble();
-                          return Marker(
-                            point: LatLng(lat, lon), width: 24, height: 24,
-                            child: GestureDetector(
-                              onTap: () => _showDurakSheet(d),
-                              child: const Icon(Icons.directions_bus, color: Colors.red, size: 20),
-                            ),
-                          );
-                        }),
-                      ]),
+                      TileLayer(
+                        urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                        userAgentPackageName: 'com.example.samsun_transit',
+                      ),
                       if (_routePolyline.isNotEmpty)
                         PolylineLayer(polylines: [
                           Polyline(points: _routePolyline, strokeWidth: 5.0, color: Colors.blue.shade700),
                         ]),
+                      MarkerLayer(markers: [
+                        Marker(
+                          point: _myLocation, width: 36, height: 36,
+                          child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
+                        ),
+                        ..._duraklar.take(300).map((d) {
+                          double lat = (d['lat'] as num).toDouble();
+                          double lon = (d['lon'] as num).toDouble();
+                          return Marker(
+                            point: LatLng(lat, lon), width: 22, height: 22,
+                            child: GestureDetector(
+                              onTap: () => _showDurakSheet(d),
+                              child: const Icon(Icons.directions_bus, color: Colors.red, size: 18),
+                            ),
+                          );
+                        }),
+                      ]),
                     ],
                   ),
-                  Positioned(
-                    bottom: 16, right: 16,
-                    child: FloatingActionButton(
-                      onPressed: _getLocation,
-                      tooltip: 'Konumuma Git',
-                      child: const Icon(Icons.my_location),
+                  Positioned(bottom: 16, right: 16,
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      FloatingActionButton.small(
+                        heroTag: 'locate',
+                        onPressed: () async { await _getLocation(); },
+                        tooltip: 'Konumumu Bul',
+                        child: const Icon(Icons.my_location),
+                      ),
+                    ]),
+                  ),
+                  Positioned(bottom: 16, left: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)]),
+                      child: Text("${_duraklar.length} durak yüklendi", style: const TextStyle(fontSize: 12)),
                     ),
                   ),
                 ]),
 
-          // ── TAB 2: YAKIN DURAKLAR ──
+          // TAB 2: YAKIN DURAKLAR
           Column(children: [
-            Padding(
-              padding: const EdgeInsets.all(12.0),
+            Padding(padding: const EdgeInsets.all(12.0),
               child: ElevatedButton.icon(
-                onPressed: () async { await _getLocation(); await _loadYakinDuraklar(); },
-                icon: const Icon(Icons.near_me),
-                label: const Text("Yakınımdaki Durakları Bul"),
+                onPressed: _isLoadingNearby ? null : () async { await _getLocation(); await _loadYakinDuraklar(); },
+                icon: _isLoadingNearby
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.near_me),
+                label: Text(_isLoadingNearby ? "Aranıyor..." : "Yakınımdaki Durakları Bul"),
                 style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
               ),
             ),
-            if (_isLoadingNearby) const Center(child: CircularProgressIndicator()),
             Expanded(
               child: _yakinDuraklar.isEmpty
-                  ? const Center(child: Text("Butona basarak yakın durakları listeleyin.", textAlign: TextAlign.center))
+                  ? const Center(child: Padding(padding: EdgeInsets.all(24),
+                      child: Text("Butona basarak GPS'e yakın (1 km) durakları listeleyin.\n\nGPS izni vermildiğinden emin olun.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey))))
                   : ListView.builder(
                       itemCount: _yakinDuraklar.length,
                       itemBuilder: (_, i) {
                         final d = _yakinDuraklar[i];
+                        final dist = (_hav(_myLocation.latitude, _myLocation.longitude,
+                            (d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()) * 1000).round();
                         return ListTile(
-                          leading: const Icon(Icons.directions_bus, color: Colors.red),
+                          leading: CircleAvatar(backgroundColor: Colors.red, child: Text(d['kod']?.toString() ?? '?', style: const TextStyle(color: Colors.white, fontSize: 11))),
                           title: Text(d['ad']?.toString() ?? ''),
-                          subtitle: Text("Durak No: ${d['kod'] ?? '?'}"),
+                          subtitle: Text("$dist metre uzakta"),
+                          trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showDurakSheet(d),
                         );
                       },
@@ -397,68 +314,135 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ]),
 
-          // ── TAB 3: NASIL GİDERİM ──
+          // TAB 3: NASIL GİDERİM
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("🗺️ Offline Rota Hesapla", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text("🧭 Offline Rota Hesapla", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              const Text("İnternet bağlantısı olmadan, cihazınızdaki veritabanıyla anlık hesaplama yapılır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(12)),
+                child: Row(children: [
+                  const Icon(Icons.my_location, color: Colors.blue),
+                  const SizedBox(width: 10),
+                  Text("GPS Konumunuz (${_myLocation.latitude.toStringAsFixed(4)}, ${_myLocation.longitude.toStringAsFixed(4)})", style: const TextStyle(fontSize: 13)),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _hedefCtrl,
+                decoration: InputDecoration(
+                  labelText: "Nereye gitmek istiyorsunuz?",
+                  hintText: "Ör: Atakum, Üniversite, Tekkeköy, Çarşamba...",
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_on, color: Colors.red),
+                  suffixIcon: IconButton(icon: const Icon(Icons.clear), onPressed: () => _hedefCtrl.clear()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text("Desteklenen bölgeler: Atakum, Canik, İlkadım, Üniversite (OMÜ), Tekkeköy, Çarşamba, Bafra, Terme, Meydan", style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _isRouting ? null : _calculateRoute,
+                icon: _isRouting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.directions),
+                label: Text(_isRouting ? "Hesaplanıyor..." : "Rota Hesapla"),
+                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
+              ),
+              if (_routeResults.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Divider(),
+                const Text("Bulunan Rotalar:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                const Text("Rota, internet bağlantısı olmadan yerleşik harita verisiyle hesaplanır.", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _baslangicCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Başlangıç (boş bırakın = GPS konumunuz)",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.my_location, color: Colors.blue),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _hedefCtrl,
-                  decoration: const InputDecoration(
-                    labelText: "Hedef (ör: Atakum, Ondokuz Mayıs Üniversitesi...)",
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on, color: Colors.red),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _isRouting ? null : _calculateRoute,
-                  icon: _isRouting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.directions),
-                  label: Text(_isRouting ? "Hesaplanıyor..." : "Rota Hesapla"),
-                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                ),
-                if (_routeResults.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const Text("Bulunan Rotalar:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  ...List.generate(_routeResults.length, (i) {
-                    final r = _routeResults[i];
-                    return Card(
-                      color: Colors.blue.shade50,
-                      child: ListTile(
-                        leading: const Icon(Icons.directions_bus, color: Colors.blue),
-                        title: Text("Doğrudan Hat • ${r['total_score']} durak"),
-                        subtitle: Text(r['desc'] ?? ''),
-                        onTap: () {
-                          final coords = r['polyline'] as List<List<double>>;
-                          setState(() => _routePolyline = coords.map((c) => LatLng(c[0], c[1])).toList());
-                          _tabController.animateTo(0);
-                        },
-                      ),
-                    );
-                  }),
-                ]
+                ...List.generate(_routeResults.length, (i) {
+                  final r = _routeResults[i];
+                  final isDirect = r['type'] == 'DIRECT';
+                  return Card(
+                    color: isDirect ? Colors.green.shade50 : Colors.amber.shade50,
+                    child: ListTile(
+                      leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station,
+                          color: isDirect ? Colors.green : Colors.amber.shade800),
+                      title: Text(isDirect ? "✅ Direkt Hat" : "🔄 Aktarmalı Rota"),
+                      subtitle: Text(r['desc'] ?? ''),
+                      onTap: () {
+                        final coords = r['polyline'] as List;
+                        setState(() => _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList());
+                        _tabController.animateTo(0);
+                      },
+                    ),
+                  );
+                }),
               ],
-            ),
+            ]),
           ),
         ],
       ),
+    );
+  }
+}
+
+// Durak detay alt sheet widget (canlı araç bilgisi)
+class _DurakDetailSheet extends StatefulWidget {
+  final Map<String, dynamic> durak;
+  final String durakKod;
+  const _DurakDetailSheet({required this.durak, required this.durakKod});
+  @override
+  State<_DurakDetailSheet> createState() => _DurakDetailSheetState();
+}
+
+class _DurakDetailSheetState extends State<_DurakDetailSheet> {
+  List<dynamic> _araclar = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final araclar = await ApiService.getDuragaYaklasanAraclar(widget.durakKod);
+    if (mounted) setState(() { _araclar = araclar; _loading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.55,
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.location_on, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(child: Text(widget.durak['ad']?.toString() ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+        ]),
+        Text("Durak No: ${widget.durakKod}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const Divider(height: 20),
+        const Text("🚌 Yaklaşan Araçlar (Canlı):", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+        const SizedBox(height: 8),
+        if (_loading)
+          const Expanded(child: Center(child: CircularProgressIndicator()))
+        else if (_araclar.isEmpty)
+          const Expanded(child: Center(child: Text("Bu durağa yaklaşan araç bulunamadı.\n(ASIS API yanıt vermedi veya araç yok)", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey))))
+        else
+          Expanded(
+            child: ListView.builder(
+              itemCount: _araclar.length,
+              itemBuilder: (_, i) {
+                final a = _araclar[i];
+                final lineCode = a['BusLineCode']?.toString() ?? '?';
+                final remaining = a['RemainingTimeCurr']?.toString() ?? '?';
+                return ListTile(
+                  leading: CircleAvatar(backgroundColor: Colors.red.shade700, child: Text(remaining, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+                  title: Text("$lineCode Hattı", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text("Yaklaşık $remaining dakika sonra gelecek"),
+                );
+              },
+            ),
+          ),
+      ]),
     );
   }
 }

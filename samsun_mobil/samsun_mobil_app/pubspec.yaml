@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   sqflite: ^2.3.0
+  path: ^1.9.0          # db_service.dart için zorunlu
   path_provider: ^2.1.1
   http: ^1.1.0
   flutter_map: ^6.0.0
@@ -25,3 +26,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/samsun_mobil.db
+    - assets/logo.png
+    - assets/samulas.png
+    - assets/odak.png
+    - assets/samair.png
