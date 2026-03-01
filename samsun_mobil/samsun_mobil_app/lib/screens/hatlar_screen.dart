@@ -209,14 +209,17 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
   }
 
   Future<void> _loadData() async {
-    final duraklar = await DBService().getDurakGuzergahi(widget.code);
-    final fiyat = await DBService().getFiyat(widget.code);
-    final seferler = await DBService().getSeferler(widget.code);
+    // Parallel loading - 3x hızlı
+    final results = await Future.wait([
+      DBService().getDurakGuzergahi(widget.code),
+      DBService().getFiyat(widget.code),
+      DBService().getSeferler(widget.code),
+    ]);
     if (mounted) {
       setState(() {
-        _duraklar = duraklar;
-        _fiyat = fiyat;
-        _seferler = seferler;
+        _duraklar = results[0] as List<Map<String, dynamic>>;
+        _fiyat = results[1] as Map<String, dynamic>?;
+        _seferler = results[2] as List<Map<String, dynamic>>;
         _isLoading = false;
       });
     }

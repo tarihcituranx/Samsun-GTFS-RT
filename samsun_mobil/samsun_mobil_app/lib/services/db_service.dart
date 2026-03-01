@@ -11,6 +11,11 @@ class DBService {
 
   Database? _db;
 
+  // In-memory cache (DB sadece read-only, veri değişmez)
+  List<Map<String, dynamic>>? _hatlarCache;
+  List<Map<String, dynamic>>? _durakCache;
+  List<Map<String, dynamic>>? _odakCache;
+
   Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDB();
@@ -41,13 +46,46 @@ class DBService {
   }
 
   Future<List<Map<String, dynamic>>> getHatlar() async {
+    if (_hatlarCache != null) return _hatlarCache!;
     final db = await database;
-    return await db.query('hat');
+    final raw = await db.query('hat');
+    // Runtime category assignment (DB'de kat sütunu yok)
+    _hatlarCache = raw.map((h) {
+      final m = Map<String, dynamic>.from(h);
+      m['kat'] = _classifyCategory(m['code']?.toString() ?? '', m['name']?.toString() ?? '');
+      return m;
+    }).toList();
+    return _hatlarCache!;
+  }
+
+  // samsun.py Collector.kat() mantığı
+  static String _classifyCategory(String code, String name) {
+    final c = code.toUpperCase();
+    final n = name.toUpperCase();
+
+    // Ring (R ile başlayan)
+    if (c.startsWith('R') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2))) return 'ring';
+    // Tramvay
+    if (c.contains('TRAMVAY') || n.contains('TRAMVAY')) return 'tramvay';
+    // Teleferik
+    if (c.contains('TELEFERIK') || n.contains('TELEFERIK') || c.contains('TELEFERİK') || n.contains('TELEFERİK')) return 'teleferik';
+    // Tekne / Gemi / Vapur
+    if (['GEMİ', 'VAPUR', 'FERİBOT', 'TEKNE', 'SAMSUNUM'].any((x) => c.contains(x) || n.contains(x))) return 'tekne';
+    // Havalimanı
+    if (c.startsWith('H') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2))) return 'havalimani';
+    // Ekspres
+    if (c.contains('EKSPRES') || (c.startsWith('E') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2)))) return 'ekspres';
+    // İlçe
+    if (['TERME', 'ÇARŞAMBA', 'BAFRA', 'HAVZA', 'LADİK', 'KAVAK', 'ASARCIK', 'SALIPAZARI', 'TEKKEKÖY'].any((x) => n.contains(x))) return 'ilce';
+
+    return 'otobus';
   }
 
   Future<List<Map<String, dynamic>>> getDuraklar() async {
+    if (_durakCache != null) return _durakCache!;
     final db = await database;
-    return await db.query('durak');
+    _durakCache = await db.query('durak');
+    return _durakCache!;
   }
 
   Future<List<Map<String, dynamic>>> getDurakGuzergahi(String hatCode) async {
@@ -57,27 +95,39 @@ class DBService {
 
   Future<Map<String, dynamic>?> getFiyat(String hatCode) async {
     final db = await database;
-    final res = await db.query('fiyat', where: 'hat_code = ?', whereArgs: [hatCode]);
-    if (res.isNotEmpty) return res.first;
+    try {
+      final res = await db.query('fiyat', where: 'hat_code = ?', whereArgs: [hatCode]);
+      if (res.isNotEmpty) return res.first;
+    } catch (_) {} // fiyat tablosu yoksa sessizce geç
     return null;
   }
 
   Future<List<Map<String, dynamic>>> getOdaklar() async {
+    if (_odakCache != null) return _odakCache!;
     final db = await database;
-    return await db.query('odak');
+    try {
+      _odakCache = await db.query('odak');
+    } catch (_) {
+      _odakCache = []; // odak tablosu yoksa boş dön
+    }
+    return _odakCache!;
   }
 
   Future<List<Map<String, dynamic>>> getOdakDuraklari(String hatId) async {
     final db = await database;
-    return await db.query('odak_durak', where: 'hat = ?', whereArgs: [hatId], orderBy: 'sira ASC');
+    try {
+      return await db.query('odak_durak', where: 'hat = ?', whereArgs: [hatId], orderBy: 'sira ASC');
+    } catch (_) { return []; }
   }
 
   Future<List<Map<String, dynamic>>> getSeferler(String hatCode, {String? gun}) async {
     final db = await database;
-    if (gun != null) {
-      return await db.query('sefer', where: 'hat = ? AND gun = ?', whereArgs: [hatCode, gun], orderBy: 'saat ASC');
-    }
-    return await db.query('sefer', where: 'hat = ?', whereArgs: [hatCode], orderBy: 'saat ASC');
+    try {
+      if (gun != null) {
+        return await db.query('sefer', where: 'hat = ? AND gun = ?', whereArgs: [hatCode, gun], orderBy: 'saat ASC');
+      }
+      return await db.query('sefer', where: 'hat = ?', whereArgs: [hatCode], orderBy: 'saat ASC');
+    } catch (_) { return []; }
   }
 
   // --- FAZ 6: Tam Bağımsız Offline Rota Hesaplama Motoru --- 
