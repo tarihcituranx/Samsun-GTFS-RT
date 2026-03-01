@@ -420,18 +420,21 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 44, height: 44,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFF5252), Color(0xFFD50000)]),
+                  color: Colors.white,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2.5),
-                  boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.6), blurRadius: 10, spreadRadius: 2)],
+                  border: Border.all(color: const Color(0xFF2979FF), width: 2),
+                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.5), blurRadius: 10, spreadRadius: 2)],
                 ),
                 child: Center(
                   child: ClipOval(
-                    child: Image.asset(
-                      'assets/logo.png', // Logo veya başka bir uygun görsel
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => 
-                        const Icon(Icons.directions_bus, color: Colors.white, size: 20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Image.asset(
+                        'assets/bus.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => 
+                          const Icon(Icons.directions_bus, color: Color(0xFF2979FF), size: 20),
+                      ),
                     ),
                   ),
                 ),
@@ -453,19 +456,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 32, height: 32,
                   child: GestureDetector(
                     onTap: () => _showDurakSheet(d), 
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        border: Border.all(color: const Color(0xFF2979FF), width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
-                      ),
-                      child: ClipOval(
+                    child: Transform.translate(
+                      offset: const Offset(0, -10), // Pin shape translation
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 4))],
+                        ),
                         child: Image.asset(
-                          'assets/samulas.png',
-                          fit: BoxFit.cover,
+                          'assets/bus_stop.png',
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => 
-                            const Icon(Icons.directions_bus, size: 16, color: Color(0xFF2979FF)),
+                            const Icon(Icons.location_on, size: 30, color: Color(0xFF2979FF)),
                         ),
                       ),
                     ),
