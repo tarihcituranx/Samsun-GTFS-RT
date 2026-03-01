@@ -1312,7 +1312,7 @@ class Collector:
             toplam_durak.sort(key=lambda x: x['sira'])
             for idx, d in enumerate(toplam_durak, 1):
                 self.db.ex("INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
-                          (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], ''))
+                          (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], '120.0'))
             
             log.info(f"      ✈️ H{hid} ({ana_ad}): {len(toplam_durak)} durak")
 
