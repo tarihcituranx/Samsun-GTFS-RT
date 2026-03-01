@@ -1,0 +1,18 @@
+{
+  "announcements": [
+    {
+      "text": "Samsun Büyükşehir Belediyesi",
+      "type": "header"
+    },
+    {
+      "text": "Yolcu Hakları: Biletinizi saklayınız. Haklarınız için 153'ü arayınız.",
+      "type": "info"
+    }
+  ],
+  "weather": {
+    "temp": "15",
+    "desc": "Parçalı Bulutlu",
+    "code": "PB"
+  },
+  "events": []
+}

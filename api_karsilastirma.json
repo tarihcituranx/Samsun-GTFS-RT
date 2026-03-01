@@ -1,0 +1,1212 @@
+{
+  "asis_lines": [
+    {
+      "code": "13 TOKİ-BL.EVLERİ",
+      "name": "13 KAMALI TOKİ - SOĞUKSU"
+    },
+    {
+      "code": "13  BL.EVLERİ-TOKİ",
+      "name": "13 SOĞUKSU - KAMALI TOKİ"
+    },
+    {
+      "code": "12/17 BEL.EVLERİ-ÜNİVERSİTE",
+      "name": "12 SOĞUKSU - OMÜ"
+    },
+    {
+      "code": "17/12 ÜNİVERSİTE-BEL.EVLERİ",
+      "name": "12 OMÜ - SOĞUKSU"
+    },
+    {
+      "code": "19 BEL.EVLERİ-PELİTKÖY",
+      "name": "19 SOĞUKSU - BÜYÜK OYUMCA"
+    },
+    {
+      "code": "19 B PELİTKÖY-BEL.EVLERİ",
+      "name": "19 BÜYÜK OYUMCA - SOĞUKSU"
+    },
+    {
+      "code": "24 ÜNİVERSİTE-OTOGAR",
+      "name": "24A OMÜ - BARIŞ BULVARI - OTOGAR"
+    },
+    {
+      "code": "24 OTOGAR-ÜNİVERSİTE",
+      "name": "24A OTOGAR - BARIŞ BULVARI - OMÜ"
+    },
+    {
+      "code": "3 TÜRKİŞ AKTARMA-OTOGAR",
+      "name": "3 TÜRKİŞ AKTARMA - OTOGAR"
+    },
+    {
+      "code": "3 OTOGAR-TÜRKİŞ AKTARMA",
+      "name": "3 OTOGAR - TÜRKİŞ AKTARMA"
+    },
+    {
+      "code": "26 ÜNİVERSİTE-B.EVLERİ",
+      "name": "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU"
+    },
+    {
+      "code": "26/17 B.EVLERİ-ÜNİVERSİTE",
+      "name": "26 SOĞUKSU - EĞİTİM ARAŞTIRMA - OMÜ"
+    },
+    {
+      "code": "14 C.MEYDANI ATAKÖY",
+      "name": "14 BÜYÜKCAMİ - ATAKÖY - EĞİTİM ARAŞTIRMA"
+    },
+    {
+      "code": " 14 ATAKÖY-C.MEYDANI",
+      "name": "14 EĞİTİM ARAŞTIRMA - ATAKÖY - BÜYÜKCAMİ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 6-GİDİŞ",
+      "name": "E6 OMÜ - İLKADIM GENÇLİK MERKEZİ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 6-DÖNÜŞ",
+      "name": "E6 BÜYÜK CAMİ - OTOGAR - OMÜ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES",
+      "name": "E1 OMÜ - SOĞUKSU"
+    },
+    {
+      "code": "R4 KALKANCA",
+      "name": "R4 BARUTHANE - KALKANCA - BARUTHANE"
+    },
+    {
+      "code": "R5 ATAKUM BLD.-SERHAT CD.",
+      "name": "R5 KARAYOLLARI - TÜRKİŞ AKTARMA"
+    },
+    {
+      "code": "R6-T TÜRKİŞ-EĞİTİM",
+      "name": "R6T TÜRKİŞ - OTOGAR - EĞİTİM ARAŞTIRMA"
+    },
+    {
+      "code": "R7 ÖMÜR EVL.-KAMALI MH.",
+      "name": "R7 UZUN TÜRKİŞ - KAMALI KÖYÜ - TÜRKİŞ"
+    },
+    {
+      "code": "R8 ATAKENT-ÇAMLIYAZI MH.",
+      "name": "R8K KARAGÖL - ATAKENT"
+    },
+    {
+      "code": "R9 YENİ MH.-DEMİRKENT ST.",
+      "name": "R9 YENİMAHALLE - DEMİRKENT - YENİMAHALLE"
+    },
+    {
+      "code": "R10 PELİTKÖY KONUTLARI",
+      "name": "R10 UZUN BATI GARAJI - ATLI SPOR TESİSLERİ"
+    },
+    {
+      "code": "R6-B BARUTHANE-OTOGAR",
+      "name": "R6B BARUTHANE - OTOGAR"
+    },
+    {
+      "code": "R12 TAFLAN",
+      "name": "R12 BATI GARAJI - TAFLAN - BATI GARAJI"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES D",
+      "name": "E1 SOĞUKSU - OMÜ"
+    },
+    {
+      "code": "R5 SERHAT CD.-ATAKUM BLD.",
+      "name": "R5 TÜRKİŞ AKTARMA - KARAYOLLARI"
+    },
+    {
+      "code": "R6-B OTOGAR-BARUTHANE",
+      "name": "R6B OTOGAR - BARUTHANE"
+    },
+    {
+      "code": "R6-T EĞİTİM-TÜRKİŞ",
+      "name": "R6T EĞİTİM ARAŞTIRMA - OTOGAR - TÜRKİŞ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 3-GİDİŞ",
+      "name": "E3 SOĞUKSU - IŞINSU PARKI"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 3-DÖNÜŞ",
+      "name": "E3 IŞINSU PARKI - SOĞUKSU"
+    },
+    {
+      "code": "BALLICA KAMPÜS-ÜNİVERSİTE",
+      "name": "R11 OMÜ REKTÖRLÜK - BALLICA"
+    },
+    {
+      "code": "ÜNİVERSİTE-BALLICA KAMPÜS",
+      "name": "R11 BALLICA - OMÜ REKTÖRLÜK"
+    },
+    {
+      "code": "R13 KORUPARK",
+      "name": "R13 TÜRKİŞ - KORUPARK - TÜRKİŞ"
+    },
+    {
+      "code": "R21 TEKKEKÖY",
+      "name": "R21 TEKKEKÖY TRAMVAY - TEKKEKÖY"
+    },
+    {
+      "code": "R25 HASKÖY",
+      "name": "R25 KILIÇDEDE - TEKNEPINAR - KILIÇDEDE"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 4-GİDİŞ",
+      "name": "E4 BÜYÜKCAMİ - OTOGAR"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 4-DÖNÜŞ",
+      "name": "E4 OTOGAR - BÜYÜKCAMİ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 5-GİDİŞ",
+      "name": "E5 OMÜ - OTOGAR"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 5-DÖNÜŞ",
+      "name": "E5 OTOGAR - OMÜ"
+    },
+    {
+      "code": "R22 ORGANİZE",
+      "name": "R22 19 MAYIS SANAYİ - TRAMVAY"
+    },
+    {
+      "code": "R28 GAR",
+      "name": "R28 BÜYÜK CAMİ - DURUŞEHİR - BÜYÜK CAMİ"
+    },
+    {
+      "code": "R8 ATAKENT-KARAGÖL",
+      "name": "R8P PANORAMA - ATAKENT"
+    },
+    {
+      "code": "R8Ç-ÇAMLIYAZI-ATAKENT TRAMVAY",
+      "name": "R8Ç ÇAMLIYAZI - ATAKENT"
+    },
+    {
+      "code": "R29 OTOGAR-DERECİK MEZARLIK",
+      "name": "R29 OTOGAR - DERECİK MEZARLIĞI - OTOGAR"
+    },
+    {
+      "code": "T3",
+      "name": "T3 TOPTEPE - OTOGAR"
+    },
+    {
+      "code": "T4",
+      "name": "T4 OTOGAR - TEKKEKÖY"
+    },
+    {
+      "code": "T3-DÖNÜŞ",
+      "name": "T3 OTOGAR - TOPTEPE"
+    },
+    {
+      "code": "T4-DÖNÜŞ",
+      "name": "T4 TEKKEKÖY - OTOGAR"
+    },
+    {
+      "code": "R43 COSTAL",
+      "name": "R43 TEKKEKÖY TRAMVAY - COSTAL"
+    },
+    {
+      "code": "R25S",
+      "name": "R25S KILIÇDEDE - SAMÜ"
+    },
+    {
+      "code": "8 BÜYÜKCAMİ-CEDİT",
+      "name": "8 BÜYÜKCAMİ - CEDİT - BÜYÜKCAMİ"
+    },
+    {
+      "code": "12H HACI İSMAİL - OMÜ",
+      "name": "12H HACI İSMAİL - OMÜ"
+    },
+    {
+      "code": "12H OMÜ - HACI İSMAİL",
+      "name": "12H OMÜ - HACI İSMAİL"
+    },
+    {
+      "code": "R7 KISA TÜRKİŞ-ŞEHİT TUNÇ FİDA",
+      "name": "R7 KISA TÜRKİŞ - ŞEHİT TUNÇ FİDANERİ - TÜRKİŞ"
+    },
+    {
+      "code": "R8 YUKARI AKSU - ATAKENT",
+      "name": "R8Y YUKARI AKSU - ATAKENT"
+    },
+    {
+      "code": "R10 KISA BATI GARAJI-BÜYÜK OYU",
+      "name": "R10 KISA BATI GARAJI - BÜYÜK OYUMCA"
+    },
+    {
+      "code": "R25 BÜYÜKCAMİ-HASKÖY",
+      "name": "R25 KILIÇDEDE - HASKÖY - KILIÇDEDE"
+    },
+    {
+      "code": "R25S BÜYÜK CAMİ - SAMÜ",
+      "name": "R25S SAMÜ - KILIÇDEDE"
+    },
+    {
+      "code": "R16 AKSU RİNGİ",
+      "name": "R16 AKSU RİNGİ"
+    },
+    {
+      "code": "R1 BÜYÜK CAMİ",
+      "name": "R1 BÜYÜK CAMİ - ŞEHİR HASTANESİ"
+    },
+    {
+      "code": "R1 ŞEHİR HASTANESİ",
+      "name": "R1 ŞEHİR HASTANESİ - BÜYÜK CAMİ "
+    },
+    {
+      "code": "SAMSUN - TERME",
+      "name": "SAMSUN - TERME"
+    },
+    {
+      "code": "TERME - SAMSUN",
+      "name": "TERME - SAMSUN"
+    },
+    {
+      "code": "H1 OMÜ - HAVALİMANI",
+      "name": "H1 OMÜ - HAVALİMANI"
+    },
+    {
+      "code": "H1 HAVALİMANI - OMÜ",
+      "name": "H1 HAVALİMANI - OMÜ"
+    },
+    {
+      "code": "H2 TTTM - HAVALİMANI",
+      "name": "H2 TTTM - HAVALİMANI"
+    },
+    {
+      "code": "H2 HAVALİMANI - TTTM",
+      "name": "H2 HAVALİMANI - TTTM"
+    },
+    {
+      "code": "H3 BAFRA - HAVALİMANI",
+      "name": "H3 BAFRA (YAKAKENT) - HAVALİMANI"
+    },
+    {
+      "code": "H3 HAVALİMANI - BAFRA",
+      "name": "H3 HAVALİMANI - BAFRA (YAKAKENT)"
+    },
+    {
+      "code": "H4 ÇARŞAMBA - HAVALİMANI",
+      "name": "H4 ÇARŞAMBA (TERME) - HAVALİMANI"
+    },
+    {
+      "code": "H4 HAVALİMANI - ÇARŞAMBA",
+      "name": "H4 HAVALİMANI - ÇARŞAMBA (TERME)"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 2-GİDİŞ",
+      "name": "E2  SOĞUKSU - BALLICA"
+    }
+  ],
+  "samulas_prices": [
+    {
+      "kod": "R2",
+      "tam_ad": "R2 CEZAEVİ-EĞİTİM ARAŞTIRMA-BÜYÜK CAMİ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R2",
+      "tam_ad": "R2 BÜYÜK CAMİ-EĞİTİM ARAŞTIRMA-CEZAEVİ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R11",
+      "tam_ad": "R11 BALLICA - OMÜ REKTÖRLÜK",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "R9",
+      "tam_ad": "R9 YENİMAHALLE - DEMİRKENT - YENİMAHALLE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R8Ç",
+      "tam_ad": "R8Ç ÇAMLIYAZI - ATAKENT",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R8Y",
+      "tam_ad": "R8Y YUKARI AKSU - ATAKENT",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R8P",
+      "tam_ad": "R8P PANORAMA - ATAKENT",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R8K",
+      "tam_ad": "R8K KARAGÖL - ATAKENT",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R7",
+      "tam_ad": "R7 UZUN TÜRKİŞ - KAMALI KÖYÜ - TÜRKİŞ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R7",
+      "tam_ad": "R7 KISA TÜRKİŞ - ŞEHİT TUNÇ FİDANERİ - TÜRKİŞ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R6T",
+      "tam_ad": "R6T TÜRKİŞ - OTOGAR - EĞİTİM ARAŞTIRMA",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R6T",
+      "tam_ad": "R6T EĞİTİM ARAŞTIRMA - OTOGAR - TÜRKİŞ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R6B",
+      "tam_ad": "R6B OTOGAR - BARUTHANE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R6B",
+      "tam_ad": "R6B BARUTHANE - OTOGAR",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R5",
+      "tam_ad": "R5 TÜRKİŞ AKTARMA - KARAYOLLARI",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R5",
+      "tam_ad": "R5 KARAYOLLARI - TÜRKİŞ AKTARMA",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R43",
+      "tam_ad": "R43 TEKKEKÖY TRAMVAY - COSTAL",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R4",
+      "tam_ad": "R4 BARUTHANE - KALKANCA - BARUTHANE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R29",
+      "tam_ad": "R29 OTOGAR - DERECİK MEZARLIĞI - OTOGAR",
+      "fiyat": 0.0
+    },
+    {
+      "kod": "R28",
+      "tam_ad": "R28 BÜYÜK CAMİ - DURUŞEHİR - BÜYÜK CAMİ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R25S",
+      "tam_ad": "R25S SAMÜ - KILIÇDEDE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R25S",
+      "tam_ad": "R25S KILIÇDEDE - SAMÜ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R25",
+      "tam_ad": "R25 KILIÇDEDE - TEKNEPINAR - KILIÇDEDE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R25",
+      "tam_ad": "R25 KILIÇDEDE - HASKÖY - KILIÇDEDE",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R22",
+      "tam_ad": "R22 19 MAYIS SANAYİ - TRAMVAY",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R21",
+      "tam_ad": "R21 TEKKEKÖY TRAMVAY - TEKKEKÖY",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R16",
+      "tam_ad": "R16 AKSU RİNGİ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R13",
+      "tam_ad": "R13 TÜRKİŞ - KORUPARK - TÜRKİŞ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R12",
+      "tam_ad": "R12 BATI GARAJI - TAFLAN - BATI GARAJI",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R10",
+      "tam_ad": "R10 UZUN BATI GARAJI - ATLI SPOR TESİSLERİ",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R10",
+      "tam_ad": "R10 KISA BATI GARAJI - BÜYÜK OYUMCA",
+      "fiyat": 17.0
+    },
+    {
+      "kod": "R11",
+      "tam_ad": "R11 OMÜ REKTÖRLÜK - BALLICA",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "T4",
+      "tam_ad": "T4 TEKKEKÖY - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "T4",
+      "tam_ad": "T4 OTOGAR - TEKKEKÖY",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "T3",
+      "tam_ad": "T3 OTOGAR - TOPTEPE",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "T3",
+      "tam_ad": "T3 TOPTEPE - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E1",
+      "tam_ad": "E1 SOĞUKSU - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E7",
+      "tam_ad": "E7 OMÜ - BÜYÜK CAMİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E7",
+      "tam_ad": "E7 BÜYÜK CAMİ - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E6",
+      "tam_ad": "E6 OMÜ - İLKADIM GENÇLİK MERKEZİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E6",
+      "tam_ad": "E6 BÜYÜK CAMİ - OTOGAR - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E5",
+      "tam_ad": "E5 OMÜ - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E5",
+      "tam_ad": "E5 OTOGAR - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E4",
+      "tam_ad": "E4 BÜYÜKCAMİ - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E4",
+      "tam_ad": "E4 OTOGAR - BÜYÜKCAMİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E3",
+      "tam_ad": "E3 SOĞUKSU - IŞINSU PARKI",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E3",
+      "tam_ad": "E3 IŞINSU PARKI - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E2",
+      "tam_ad": "E2 SOĞUKSU - BALLICA",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E2",
+      "tam_ad": "E2 BALLICA - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "E1",
+      "tam_ad": "E1 OMÜ - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "8",
+      "tam_ad": "8 BÜYÜKCAMİ - CEDİT - BÜYÜKCAMİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "3",
+      "tam_ad": "3 TÜRKİŞ AKTARMA - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "3",
+      "tam_ad": "3 OTOGAR - TÜRKİŞ AKTARMA",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "28",
+      "tam_ad": "28 YENİ CEZAEVİ - SOĞUKSU",
+      "fiyat": 0.0
+    },
+    {
+      "kod": "28",
+      "tam_ad": "28 SOĞUKSU - YENİ CEZAEVİ",
+      "fiyat": 0.0
+    },
+    {
+      "kod": "26",
+      "tam_ad": "26 SOĞUKSU - EĞİTİM ARAŞTIRMA - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "26",
+      "tam_ad": "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "25",
+      "tam_ad": "25 OTOGAR - ŞEHİR HASTANESİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "25",
+      "tam_ad": "25 ŞEHİR HASTANESİ - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "24A",
+      "tam_ad": "24A OMÜ - BARIŞ BULVARI - OTOGAR",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "24A",
+      "tam_ad": "24A OTOGAR - BARIŞ BULVARI - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "22",
+      "tam_ad": "22 TÜRKİŞ-SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "22",
+      "tam_ad": "22 SOĞUKSU-TÜRKİŞ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "20",
+      "tam_ad": "20 SOĞUKSU - TOYBELEN SANAYİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "20",
+      "tam_ad": "20 TOYBELEN SANAYİ - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "19",
+      "tam_ad": "19 SOĞUKSU - BÜYÜK OYUMCA",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "19",
+      "tam_ad": "19 BÜYÜK OYUMCA - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "12",
+      "tam_ad": "12 OMÜ - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "15",
+      "tam_ad": "15 SOĞUKSU - İLYASKÖY - BÜYÜK CAMİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "15",
+      "tam_ad": "15 BÜYÜK CAMİ - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "14",
+      "tam_ad": "14 BÜYÜKCAMİ - ATAKÖY - EĞİTİM ARAŞTIRMA",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "13",
+      "tam_ad": "13 KAMALI TOKİ - SOĞUKSU",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "13",
+      "tam_ad": "13 SOĞUKSU - KAMALI TOKİ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "12H",
+      "tam_ad": "12H OMÜ - HACI İSMAİL",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "12H",
+      "tam_ad": "12H HACI İSMAİL - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "12",
+      "tam_ad": "12 SOĞUKSU - OMÜ",
+      "fiyat": 23.5
+    },
+    {
+      "kod": "14",
+      "tam_ad": "14 EĞİTİM ARAŞTIRMA - ATAKÖY - BÜYÜKCAMİ",
+      "fiyat": 23.5
+    }
+  ],
+  "samair_duraklar": [
+    {
+      "kod": "31632",
+      "ad": "Rektörlük Tramvay İstasyonu",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30602",
+      "ad": "Turgut Özal Öğrenci Yurdu",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30582",
+      "ad": "Eczaneler",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30502",
+      "ad": "Pelitköy",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30462",
+      "ad": "Tuğba Evleri",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "304123",
+      "ad": "Atakent",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30352",
+      "ad": "Ömürevleri",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30282",
+      "ad": "Türkiş",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30182",
+      "ad": "Dsi",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30142",
+      "ad": "Atakum Endüstri Meslek Lisesi",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30112",
+      "ad": "Karayolları",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10111",
+      "ad": "Fener",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10081",
+      "ad": "Gençlik Parkı",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10031",
+      "ad": "Defterdarlık",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10011",
+      "ad": "Gar",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10001",
+      "ad": "Kılıçdede",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "50041",
+      "ad": "Piazza Avm",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "50011",
+      "ad": "Lovelet Avm",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "60211",
+      "ad": "Tekkeköy",
+      "fiyat": 65.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65311",
+      "ad": "Çarşamba Havalimanı",
+      "fiyat": 0.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "13831",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10301",
+      "ad": "30 Ağustos İöo",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10251",
+      "ad": "Sait Bey",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10221",
+      "ad": "Gürbüz Cami",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10211",
+      "ad": "Lise Kavşağı",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10191",
+      "ad": "İlim Yayma Vakfı",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10721",
+      "ad": "Varol Sitesi",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10471",
+      "ad": "Atasam Hastanesi",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "50111",
+      "ad": "Soğuksu",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "50671",
+      "ad": "Canik Belediyesi",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "50681",
+      "ad": "Belediye Evleri Aktarma",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "73012",
+      "ad": "Bafra Otogar",
+      "fiyat": 175.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "73022",
+      "ad": "Karaköy",
+      "fiyat": 175.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "70082",
+      "ad": "Ballıca Kavşak",
+      "fiyat": 155.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "70052",
+      "ad": "Dereköy Yolu",
+      "fiyat": 155.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30852",
+      "ad": "Taflan Un Fabrikası",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30762",
+      "ad": "Polis Okulu",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30692",
+      "ad": "Çakırlar Korusu",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "31602",
+      "ad": "Pelitköy Bulvar",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "31572",
+      "ad": "Vatan Caddesi",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "31522",
+      "ad": "Gaffar Okkan Kavşağı",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "31482",
+      "ad": "Meltem",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "32162",
+      "ad": "Okullar Bölgesi",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "13122",
+      "ad": "Derecik Kavşağı",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65372",
+      "ad": "Çarşamba Doğu Yakası",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65362",
+      "ad": "Dörtyol",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65352",
+      "ad": "Beylerce",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65342",
+      "ad": "Dikbıyık",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65332",
+      "ad": "Irmaksırtı",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65322",
+      "ad": "Çınarlık Yolu",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "74001",
+      "ad": "Yakakent",
+      "fiyat": 210.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "74011",
+      "ad": "Kozköy",
+      "fiyat": 210.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "75012",
+      "ad": "Alaçam",
+      "fiyat": 190.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "55022",
+      "ad": "Terme",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "55012",
+      "ad": "Gündoğdu",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "55002",
+      "ad": "Söğütlü",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30232",
+      "ad": "Mimarsinan",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "10131",
+      "ad": "Kenan Şara Köprüsü",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "70142",
+      "ad": "Vural Akdeniz",
+      "fiyat": 155.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30452",
+      "ad": "Yenimahalle",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "70012",
+      "ad": "Erenköy",
+      "fiyat": 155.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65382",
+      "ad": "EMİRGAN PARKI",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "30642",
+      "ad": "İncesu Yalı Cami",
+      "fiyat": 130.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "13491",
+      "ad": "Samsun Otogar",
+      "fiyat": 110.0,
+      "lat": null,
+      "lon": null
+    },
+    {
+      "kod": "65382",
+      "ad": "Emirgan Parkı",
+      "fiyat": 85.0,
+      "lat": null,
+      "lon": null
+    }
+  ],
+  "odak_hatlar": [
+    {
+      "id": 1,
+      "ad": "Şahinkaya Kanyonu Gidiş",
+      "kod": "G1",
+      "durak_sayisi": 5
+    },
+    {
+      "id": 2,
+      "ad": "Şahinkaya Kanyonu Dönüş",
+      "kod": "G1",
+      "durak_sayisi": 5
+    },
+    {
+      "id": 3,
+      "ad": "Kızılırmak Deltası Gidiş",
+      "kod": "G2",
+      "durak_sayisi": 19
+    },
+    {
+      "id": 4,
+      "ad": "Kızılırmak Deltası Dönüş",
+      "kod": "G2",
+      "durak_sayisi": 19
+    },
+    {
+      "id": 5,
+      "ad": "Ayvacık Baraj Gölü Gidiş",
+      "kod": "G3",
+      "durak_sayisi": 8
+    },
+    {
+      "id": 6,
+      "ad": "Ayvacık Baraj Gölü Dönüş",
+      "kod": "G3",
+      "durak_sayisi": 8
+    },
+    {
+      "id": 9,
+      "ad": "Odak Samsun K1 (Terme - Çarşamba - Etkinlik Alanı)",
+      "kod": "K1",
+      "durak_sayisi": 2
+    },
+    {
+      "id": 10,
+      "ad": "Odak Samsun K2 (Bafra - Etkinlik Alanı)",
+      "kod": "K2",
+      "durak_sayisi": 1
+    },
+    {
+      "id": 11,
+      "ad": "Odak Samsun K3 (Kavak - Etkinlik Alanı)",
+      "kod": "K3",
+      "durak_sayisi": 1
+    },
+    {
+      "id": 12,
+      "ad": "Ladik Akdağ Gidiş",
+      "kod": "G4",
+      "durak_sayisi": 2
+    },
+    {
+      "id": 13,
+      "ad": "Ladik Akdağ Dönüş",
+      "kod": "G4",
+      "durak_sayisi": 2
+    }
+  ]
+}

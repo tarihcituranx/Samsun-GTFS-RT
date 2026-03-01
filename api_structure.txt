@@ -1,0 +1,111 @@
+﻿
+============================================================
+SAMSUN ASIS API EXPLORER
+============================================================
+
+============================================================
+ENDPOINT: Lines
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/Lines
+============================================================
+Status Code: 500
+Message: An item with the same key has already been added. Key: 303
+Data Count: 74
+Keys: ['lineCode', 'lineNo', 'lineName', 'shortLineName', 'tip']
+
+Sample Items:
+  [0] {"lineCode": "13 TOK¦-BL.EVLER¦", "lineNo": "35", "lineName": "13 KAMALI TOK¦ - SOºUKSU", "shortLineName": "339", "tip": "donus"}
+  [1] {"lineCode": "13  BL.EVLER¦-TOK¦", "lineNo": "36", "lineName": "13 SOºUKSU - KAMALI TOK¦", "shortLineName": "338", "tip": "gidis"}
+  [2] {"lineCode": "12/17 BEL.EVLER¦-▄N¦VERS¦TE", "lineNo": "37", "lineName": "12 SOºUKSU - OM▄", "shortLineName": "334", "tip": "gidis"}
+
+============================================================
+ENDPOINT: OrjLines
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/OrjLines
+============================================================
+Status Code: 200
+Message: 
+Data Count: 134
+Keys: ['lineCode', 'lineNo', 'lineName', 'shortLineName']
+
+Sample Items:
+  [0] {"lineCode": "15/A B▄Y▄K CAM¦-SOºUKSU", "lineNo": "69", "lineName": "15 B▄Y▄K CAM¦ - SOºUKSU", "shortLineName": "15 B▄Y▄K CAM¦ - SOºUKSU"}
+  [1] {"lineCode": "15/B SOºUKSU-B▄Y▄K CAM¦", "lineNo": "70", "lineName": "15 SOºUKSU - B▄Y▄K CAM¦", "shortLineName": "15 SOºUKSU - B▄Y▄K CAM¦"}
+  [2] {"lineCode": "20 BEL.ELER¦-B.KOLPINAR", "lineNo": "55", "lineName": "20 SOºUKSU - TOYBELEN SANAY¦", "shortLineName": "20 SOºUKSU - TOYBELEN SANAY¦"}
+
+============================================================
+ENDPOINT: StopsStations (all)
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/StopsStations
+============================================================
+Status Code: 200
+Message: 
+Data Count: 4538
+Keys: ['stopId', 'stopName', 'orderId', 'latitude', 'longitude']
+
+Sample Items:
+  [0] {"stopId": "800", "stopName": "¦LK DURAK", "orderId": "0", "latitude": "41.2915", "longitude": "36.3374"}
+  [1] {"stopId": "6161", "stopName": "50122 - SOºUK SU PLANTONLUºU", "orderId": "0", "latitude": "41.2662808682565", "longitude": "36.3495247876042"}
+  [2] {"stopId": "800", "stopName": "¦LK DURAK", "orderId": "1", "latitude": "41.2915", "longitude": "36.3374"}
+
+============================================================
+ENDPOINT: StopsStations (lineCode=13 TOK¦-BL.EVLER¦)
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/StopsStations
+============================================================
+Status Code: 200
+Message: 
+Data Count: 78
+Keys: ['stopId', 'stopName', 'orderId', 'latitude', 'longitude']
+
+Sample Items:
+  [0] {"stopId": "5392", "stopName": "32561 - ÌEH¦T Y▄ZBAÌI TUNÃ F¦DANER¦ ¦ÍO", "orderId": "1", "latitude": "41.326801248568", "longitude": "36.2363679545895"}
+  [1] {"stopId": "5495", "stopName": "32551 - 3520.SOKAK", "orderId": "2", "latitude": "41.325800", "longitude": "36.237200"}
+  [2] {"stopId": "5497", "stopName": "32532 - ATAKENT TOK¦ KONUTLARI 1", "orderId": "4", "latitude": "41.328200", "longitude": "36.238900"}
+
+============================================================
+ENDPOINT: SmartStations
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/SmartStations
+============================================================
+Status Code: 200
+Message: 
+Data Count: 0
+
+============================================================
+ENDPOINT: LineDirections (lineCode=13 TOK¦-BL.EVLER¦)
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/LineDirections
+============================================================
+Status Code: 200
+Message: 
+Data Count: 8556
+Keys: ['Direction', 'lineCode', 'lineNo', 'stopName', 'orderId', 'durakId']
+
+Sample Items:
+  [0] {"Direction": "CIRCULAR", "lineCode": "KAMALI TOP.KONT.", "lineNo": "119", "stopName": "¦LK DURAK", "orderId": "0", "durakId": "800"}
+  [1] {"Direction": "BACKWARD", "lineCode": "RAYLI S¦STEM DURAºI", "lineNo": "122", "stopName": "¦LK DURAK", "orderId": "0", "durakId": "800"}
+  [2] {"Direction": "CIRCULAR", "lineCode": "T▄RK-¦Ì EºT.MER.", "lineNo": "120", "stopName": "¦LK DURAK", "orderId": "0", "durakId": "800"}
+
+============================================================
+ENDPOINT: RealTimeData (lineCode=13 TOK¦-BL.EVLER¦)
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/RealTimeData
+============================================================
+Status Code: 200
+Message: 
+Data Count: 0
+
+============================================================
+ENDPOINT: Schedules (lineCode=13 TOK¦-BL.EVLER¦)
+URL: https://api.samsun.bel.tr/OHSSoapToJson/api/Asis/Schedules
+============================================================
+Status Code: 200
+Message: 
+Data Count: 28
+Keys: ['cizelgekodu', 'hatkodu', 'saat', 'yon']
+
+Sample Items:
+  [0] {"cizelgekodu": "13 TOK¦-BL.EVLER¦", "hatkodu": "13 TOK¦-BL.EVLER¦", "saat": "06:30", "yon": "G"}
+  [1] {"cizelgekodu": "13 TOK¦-BL.EVLER¦", "hatkodu": "13 TOK¦-BL.EVLER¦", "saat": "07:00", "yon": "G"}
+  [2] {"cizelgekodu": "13 TOK¦-BL.EVLER¦", "hatkodu": "13 TOK¦-BL.EVLER¦", "saat": "07:30", "yon": "G"}
+
+
+============================================================
+ÍZET
+============================================================
+Toplam Hat Say²s²: 74
+Hat Kategorileri: {'1': 9, '2': 4, '3': 2, ' ': 1, 'S': 12, 'R': 30, 'B': 1, '▄': 1, 'T': 5, '8': 1, 'H': 8}

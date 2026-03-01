@@ -111,6 +111,7 @@ def extract_short_name(code, short_name):
     combined = f"{code_ascii} {short_str.upper().translate(_ASCII_MAP)}"
 
     if 'TELEFERIK' in combined: return 'TLFRK'
+    if combined.startswith('SAMULAS EKSPRES 302'): return 'E1'
     m_sn = re.search(r'SAMSUNUM\s*(\d+)', combined)
     if m_sn: return f'SN{m_sn.group(1)}'
     if 'ALTINKAYA' in combined: return 'AK55'

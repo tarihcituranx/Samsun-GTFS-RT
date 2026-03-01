@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
+SAMULAS,Samsun Büyükşehir Belediyesi,https://samulas.com.tr,Europe/Istanbul,tr,0362 431 10 12

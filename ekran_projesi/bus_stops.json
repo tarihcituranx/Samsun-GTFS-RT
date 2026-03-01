@@ -1,0 +1,681 @@
+[
+  {
+    "id": "6161",
+    "name": "50122 - SOĞUK SU PLANTONLUĞU",
+    "sequence": 1,
+    "lat": 41.2662808682565,
+    "lon": 36.3495247876042
+  },
+  {
+    "id": "6119",
+    "name": "50111 - SOĞUKSU",
+    "sequence": 2,
+    "lat": 41.2661999574797,
+    "lon": 36.3503994890515
+  },
+  {
+    "id": "5690",
+    "name": "50631 - GAZİ GİRAY SOKAK",
+    "sequence": 3,
+    "lat": 41.26557161631017,
+    "lon": 36.35290336892604
+  },
+  {
+    "id": "5141",
+    "name": "50651 - IĞDIR SOKAK",
+    "sequence": 4,
+    "lat": 41.26731855294776,
+    "lon": 36.35640901610851
+  },
+  {
+    "id": "5416",
+    "name": "50671 - CANİK BELEDİYESİ",
+    "sequence": 5,
+    "lat": 41.268956,
+    "lon": 36.360019
+  },
+  {
+    "id": "5068",
+    "name": "50681 - BELEDİYE EVLERİ AKTARMA",
+    "sequence": 6,
+    "lat": 41.271891,
+    "lon": 36.365458
+  },
+  {
+    "id": "5137",
+    "name": "50032 - 19 MAYIS STAD KAVŞAĞI",
+    "sequence": 7,
+    "lat": 41.27454,
+    "lon": 36.361214
+  },
+  {
+    "id": "5156",
+    "name": "50052 - SANAYİ KAVŞAĞI",
+    "sequence": 8,
+    "lat": 41.274251584652,
+    "lon": 36.3582236038835
+  },
+  {
+    "id": "5143",
+    "name": "50072 - MİLLET PARKI",
+    "sequence": 9,
+    "lat": 41.2718122792637,
+    "lon": 36.3537689907595
+  },
+  {
+    "id": "5144",
+    "name": "50092 - ESKİ STAT KAVŞAĞI",
+    "sequence": 10,
+    "lat": 41.270385,
+    "lon": 36.352134
+  },
+  {
+    "id": "5307",
+    "name": "50112 - SOĞUKSU",
+    "sequence": 11,
+    "lat": 41.2663951482845,
+    "lon": 36.3500676739588
+  },
+  {
+    "id": "4725",
+    "name": "50132 - KUZEY YILDIZI TOKİ 2",
+    "sequence": 12,
+    "lat": 41.265465,
+    "lon": 36.347746
+  },
+  {
+    "id": "4726",
+    "name": "50142 - KUZEY YILDIZI TOKİ 1",
+    "sequence": 13,
+    "lat": 41.2649798585315,
+    "lon": 36.3456525062402
+  },
+  {
+    "id": "4727",
+    "name": "50152 - KUZEY YILDIZI TOKİ",
+    "sequence": 14,
+    "lat": 41.2648508022658,
+    "lon": 36.3437549224891
+  },
+  {
+    "id": "4728",
+    "name": "10462 - DEREBAHÇE IRMAK",
+    "sequence": 15,
+    "lat": 41.264667,
+    "lon": 36.341721
+  },
+  {
+    "id": "4729",
+    "name": "10472 - ATASAM HASTANESİ",
+    "sequence": 16,
+    "lat": 41.2646,
+    "lon": 36.3392
+  },
+  {
+    "id": "4731",
+    "name": "10492 - MAÇKA SOKAK",
+    "sequence": 17,
+    "lat": 41.266461,
+    "lon": 36.336536
+  },
+  {
+    "id": "4947",
+    "name": "10502 - ADALET MAHALLESİ",
+    "sequence": 18,
+    "lat": 41.2693,
+    "lon": 36.3341
+  },
+  {
+    "id": "5145",
+    "name": "11042 - DURUŞEHİR",
+    "sequence": 19,
+    "lat": 41.2705950900366,
+    "lon": 36.3315854623706
+  },
+  {
+    "id": "5146",
+    "name": "11052 - DURUŞEHİR TOKİ",
+    "sequence": 20,
+    "lat": 41.271468350202,
+    "lon": 36.3288674352389
+  },
+  {
+    "id": "5906",
+    "name": "11372 - ÇAGEM",
+    "sequence": 21,
+    "lat": 41.273,
+    "lon": 36.3271
+  },
+  {
+    "id": "4893",
+    "name": "11062 - FEVZİ ÇAKMAK MAHALLESİ",
+    "sequence": 22,
+    "lat": 41.2748058632765,
+    "lon": 36.3274860210192
+  },
+  {
+    "id": "4894",
+    "name": "11072 - ŞEHİT KORHAN EKİZ BULVARI",
+    "sequence": 23,
+    "lat": 41.2758,
+    "lon": 36.3256
+  },
+  {
+    "id": "4895",
+    "name": "11082 - İLYASKÖY KAVŞAĞI",
+    "sequence": 24,
+    "lat": 41.2766376475905,
+    "lon": 36.3238804054765
+  },
+  {
+    "id": "4896",
+    "name": "11092 - FATİH MAHALLESİ",
+    "sequence": 25,
+    "lat": 41.2783755682982,
+    "lon": 36.3216974037339
+  },
+  {
+    "id": "4897",
+    "name": "11112 - DR. KAMİL FURTUN GÖĞÜS HASTANESİ",
+    "sequence": 26,
+    "lat": 41.279504,
+    "lon": 36.32098
+  },
+  {
+    "id": "4898",
+    "name": "11132 - KADIKÖY KAVŞAĞI",
+    "sequence": 27,
+    "lat": 41.281401,
+    "lon": 36.31935
+  },
+  {
+    "id": "4979",
+    "name": "11142 - ŞEHİT PİYADE UZMAN ÇAVUŞ METE YAHŞİ",
+    "sequence": 28,
+    "lat": 41.2829,
+    "lon": 36.3167
+  },
+  {
+    "id": "5261",
+    "name": "11632 - İLKADIM GENÇLİK MERKEZİ",
+    "sequence": 29,
+    "lat": 41.284314,
+    "lon": 36.308089
+  },
+  {
+    "id": "4934",
+    "name": "11652 - KIRAN MAHALLESİ",
+    "sequence": 30,
+    "lat": 41.2827931854083,
+    "lon": 36.306770039806
+  },
+  {
+    "id": "4935",
+    "name": "11662 - ULUGAZİ TOKİ",
+    "sequence": 31,
+    "lat": 41.2808595469999,
+    "lon": 36.3050501944358
+  },
+  {
+    "id": "5321",
+    "name": "11672 - ULUGAZİ TOKİ 1",
+    "sequence": 32,
+    "lat": 41.2791698161549,
+    "lon": 36.3034605538232
+  },
+  {
+    "id": "5323",
+    "name": "11692 - KIRANKÖY MEZARLIK",
+    "sequence": 33,
+    "lat": 41.2739563440246,
+    "lon": 36.2983029152815
+  },
+  {
+    "id": "4936",
+    "name": "11702 - EĞİTİM ARAŞTIRMA HASTANESİ",
+    "sequence": 34,
+    "lat": 41.2723394281525,
+    "lon": 36.2961812194967
+  },
+  {
+    "id": "4980",
+    "name": "11712 - BARIŞ BULVARI",
+    "sequence": 35,
+    "lat": 41.2704,
+    "lon": 36.2937
+  },
+  {
+    "id": "5664",
+    "name": "11722 - TEPECİK KIZ KURAN KURSU",
+    "sequence": 36,
+    "lat": 41.2678,
+    "lon": 36.2902
+  },
+  {
+    "id": "5668",
+    "name": "11721 - TEPECİK KIZ KURAN KURSU",
+    "sequence": 37,
+    "lat": 41.2676404556356,
+    "lon": 36.2903797585186
+  },
+  {
+    "id": "4990",
+    "name": "11711 - BARIŞ BULVARI",
+    "sequence": 38,
+    "lat": 41.2703,
+    "lon": 36.2939
+  },
+  {
+    "id": "4937",
+    "name": "12911 - RUH VE SİNİR HASTANESİ",
+    "sequence": 39,
+    "lat": 41.2695427442286,
+    "lon": 36.2975777526196
+  },
+  {
+    "id": "4950",
+    "name": "12912 - RUH VE SİNİR HASTANESİ",
+    "sequence": 40,
+    "lat": 41.2698369983918,
+    "lon": 36.2974527676584
+  },
+  {
+    "id": "4952",
+    "name": "11701 - EĞİTİM ARAŞTIRMA HASTANESİ",
+    "sequence": 41,
+    "lat": 41.2727,
+    "lon": 36.2971
+  },
+  {
+    "id": "5648",
+    "name": "11691 - KIRANKÖY MEZARLIK",
+    "sequence": 42,
+    "lat": 41.2739073913084,
+    "lon": 36.298676192084
+  },
+  {
+    "id": "4953",
+    "name": "11671 - ULUGAZİ TOKİ 1",
+    "sequence": 43,
+    "lat": 41.2789611016543,
+    "lon": 36.3035880778105
+  },
+  {
+    "id": "5650",
+    "name": "11661 - ULUGAZİ TOKİ",
+    "sequence": 44,
+    "lat": 41.2807909195421,
+    "lon": 36.3053262100783
+  },
+  {
+    "id": "4954",
+    "name": "11651 - KIRAN MAHALLESİ",
+    "sequence": 45,
+    "lat": 41.283186051294,
+    "lon": 36.3074541361649
+  },
+  {
+    "id": "4795",
+    "name": "12051 - ÇATALARMUT",
+    "sequence": 46,
+    "lat": 41.2864,
+    "lon": 36.3083
+  },
+  {
+    "id": "4796",
+    "name": "12041 - ANADOLU MAHALLESİ",
+    "sequence": 47,
+    "lat": 41.287346,
+    "lon": 36.310508
+  },
+  {
+    "id": "4797",
+    "name": "12021 - HACI OSMAN CAMİ",
+    "sequence": 48,
+    "lat": 41.2882,
+    "lon": 36.312
+  },
+  {
+    "id": "4799",
+    "name": "12001 - İLKADIM SERA",
+    "sequence": 49,
+    "lat": 41.289,
+    "lon": 36.3156
+  },
+  {
+    "id": "4800",
+    "name": "11991 - ZEYTİNLİK PARKI",
+    "sequence": 50,
+    "lat": 41.2902,
+    "lon": 36.318
+  },
+  {
+    "id": "4802",
+    "name": "11971 - HASTANE MAHALLESİ",
+    "sequence": 51,
+    "lat": 41.2919,
+    "lon": 36.3204
+  },
+  {
+    "id": "4803",
+    "name": "11961 - ÇIRAKLIK OKULU",
+    "sequence": 52,
+    "lat": 41.2938,
+    "lon": 36.3212
+  },
+  {
+    "id": "4804",
+    "name": "11951 - KÖKÇÜOĞLU MAHALLESİ",
+    "sequence": 53,
+    "lat": 41.2951,
+    "lon": 36.3221
+  },
+  {
+    "id": "4805",
+    "name": "11941 - KÖKÇÜOĞLU CAMİ",
+    "sequence": 54,
+    "lat": 41.2969056685801,
+    "lon": 36.3232769807437
+  },
+  {
+    "id": "4806",
+    "name": "11931 - SELAHİYE MAHALLESİ",
+    "sequence": 55,
+    "lat": 41.299,
+    "lon": 36.3244
+  },
+  {
+    "id": "4807",
+    "name": "11921 - SELAHİYE TOKİ",
+    "sequence": 56,
+    "lat": 41.3007324348814,
+    "lon": 36.3257670723444
+  },
+  {
+    "id": "4808",
+    "name": "11911 - NECATİBEY İLKÖĞRETİM",
+    "sequence": 57,
+    "lat": 41.301522,
+    "lon": 36.32731
+  },
+  {
+    "id": "5073",
+    "name": "10322 - GENÇLİK PARKI 2",
+    "sequence": 58,
+    "lat": 41.3015190431896,
+    "lon": 36.3297652705376
+  },
+  {
+    "id": "5338",
+    "name": "10082 - GENÇLİK PARKI",
+    "sequence": 59,
+    "lat": 41.3033,
+    "lon": 36.3315
+  },
+  {
+    "id": "5339",
+    "name": "10112 - SAMSUN MÜZESİ",
+    "sequence": 60,
+    "lat": 41.3089684270771,
+    "lon": 36.3350981608734
+  },
+  {
+    "id": "5309",
+    "name": "10122 - BARUTHANE",
+    "sequence": 61,
+    "lat": 41.3195862002141,
+    "lon": 36.3277364935142
+  },
+  {
+    "id": "6007",
+    "name": "10132 - KENAN ŞARA KÖPRÜSÜ",
+    "sequence": 62,
+    "lat": 41.3209211073315,
+    "lon": 36.3223993721087
+  },
+  {
+    "id": "5016",
+    "name": "10152 - GÜZEL SANATLAR FAKÜLTESİ",
+    "sequence": 63,
+    "lat": 41.3220609871451,
+    "lon": 36.3157744830854
+  },
+  {
+    "id": "5658",
+    "name": "30111 - SASKİ",
+    "sequence": 64,
+    "lat": 41.324,
+    "lon": 36.3094
+  },
+  {
+    "id": "5017",
+    "name": "30141 - ATAKUM ENDÜSTRİ MESLEK LİSESİ",
+    "sequence": 66,
+    "lat": 41.3268481912882,
+    "lon": 36.3010076942309
+  },
+  {
+    "id": "5239",
+    "name": "30161 - ÇELİK SİTESİ",
+    "sequence": 68,
+    "lat": 41.328727,
+    "lon": 36.295728
+  },
+  {
+    "id": "5304",
+    "name": "30181 - BÜYÜKŞEHİR SANAT MERKEZİ",
+    "sequence": 70,
+    "lat": 41.330286,
+    "lon": 36.291434
+  },
+  {
+    "id": "5018",
+    "name": "30201 - İLKADIM ÖĞRENCİ YURDU",
+    "sequence": 71,
+    "lat": 41.331911,
+    "lon": 36.28678
+  },
+  {
+    "id": "5241",
+    "name": "30231 - MİMAR SİNAN",
+    "sequence": 72,
+    "lat": 41.333243,
+    "lon": 36.282952
+  },
+  {
+    "id": "5147",
+    "name": "30271 - PARK",
+    "sequence": 73,
+    "lat": 41.335657,
+    "lon": 36.276177
+  },
+  {
+    "id": "5341",
+    "name": "30301 - TÜRKİŞ",
+    "sequence": 74,
+    "lat": 41.33719,
+    "lon": 36.271899
+  },
+  {
+    "id": "5243",
+    "name": "30311 - HANIMELİ",
+    "sequence": 75,
+    "lat": 41.338093,
+    "lon": 36.269314
+  },
+  {
+    "id": "5148",
+    "name": "30341 - CUMHURİYET MAHALLESİ",
+    "sequence": 76,
+    "lat": 41.339954,
+    "lon": 36.264104
+  },
+  {
+    "id": "5342",
+    "name": "30351 - ÖMÜREVLERİ",
+    "sequence": 77,
+    "lat": 41.3414,
+    "lon": 36.2601
+  },
+  {
+    "id": "6442",
+    "name": "30391 - OLİMPİK YÜZME HAVUZU",
+    "sequence": 78,
+    "lat": 41.342721,
+    "lon": 36.256228
+  },
+  {
+    "id": "5244",
+    "name": "30401 - METEOROLOJİ",
+    "sequence": 79,
+    "lat": 41.344569,
+    "lon": 36.251047
+  },
+  {
+    "id": "5343",
+    "name": "30421 - ATAKENT",
+    "sequence": 80,
+    "lat": 41.346578,
+    "lon": 36.247806
+  },
+  {
+    "id": "5246",
+    "name": "30431 - GÜZELYALI",
+    "sequence": 81,
+    "lat": 41.349075,
+    "lon": 36.244943
+  },
+  {
+    "id": "5659",
+    "name": "30451 - YENİMAHALLE",
+    "sequence": 83,
+    "lat": 41.351787,
+    "lon": 36.24187
+  },
+  {
+    "id": "4832",
+    "name": "30471 - GRAND OTEL",
+    "sequence": 85,
+    "lat": 41.3554,
+    "lon": 36.2378
+  },
+  {
+    "id": "5019",
+    "name": "30491 - ÇANKAYA",
+    "sequence": 86,
+    "lat": 41.358162,
+    "lon": 36.235634
+  },
+  {
+    "id": "5344",
+    "name": "30501 - PELİTKÖY",
+    "sequence": 87,
+    "lat": 41.361438,
+    "lon": 36.233146
+  },
+  {
+    "id": "5250",
+    "name": "30541 - KÖRFEZ",
+    "sequence": 89,
+    "lat": 41.366299,
+    "lon": 36.230038
+  },
+  {
+    "id": "5251",
+    "name": "30571 - KURUPELİT DÜĞÜN SALONU",
+    "sequence": 91,
+    "lat": 41.3698241775354,
+    "lon": 36.2284375285811
+  },
+  {
+    "id": "5305",
+    "name": "30581 - ECZANELER",
+    "sequence": 92,
+    "lat": 41.37221,
+    "lon": 36.227265
+  },
+  {
+    "id": "5345",
+    "name": "31641 - LOJMANLAR",
+    "sequence": 93,
+    "lat": 41.3742,
+    "lon": 36.2212
+  },
+  {
+    "id": "5113",
+    "name": "31651 - HASTANE POLİKLİNİKLER",
+    "sequence": 94,
+    "lat": 41.373388,
+    "lon": 36.2121
+  },
+  {
+    "id": "5114",
+    "name": "31671 - TIP FAKÜLTESİ",
+    "sequence": 95,
+    "lat": 41.371426,
+    "lon": 36.208733
+  },
+  {
+    "id": "5020",
+    "name": "31691 - SPOR BİLİMLERİ FAKÜLTESİ",
+    "sequence": 96,
+    "lat": 41.367641,
+    "lon": 36.206614
+  },
+  {
+    "id": "5346",
+    "name": "31711 - İLAHİYAT FAKÜLTESİ",
+    "sequence": 97,
+    "lat": 41.367879,
+    "lon": 36.19733
+  },
+  {
+    "id": "6107",
+    "name": "31731 - SAĞLIK BİLİMLERİ",
+    "sequence": 98,
+    "lat": 41.367418,
+    "lon": 36.194727
+  },
+  {
+    "id": "5021",
+    "name": "31751 - ZİRAAT FAKÜLTESİ",
+    "sequence": 99,
+    "lat": 41.3656401356367,
+    "lon": 36.1872450746943
+  },
+  {
+    "id": "6387",
+    "name": "34151 - MÜHENDİSLİK EK BİNA",
+    "sequence": 100,
+    "lat": 41.363329,
+    "lon": 36.184337
+  },
+  {
+    "id": "5288",
+    "name": "31761 - MÜHENDİSLİK FAKÜLTESİ",
+    "sequence": 101,
+    "lat": 41.365048,
+    "lon": 36.183817
+  },
+  {
+    "id": "5347",
+    "name": "31771 - FEN EDEBİYAT FAKÜLTESİ",
+    "sequence": 102,
+    "lat": 41.3669,
+    "lon": 36.1869
+  },
+  {
+    "id": "5289",
+    "name": "31781 - EĞİTİM FAKÜLTESİ",
+    "sequence": 103,
+    "lat": 41.368783,
+    "lon": 36.189245
+  },
+  {
+    "id": "5348",
+    "name": "31791 - KARADENİZ ERKEK YURDU",
+    "sequence": 104,
+    "lat": 41.371644,
+    "lon": 36.19688
+  }
+]

@@ -219,6 +219,7 @@ def extract_short_name(code, short_name):
     combined = f"{code_ascii} {short_str.upper().translate(_ASCII_MAP)}"
 
     if 'TELEFERIK' in combined: return 'TLFRK'
+    if combined.startswith('SAMULAS EKSPRES 302'): return 'E1'
     m_sn = re.search(r'SAMSUNUM\s*(\d+)', combined)
     if m_sn: return f'SN{m_sn.group(1)}'
     if 'ALTINKAYA' in combined: return 'AK55'
@@ -709,6 +710,7 @@ class Collector:
     def veri_cek(self):
         if not self.db.guncelleme_gerekli():
             log.info("📦 Ana veriler güncel.")
+            self._recompute_gtfs_columns()  # GTFS short name'leri her zaman güncel tut
             self._inject_fixed_prices()
             self._fix_tram_schedules()
             self._fix_stop_coordinates()
@@ -838,14 +840,6 @@ class Collector:
                         if name and tam_fiyat > 0:
                             self.db.ex("INSERT INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,aktarma2,link,guncelleme) VALUES(?,?,?,?,?,?,?,?,?)",
                                       ('samulas', name, hat_code, tam_fiyat, indirimli, aktarma1, aktarma2, url, now))
-                            toplam += 1
-                        # 4. Tramvayları Ekle (Mevcut mantık + GTFS)
-            # ... (Mevcut tramvay konumu simülasyonu zaten self.araclar veya self.tramvaylar listesinde olmalı)
-            # Şu anki kodda tramvaylar self.canli fonksiyonunda 'on-the-fly' üretiliyor gibi?
-            # Hayır, init'te start_background_task ile veriyi_guncelle çağrılıyor.
-            
-            # 5. GTFS-RT Oluştur (Global değişkeni güncelle)
-
         
                     except: pass # for url in links
             except: pass # for page in range
@@ -1216,7 +1210,61 @@ class Collector:
              self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
                   ('fixed', f['name'], f['code'], 15.00, 7.00, 'Yok', now))
         
+        # 7. Samair/Havalimanı Servisleri (H1-H5)
+        samair_hatlar = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'H_%%-%%-%%'")
+        for sh in samair_hatlar:
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
+                  ('fixed', sh['name'], sh['code'], 120.00, 60.00, 'Yok', now))
+        if not samair_hatlar:
+            # Fallback: SAMAIR_HATLAR'dan al
+            for hatid, info in SAMAIR_HATLAR.items():
+                ad = info['ad']
+                self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
+                      ('fixed', ad, ad, 120.00, 60.00, 'Yok', now))
+        
+        # 8. Odak Turistik Hatlar (G1-G4)
+        odak_hatlar = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'G_%%'")
+        for oh in odak_hatlar:
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
+                  ('fixed', oh['name'], oh['code'], 250.00, 200.00, 'Yok', now))
+        
+        # 9. İlçe Hatları (Samsun-Terme, Samsun-Çarşamba)
+        ilce_hatlar = self.db.get("SELECT code, name FROM hat WHERE tip='ilce'")
+        for ih in ilce_hatlar:
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
+                  ('fixed', ih['name'], ih['code'], 60.00, 30.00, 'Yok', now))
+        
         log.info("      ✅ Fiyatlar güncellendi.")
+
+    def _recompute_gtfs_columns(self):
+        """GTFS sütunlarını mevcut DB verisinden yeniden hesapla.
+        Her başlatmada çalışır — short name ID'lerinin doğru olmasını garanti eder."""
+        all_hatlar = self.db.get("SELECT code, name, tip, kat, short_name FROM hat")
+        for h in all_hatlar:
+            g_route_id = sanitize_id(h['code'])
+            g_short = extract_short_name(h['code'], h['short_name'])
+            db_short = str(h['short_name']).strip() if h['short_name'] else ''
+            raw_long = str(h['name']).strip() if h['name'] else h['code']
+            g_long = title_case_tr(clean_long_name(g_short, raw_long, db_short)).replace(',', ' -')
+            g_type = gtfs_route_type(h['tip'])
+            g_color = gtfs_route_color(h['tip'])
+            self.db.ex(
+                "UPDATE hat SET gtfs_route_id=?, gtfs_route_short_name=?, gtfs_route_long_name=?, gtfs_route_type=?, gtfs_route_color=? WHERE code=?",
+                (g_route_id, g_short, g_long, g_type, g_color, h['code'])
+            )
+        # Duraklar
+        for d in self.db.get("SELECT id, ad FROM durak"):
+            gid = sanitize_id(d['id'])
+            gname = title_case_tr(str(d['ad']))
+            self.db.ex("UPDATE durak SET gtfs_stop_id=?, gtfs_stop_name=? WHERE id=?", (gid, gname, d['id']))
+        # Seferler (sadece boş olanlar)
+        for s in self.db.get("SELECT id, hat, gun FROM sefer WHERE gtfs_trip_id='' OR gtfs_trip_id IS NULL"):
+            tid = sanitize_id(f"T_{s['id']}")
+            rid = sanitize_id(s['hat'])
+            sid = gun_to_service(s['gun'])
+            self.db.ex("UPDATE sefer SET gtfs_trip_id=?, gtfs_route_id=?, gtfs_service_id=? WHERE id=?",
+                      (tid, rid, sid, s['id']))
+        log.info(f"      ✅ GTFS sütunları güncellendi ({len(all_hatlar)} hat)")
 
 
     def _samair_duraklar(self):

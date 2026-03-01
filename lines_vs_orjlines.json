@@ -1,0 +1,319 @@
+{
+  "lines_count": 74,
+  "orjlines_count": 134,
+  "sadece_orjlines": [
+    {
+      "code": "15/A BÜYÜK CAMİ-SOĞUKSU",
+      "name": "15 BÜYÜK CAMİ - SOĞUKSU"
+    },
+    {
+      "code": "15/B SOĞUKSU-BÜYÜK CAMİ",
+      "name": "15 SOĞUKSU - BÜYÜK CAMİ"
+    },
+    {
+      "code": "20 BEL.ELERİ-B.KOLPINAR",
+      "name": "20 SOĞUKSU - TOYBELEN SANAYİ"
+    },
+    {
+      "code": "20 B.KOLPINAR-BEL.EVLERİ",
+      "name": "20 TOYBELEN SANAYİ - SOĞUKSU"
+    },
+    {
+      "code": "25 OTOGAR-200 EVLER",
+      "name": "25 OTOGAR - ŞEHİR HASTANESİ"
+    },
+    {
+      "code": "25 200 EVLER-OTOGAR",
+      "name": "25 ŞEHİR HASTANESİ - OTOGAR"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 2-DÖNÜŞ",
+      "name": "E2  BALLICA - SOĞUKSU"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 7-DÖNÜŞ",
+      "name": "E7 BÜYÜK CAMİ - OMÜ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES 7-GİDİŞ",
+      "name": "E7 OMÜ - BÜYÜK CAMİ"
+    },
+    {
+      "code": "22 SOĞUKSU-TÜRKİŞ",
+      "name": "22 SOĞUKSU-TÜRKİŞ"
+    },
+    {
+      "code": "22 TÜRKİŞ-SOĞUKSU",
+      "name": "22 TÜRKİŞ-SOĞUKSU"
+    },
+    {
+      "code": "R11B B. Garajı - Eczacılık Fak",
+      "name": "R11B OMÜ - BAFRA KAMPÜSÜ"
+    },
+    {
+      "code": "R11B Eczacılık Fak - B. Garajı",
+      "name": "R11B BAFRA KAMPÜSÜ - OMÜ"
+    },
+    {
+      "code": "SAMSUNUM1 GEZİNTİ GEMİSİ(MRKZ)",
+      "name": "SAMSUNUM-1 GEZİNTİ GEMİSİ MERKEZ(LİMAN İÇİ)"
+    },
+    {
+      "code": "SAMSUNUM2 AYVACIK GEMİSİ",
+      "name": "SAMSUNUM-2 GEZİNTİ GEMİSİ AYVACIK"
+    },
+    {
+      "code": "SAMSUNUM3 VEZİRKÖPRÜ KANYON G",
+      "name": "SAMSUNUM-3 GEZİNTİ GEMİSİ VEZİRKÖPRÜ KANYON"
+    },
+    {
+      "code": "ALTINKAYA55 FRBT. VEZİRKÖPRÜ ",
+      "name": "ALTINKAYA 55 FERİBOTU VEZİRKÖPRÜ KANYON"
+    },
+    {
+      "code": "SAMULAŞ BAŞVURU MERKEZİ",
+      "name": "SAMULAŞ BAŞVURU MERKEZİ(Ücretsiz)"
+    },
+    {
+      "code": "KURTULUŞ OTOPARKI",
+      "name": "KURTULUŞ OTOPARKI"
+    },
+    {
+      "code": "AĞABALİ AÇIK OTOPARKI",
+      "name": "AĞABALİ OTOPARKI"
+    },
+    {
+      "code": "İSTİKLAL CADDESİ OTOPARKI",
+      "name": "İSTİKLAL CADDESİ OTOPARKI"
+    },
+    {
+      "code": "İLÇE TRSFR. MRKZ. AÇIK OTOPARK",
+      "name": "İLÇE TRANSFER MERKEZİ OTOPARKI"
+    },
+    {
+      "code": "P3(ÇOBANLI İSKELE) OTOPARKI",
+      "name": "P3 ÇOBANLI OTOPARKI"
+    },
+    {
+      "code": "P4(KURUPELİT MARİNA) OTOPARKI",
+      "name": "P4 KURUPELİT YAT LİMANI OTOPARKI"
+    },
+    {
+      "code": "ANAKENT OTOPARK",
+      "name": "ANAKENT OTOPARK"
+    },
+    {
+      "code": "FUAR CADDESİ OTOPARKI",
+      "name": "FUAR OTOPARKI"
+    },
+    {
+      "code": "HAVZA MEK.ve KAPALI OTOPARKI",
+      "name": "HAVZA MEKANİK OTOPARKI"
+    },
+    {
+      "code": "BÜYÜK CAMİ KAPALI OTOPARKI",
+      "name": "BÜYÜK CAMİ OTOPARKI"
+    },
+    {
+      "code": "CUMHURİYET MEYDANI OTOPARKI",
+      "name": "CUMHURİYET MEYDANI OTOPARKI"
+    },
+    {
+      "code": "GAZİ KAPALI OTOPARKI",
+      "name": "GAZİ KAPALI OTOPARKI"
+    },
+    {
+      "code": "BALONYA OTOPARKI",
+      "name": "BALONYA OTOPARKI"
+    },
+    {
+      "code": "SAATHANE OTOPARK",
+      "name": "SAATHANE OTOPARK"
+    },
+    {
+      "code": "SEVGİ GÖLÜ OTOPARKI",
+      "name": "SEVGİ GÖLÜ OTOPARKI"
+    },
+    {
+      "code": "H5 HAVZA - HAVALİMANI",
+      "name": "H5 HAVZA - HAVALİMANI"
+    },
+    {
+      "code": "H5 HAVALİMANI - HAVZA",
+      "name": "H5 HAVALİMANI - HAVZA"
+    },
+    {
+      "code": "G1 ŞAHİNKAYA - SAMSUN",
+      "name": "G1 ŞAHİNKAYA KANYONU - SAMSUN"
+    },
+    {
+      "code": "G1 SAMSUN - ŞAHİNKAYA",
+      "name": "G1 SAMSUN - ŞAHİNKAYA KANYONU"
+    },
+    {
+      "code": "G2 KIZILIRMAK - SAMSUN",
+      "name": "G2 KIZILIRMAK DELTASI - SAMSUN"
+    },
+    {
+      "code": "G2 SAMSUN - KIZILIRMAK",
+      "name": "G2 SAMSUN - KIZILIRMAK DELTASI"
+    },
+    {
+      "code": "G3 AYVACIK - SAMSUN",
+      "name": "G3 AYVACIK BARAJ GÖLÜ - SAMSUN"
+    },
+    {
+      "code": "G3 SAMSUN - AYVACIK",
+      "name": "G3 SAMSUN - AYVACIK BARAJ GÖLÜ"
+    },
+    {
+      "code": "G4 LADİK AKDAĞ - SAMSUN",
+      "name": "G4 LADİK AKDAĞ - SAMSUN"
+    },
+    {
+      "code": "G4 SAMSUN - LADİK AKDAĞ",
+      "name": "G4 SAMSUN - LADİK AKDAĞ"
+    },
+    {
+      "code": "AMAZON KÖYÜ",
+      "name": "AMAZON KÖYÜ"
+    },
+    {
+      "code": "BANDIRMA VAPURU",
+      "name": "BANDIRMA VAPURU"
+    },
+    {
+      "code": "ÇARŞAMBA-SAMSUN",
+      "name": "ÇARŞAMBA-SAMSUN"
+    },
+    {
+      "code": "KENT MÜZESİ",
+      "name": "KENT MÜZESİ"
+    },
+    {
+      "code": "2  FAKÜLTE-SHELL",
+      "name": "KÜLTÜR YOLU FESTİVALİ"
+    },
+    {
+      "code": "R2 CEZAEVİ-BÜYÜK CAMİ",
+      "name": "R2 CEZAEVİ-EĞİTİM ARAŞTIRMA-BÜYÜK CAMİ"
+    },
+    {
+      "code": "R2 BÜYÜK CAMİ-CEZAEVİ",
+      "name": "R2 BÜYÜK CAMİ-EĞİTİM ARAŞTIRMA-CEZAEVİ"
+    },
+    {
+      "code": "SAMSUN-ÇARŞAMBA",
+      "name": "SAMSUN-ÇARŞAMBA"
+    },
+    {
+      "code": "GÖREVLİ",
+      "name": "GÖREVLİ"
+    },
+    {
+      "code": "SAMULAŞ - AKTARMA",
+      "name": "SAMULAŞ - AKTARMA"
+    },
+    {
+      "code": "SAMULAŞ IADE(MMVAL)",
+      "name": "BELEDİYE EVLERİ - REKTÖRLÜK"
+    },
+    {
+      "code": "OTOPARK GİRİŞ",
+      "name": "OTOPARK GIRIS"
+    },
+    {
+      "code": "OTOPARK ÇIKIŞ",
+      "name": "OTOPARK CIKIS"
+    },
+    {
+      "code": "TELEFERİK",
+      "name": "TELEFERİK"
+    },
+    {
+      "code": "TEKEL OTOPARKI",
+      "name": "TEKEL OTOPARKI"
+    },
+    {
+      "code": "KAMPÜS IADE(MMVAL)",
+      "name": "KAMPÜS IADE(MMVAL)"
+    },
+    {
+      "code": "SAMULAŞ - TRAMVAY",
+      "name": "SAMULAŞ - TRAMVAY"
+    }
+  ],
+  "kategoriler": {
+    "EKSPRES (E)": [],
+    "NUMERİK (15, 20, 22, 25, 28...)": [
+      "15/A BÜYÜK CAMİ-SOĞUKSU",
+      "15/B SOĞUKSU-BÜYÜK CAMİ",
+      "20 BEL.ELERİ-B.KOLPINAR",
+      "20 B.KOLPINAR-BEL.EVLERİ",
+      "25 OTOGAR-200 EVLER",
+      "25 200 EVLER-OTOGAR",
+      "22 SOĞUKSU-TÜRKİŞ",
+      "22 TÜRKİŞ-SOĞUKSU",
+      "2  FAKÜLTE-SHELL"
+    ],
+    "TURİSTİK (G)": [
+      "GAZİ KAPALI OTOPARKI",
+      "G1 ŞAHİNKAYA - SAMSUN",
+      "G1 SAMSUN - ŞAHİNKAYA",
+      "G2 KIZILIRMAK - SAMSUN",
+      "G2 SAMSUN - KIZILIRMAK",
+      "G3 AYVACIK - SAMSUN",
+      "G3 SAMSUN - AYVACIK",
+      "G4 LADİK AKDAĞ - SAMSUN",
+      "G4 SAMSUN - LADİK AKDAĞ",
+      "GÖREVLİ"
+    ],
+    "HAVAŞ EK (H5+)": [
+      "H5 HAVZA - HAVALİMANI",
+      "H5 HAVALİMANI - HAVZA"
+    ],
+    "OTOPARK": [
+      "KURTULUŞ OTOPARKI",
+      "AĞABALİ AÇIK OTOPARKI",
+      "İSTİKLAL CADDESİ OTOPARKI",
+      "İLÇE TRSFR. MRKZ. AÇIK OTOPARK",
+      "P3(ÇOBANLI İSKELE) OTOPARKI",
+      "P4(KURUPELİT MARİNA) OTOPARKI",
+      "ANAKENT OTOPARK",
+      "FUAR CADDESİ OTOPARKI",
+      "HAVZA MEK.ve KAPALI OTOPARKI",
+      "BÜYÜK CAMİ KAPALI OTOPARKI",
+      "CUMHURİYET MEYDANI OTOPARKI",
+      "BALONYA OTOPARKI",
+      "SAATHANE OTOPARK",
+      "SEVGİ GÖLÜ OTOPARKI",
+      "OTOPARK GİRİŞ",
+      "OTOPARK ÇIKIŞ",
+      "TEKEL OTOPARKI"
+    ],
+    "DİĞER": [
+      "SAMULAŞ EKSPRES 2-DÖNÜŞ",
+      "SAMULAŞ EKSPRES 7-DÖNÜŞ",
+      "SAMULAŞ EKSPRES 7-GİDİŞ",
+      "R11B B. Garajı - Eczacılık Fak",
+      "R11B Eczacılık Fak - B. Garajı",
+      "SAMSUNUM1 GEZİNTİ GEMİSİ(MRKZ)",
+      "SAMSUNUM2 AYVACIK GEMİSİ",
+      "SAMSUNUM3 VEZİRKÖPRÜ KANYON G",
+      "ALTINKAYA55 FRBT. VEZİRKÖPRÜ ",
+      "SAMULAŞ BAŞVURU MERKEZİ",
+      "AMAZON KÖYÜ",
+      "BANDIRMA VAPURU",
+      "ÇARŞAMBA-SAMSUN",
+      "KENT MÜZESİ",
+      "R2 CEZAEVİ-BÜYÜK CAMİ",
+      "R2 BÜYÜK CAMİ-CEZAEVİ",
+      "SAMSUN-ÇARŞAMBA",
+      "SAMULAŞ - AKTARMA",
+      "SAMULAŞ IADE(MMVAL)",
+      "TELEFERİK",
+      "KAMPÜS IADE(MMVAL)",
+      "SAMULAŞ - TRAMVAY"
+    ]
+  }
+}

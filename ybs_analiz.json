@@ -1,0 +1,1097 @@
+{
+  "tarih": "2026-02-26T16:26:06.284690",
+  "odak_hatlar": [
+    {
+      "id": "1",
+      "ad": "Şahinkaya Kanyonu Gidiş",
+      "durak_sayisi": 5,
+      "duraklar": [
+        {
+          "id": 1,
+          "durak_adi": "Şahinkaya Kanyonu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "74022",
+          "durak_fiyat": "115,00",
+          "durak_fiyat_ogr": "92,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 2,
+          "durak_adi": "Vezirköprü Otogarı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "74012",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 3,
+          "durak_adi": "Havza Merkez",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "72021",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 4,
+          "durak_adi": "Kavak",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "71022",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 5,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13832",
+          "durak_fiyat": "0,00",
+          "durak_fiyat_ogr": "0,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "ad": "Şahinkaya Kanyonu Dönüş",
+      "durak_sayisi": 5,
+      "duraklar": [
+        {
+          "id": 6,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13831",
+          "durak_fiyat": "115,00",
+          "durak_fiyat_ogr": "92,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 7,
+          "durak_adi": "Kavak",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "71021",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 8,
+          "durak_adi": "Havza Merkez",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "72021",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 9,
+          "durak_adi": "Vezirköprü Otogarı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "74011",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 10,
+          "durak_adi": "Şahinkaya Kanyonu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "74021",
+          "durak_fiyat": "0,00",
+          "durak_fiyat_ogr": "0,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "ad": "Kızılırmak Deltası Gidiş",
+      "durak_sayisi": 19,
+      "duraklar": [
+        {
+          "id": 11,
+          "durak_adi": "Kızılırmak Deltası",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70132",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 12,
+          "durak_adi": "Ballıca Kavşak",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70082",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 13,
+          "durak_adi": "Dereköy Yolu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70052",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 14,
+          "durak_adi": "Taflan Un Fabrikası",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30852",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 15,
+          "durak_adi": "Polis Okulu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30762",
+          "durak_fiyat": "55,00",
+          "durak_fiyat_ogr": "45,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 16,
+          "durak_adi": "Çakırlar Korusu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30692",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 17,
+          "durak_adi": "Turgut Özal Öğrenci Yurdu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30602",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 18,
+          "durak_adi": "Eczaneler",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30582",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 19,
+          "durak_adi": "Pelitköy",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30502",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 20,
+          "durak_adi": "Tuğba Evleri",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30462",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 21,
+          "durak_adi": "Atakent",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30412",
+          "durak_fiyat": "75,00",
+          "durak_fiyat_ogr": "60,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 22,
+          "durak_adi": "Ömürevleri",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30352",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 23,
+          "durak_adi": "Türkiş",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30282",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 24,
+          "durak_adi": "Dsi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30182",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 25,
+          "durak_adi": "Atakum Endüstri Meslek Lisesi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30142",
+          "durak_fiyat": "75,00",
+          "durak_fiyat_ogr": "60,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 26,
+          "durak_adi": "Karayolları",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30112",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 27,
+          "durak_adi": "Fener",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "10111",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 28,
+          "durak_adi": "Gençlik Parkı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "10081",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 29,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13832",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "ad": "Kızılırmak Deltası Dönüş",
+      "durak_sayisi": 19,
+      "duraklar": [
+        {
+          "id": 30,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13831",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 31,
+          "durak_adi": "Gençlik Parkı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "10082",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 32,
+          "durak_adi": "Fener",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "10112",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 33,
+          "durak_adi": "Saski",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30111",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 34,
+          "durak_adi": "Atakum Endüstri Meslek Lisesi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30141",
+          "durak_fiyat": "75,00",
+          "durak_fiyat_ogr": "60,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 35,
+          "durak_adi": "Büyükşehir Sanat Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30181",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 36,
+          "durak_adi": "Türkiş",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30301",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 37,
+          "durak_adi": "Ömürevleri",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30351",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 38,
+          "durak_adi": "Meteoroloji",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30401",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 39,
+          "durak_adi": "Vatan Kavşağı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30461",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 40,
+          "durak_adi": "Çankaya",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30491",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 41,
+          "durak_adi": "Eczaneler",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30581",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 42,
+          "durak_adi": "Omtel Otel",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30601",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 43,
+          "durak_adi": "Çakırlar Korusu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30691",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 44,
+          "durak_adi": "Polis Okulu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30761",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 45,
+          "durak_adi": "Taflan Un Fabrikası",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "30851",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 46,
+          "durak_adi": "Dereköy Yolu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70051",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 47,
+          "durak_adi": "Ballıca Kavşak",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70081",
+          "durak_fiyat": "75,00",
+          "durak_fiyat_ogr": "60,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 48,
+          "durak_adi": "Kızılırmak Deltası",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "70131",
+          "durak_fiyat": "63,00",
+          "durak_fiyat_ogr": "50,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "ad": "Ayvacık Baraj Gölü Gidiş",
+      "durak_sayisi": 8,
+      "duraklar": [
+        {
+          "id": 50,
+          "durak_adi": "Ayvacık Merkez",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "75012",
+          "durak_fiyat": "100,00",
+          "durak_fiyat_ogr": "80,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 51,
+          "durak_adi": "Beylerce",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65352",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 52,
+          "durak_adi": "Dikbıyık",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65342",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 53,
+          "durak_adi": "Irmaksırtı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65332",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 54,
+          "durak_adi": "Çınarlık Yolu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65322",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 55,
+          "durak_adi": "Tekkeköy Tramvay",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "60212",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 56,
+          "durak_adi": "Lovelet Avm",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "50012",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 57,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13832",
+          "durak_fiyat": "110,00",
+          "durak_fiyat_ogr": "90,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "ad": "Ayvacık Baraj Gölü Dönüş",
+      "durak_sayisi": 8,
+      "duraklar": [
+        {
+          "id": 58,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13831",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 59,
+          "durak_adi": "Lovelet Avm",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "50011",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 60,
+          "durak_adi": "Tekkeköy",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "60211",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 61,
+          "durak_adi": "Çınarlık Yolu",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65321",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 62,
+          "durak_adi": "Irmaksırtı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65331",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 63,
+          "durak_adi": "Dikbıyık",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65341",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 64,
+          "durak_adi": "Beylerce",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "65351",
+          "durak_fiyat": "85,00",
+          "durak_fiyat_ogr": "70,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 65,
+          "durak_adi": "Ayvacık Merkez",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "75011",
+          "durak_fiyat": "100,00",
+          "durak_fiyat_ogr": "80,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "ad": "Odak Samsun K1 (Terme - Çarşamba - Etkinlik Alanı)",
+      "durak_sayisi": 2,
+      "duraklar": [
+        {
+          "id": 66,
+          "durak_adi": "Terme Cumhuriyet Meydanı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "00001",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 67,
+          "durak_adi": "Çarşamba Vefa AVM",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "00002",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "ad": "Odak Samsun K2 (Bafra - Etkinlik Alanı)",
+      "durak_sayisi": 1,
+      "duraklar": [
+        {
+          "id": 69,
+          "durak_adi": "Bafra Kent Meydanı",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "00004",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "ad": "Odak Samsun K3 (Kavak - Etkinlik Alanı)",
+      "durak_sayisi": 1,
+      "duraklar": [
+        {
+          "id": 68,
+          "durak_adi": "Kavak Otogar",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "00003",
+          "durak_fiyat": "45,00",
+          "durak_fiyat_ogr": "37,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "ad": "Ladik Akdağ Gidiş",
+      "durak_sayisi": 2,
+      "duraklar": [
+        {
+          "id": 57,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13832",
+          "durak_fiyat": "110,00",
+          "durak_fiyat_ogr": "90,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 70,
+          "durak_adi": "Ladik",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "79051",
+          "durak_fiyat": "110,00",
+          "durak_fiyat_ogr": "90,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "ad": "Ladik Akdağ Dönüş",
+      "durak_sayisi": 2,
+      "duraklar": [
+        {
+          "id": 57,
+          "durak_adi": "Toplu Taşıma Transfer Merkezi",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "13832",
+          "durak_fiyat": "110,00",
+          "durak_fiyat_ogr": "90,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        },
+        {
+          "id": 70,
+          "durak_adi": "Ladik",
+          "durak_lat": null,
+          "durak_long": null,
+          "durak_kodu": "79051",
+          "durak_fiyat": "110,00",
+          "durak_fiyat_ogr": "90,00",
+          "saat": "00:00",
+          "varis_saati": "00:00"
+        }
+      ]
+    }
+  ],
+  "samair_duraklar": [
+    {
+      "id": 1,
+      "durak_adi": "Rektörlük Tramvay İstasyonu",
+      "durak_lat": "36.225315980358843",
+      "durak_long": "41.3718854642756",
+      "durak_kodu": "31632",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 3,
+      "durak_adi": "Turgut Özal Öğrenci Yurdu",
+      "durak_lat": "41.378623957509213",
+      "durak_long": "36.219664798045521",
+      "durak_kodu": "30602",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 4,
+      "durak_adi": "Eczaneler",
+      "durak_lat": "41.371112059825009",
+      "durak_long": "36.227565927850442",
+      "durak_kodu": "30582",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 5,
+      "durak_adi": "Pelitköy",
+      "durak_lat": "41.359689475144137",
+      "durak_long": "36.233911991629327",
+      "durak_kodu": "30502",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 6,
+      "durak_adi": "Tuğba Evleri",
+      "durak_lat": "41.3537",
+      "durak_long": "36.2392",
+      "durak_kodu": "30462",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 7,
+      "durak_adi": "Atakent",
+      "durak_lat": "41.344632",
+      "durak_long": "36.250087",
+      "durak_kodu": "304123",
+      "durak_fiyat": "130",
+      "sabah_sure": "03:03:00",
+      "aksam_sure": "03:03:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 8,
+      "durak_adi": "Ömürevleri",
+      "durak_lat": "41.340476",
+      "durak_long": "36.261497",
+      "durak_kodu": "30352",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 9,
+      "durak_adi": "Türkiş",
+      "durak_lat": "41.33611",
+      "durak_long": "36.274032",
+      "durak_kodu": "30282",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 10,
+      "durak_adi": "Dsi",
+      "durak_lat": "41.330122",
+      "durak_long": "36.290642",
+      "durak_kodu": "30182",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 11,
+      "durak_adi": "Atakum Endüstri Meslek Lisesi",
+      "durak_lat": "41.326001",
+      "durak_long": "36.302603",
+      "durak_kodu": "30142",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 12,
+      "durak_adi": "Karayolları",
+      "durak_lat": "41.323833211801848",
+      "durak_long": "36.308580883213303",
+      "durak_kodu": "30112",
+      "durak_fiyat": "130",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 13,
+      "durak_adi": "Fener",
+      "durak_lat": "41.308937737320178",
+      "durak_long": "36.335082651910497",
+      "durak_kodu": "10111",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 14,
+      "durak_adi": "Gençlik Parkı",
+      "durak_lat": "41.303279253500513",
+      "durak_long": "36.331512016661868",
+      "durak_kodu": "10081",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 15,
+      "durak_adi": "Defterdarlık",
+      "durak_lat": "41.2922",
+      "durak_long": "36.3348",
+      "durak_kodu": "10031",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 16,
+      "durak_adi": "Gar",
+      "durak_lat": "41.285213237911783",
+      "durak_long": "36.342605617399407",
+      "durak_kodu": "10011",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 17,
+      "durak_adi": "Kılıçdede",
+      "durak_lat": "41.279978114433341",
+      "durak_long": "36.349376632414717",
+      "durak_kodu": "10001",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 18,
+      "durak_adi": "Piazza Avm",
+      "durak_lat": "41.277137137593307",
+      "durak_long": "36.353933833590062",
+      "durak_kodu": "50041",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 19,
+      "durak_adi": "Lovelet Avm",
+      "durak_lat": "41.266003397783031",
+      "durak_long": "36.380063284625273",
+      "durak_kodu": "50011",
+      "durak_fiyat": "110",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 20,
+      "durak_adi": "Tekkeköy",
+      "durak_lat": "41.225004475888099",
+      "durak_long": "36.453208773835982",
+      "durak_kodu": "60211",
+      "durak_fiyat": "65",
+      "sabah_sure": "00:00:00",
+      "aksam_sure": "00:00:00",
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    },
+    {
+      "id": 22,
+      "durak_adi": "Çarşamba Havalimanı",
+      "durak_lat": "41.257265155861383",
+      "durak_long": "36.554777354488841",
+      "durak_kodu": "65311",
+      "durak_fiyat": null,
+      "sabah_sure": null,
+      "aksam_sure": null,
+      "formatted_date": "01 Ocak 1970 Perşembe"
+    }
+  ],
+  "samair_durak_toplam": 65
+}

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samsun Akıllı Ulaşım Ekranı</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+        }
+
+        .bus-marker-real {
+            z-index: 1000 !important;
+        }
+
+        .leaflet-popup-content {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .bus-info-panel {
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .bus-info-panel .bus-plate {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .bus-info-panel .bus-stats {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .bus-info-panel .bus-stats span {
+            margin: 0 5px;
+        }
+
+        .eta-badge.live {
+            background: #00c853 !important;
+            animation: pulse-badge 1s infinite;
+        }
+
+        @keyframes pulse-badge {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Settings Button */
+        .settings-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            margin-left: 15px;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-panel {
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 16px;
+            min-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .settings-panel h2 {
+            color: #fff;
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-panel label {
+            color: #aaa;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .settings-panel select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #0f0f23;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .settings-panel select:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+
+        .settings-panel .btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .settings-panel button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .settings-panel .btn-cancel {
+            background: #333;
+            color: #fff;
+        }
+
+        .settings-panel .btn-apply {
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: #fff;
+        }
+
+        .settings-panel button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Live indicator */
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #00c853;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Events Panel */
+        .events-panel {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .events-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .events-header span {
+            flex: 1;
+        }
+
+        .events-nav {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+
+        .events-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .event-card {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid #e91e63;
+        }
+
+        .event-type {
+            color: #e91e63;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .event-title {
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .event-info {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .event-info .venue::before {
+            content: '📍 ';
+        }
+
+        .event-info .date::before {
+            content: '📅 ';
+        }
+
+        /* Event with Image */
+        .event-card-visual {
+            display: flex;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 80px;
+        }
+
+        .event-thumb {
+            width: 90px;
+            height: 65px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #333;
+        }
+
+        .event-details {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Media Overlay for YouTube/Video */
+        .media-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: 100;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .media-overlay.active {
+            display: block;
+        }
+
+        .media-overlay iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .media-countdown {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 101;
+        }
+
+        .live-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="screen-container">
+
+        <!-- HEADER -->
+        <header class="top-bar">
+            <div class="logos">
+                <img src="SBB Logo 1.png" alt="SBB Logo" class="logo-sbb">
+                <div class="divider"></div>
+                <img src="samulaş.png" alt="Samulaş Logo" class="logo-samulas">
+            </div>
+
+            <div class="header-info">
+                <div class="weather-widget">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span id="temp">--°C</span>
+                    <span id="weather-desc">Yükleniyor...</span>
+                </div>
+                <div class="clock-widget">
+                    <span id="clock">--:--</span>
+                    <span id="date">--</span>
+                </div>
+                <span id="live-indicator" class="live-indicator" style="display:none;">CANLI</span>
+                <button class="settings-btn" onclick="openSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT GRID -->
+        <main class="main-content">
+
+            <!-- LEFT PANEL: LIVE MAP -->
+            <div class="left-panel">
+                <div class="media-container" style="position: relative;">
+                    <div id="map"></div>
+                    <!-- Media Overlay for YouTube -->
+                    <div class="media-overlay" id="media-overlay">
+                        <iframe id="youtube-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        <div class="media-countdown" id="media-countdown">Harita: 30s</div>
+                    </div>
+                </div>
+
+                <!-- Events Panel with Images -->
+                <div class="events-panel" id="events-panel">
+                    <div class="events-header">
+                        <span>🎭 Bu Hafta Samsun'da</span>
+                        <button class="events-nav prev" onclick="prevEvent()">‹</button>
+                        <button class="events-nav next" onclick="nextEvent()">›</button>
+                    </div>
+                    <div class="event-card-visual" id="current-event">
+                        <img class="event-thumb" id="event-thumb" src="" alt="Etkinlik">
+                        <div class="event-details">
+                            <div class="event-type">Yükleniyor...</div>
+                            <div class="event-title">Etkinlikler getiriliyor</div>
+                            <div class="event-info">
+                                <span class="venue">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vehicle-info-bar">
+                    <div class="feature"><i class="fas fa-wifi"></i> Ücretsiz Wi-Fi</div>
+                    <div class="feature"><i class="fas fa-charging-station"></i> USB Şarj</div>
+                    <div class="feature"><i class="fas fa-snowflake"></i> Klima: 22°C</div>
+                    <div class="feature"><i class="fas fa-wheelchair"></i> Engelsiz</div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: TIMELINE -->
+            <div class="right-panel">
+                <div class="route-header">
+                    <div class="line-badge">26/17</div>
+                    <div class="line-name">B.EVLER - ÜNİVERSİTE</div>
+                </div>
+
+                <div class="timeline-container" id="timeline">
+                    <!-- Stops will be injected here via JS -->
+                    <!-- Mockup Item -->
+                    <div class="timeline-item passed">
+                        <div class="time">14:45</div>
+                        <div class="dot"></div>
+                        <div class="stop-name">Meydan</div>
+                    </div>
+                    <div class="timeline-item active">
+                        <div class="time">14:50</div>
+                        <div class="dot pulse"></div>
+                        <div class="stop-name">Gençlik Parkı</div>
+                        <div class="eta-badge">ŞİMDİ</div>
+                    </div>
+                    <div class="timeline-item future">
+                        <div class="time">14:55</div>
+                        <div class="dot"></div>
+                        <div class="stop-name">Liman</div>
+                        <div class="eta-badge">5 dk</div>
+                    </div>
+                    <div class="timeline-item future">
+                        <div class="time">14:58</div>
+                        <div class="dot"></div>
+                        <div class="stop-name">Belediye Evleri</div>
+                        <div class="eta-badge">8 dk</div>
+                    </div>
+                    <div class="timeline-item future">
+                        <div class="time">15:05</div>
+                        <div class="dot"></div>
+                        <div class="stop-name">Tekkeköy</div>
+                        <div class="eta-badge">15 dk</div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FOOTER: NEXT STOP BANNER -->
+        <footer class="next-stop-bar">
+            <div class="label">GELECEK DURAK / NEXT STOP</div>
+            <div class="stop-name-display" id="next-stop-name">GENÇLİK PARKI</div>
+            <div class="bus-plate">55 AL 123</div>
+        </footer>
+
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="settings-modal" id="settings-modal">
+        <div class="settings-panel">
+            <h2><i class="fas fa-cog"></i> Ayarlar</h2>
+
+            <label>Hat Seçimi</label>
+            <select id="line-select">
+                <option value="">Yükleniyor...</option>
+            </select>
+
+            <label>Durak Sırası</label>
+            <select id="stop-select">
+                <option value="1">1. Durak (Başlangıç)</option>
+                <option value="10" selected>10. Durak</option>
+                <option value="20">20. Durak</option>
+                <option value="30">30. Durak</option>
+                <option value="50">50. Durak (Orta)</option>
+            </select>
+
+            <div class="btn-row">
+                <button class="btn-cancel" onclick="closeSettings()">İptal</button>
+                <button class="btn-apply" onclick="applySettings()">Uygula</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
