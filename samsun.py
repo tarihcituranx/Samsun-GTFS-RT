@@ -2752,7 +2752,7 @@ def create_app(db, col):
         """Mobil uygulama için Odak noktalarını proxy yapar (WAF Aşar)"""
         http_client = col.http
         token = await get_ybs_token(http_client.session)
-        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        if not token: return JSONResponse([])
         
         try:
             resp = await asyncio.to_thread(
@@ -2773,7 +2773,7 @@ def create_app(db, col):
         """Mobil uygulama için SamAir saatlerini proxy yapar"""
         http_client = col.http
         token = await get_ybs_token(http_client.session)
-        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        if not token: return JSONResponse([])
         
         try:
             resp = await asyncio.to_thread(
@@ -2794,7 +2794,7 @@ def create_app(db, col):
         """Mobil uygulama için SamAir araç konumlarını proxy yapar"""
         http_client = col.http
         token = await get_ybs_token(http_client.session)
-        if not token: return JSONResponse({"error": "Token alınamadı"}, status_code=500)
+        if not token: return JSONResponse([])
         
         try:
             resp = await asyncio.to_thread(
