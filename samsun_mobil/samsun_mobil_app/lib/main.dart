@@ -17,19 +17,45 @@ class SamsunRouteApp extends StatelessWidget {
       title: 'Samsun Ulaşım',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorSchemeSeed: Colors.red,
-        brightness: Brightness.light,
+        colorSchemeSeed: const Color(0xFF0A1628),
+        brightness: Brightness.dark,
         useMaterial3: true,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.red.shade700,
+        scaffoldBackgroundColor: const Color(0xFF0A1628),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF0F1E36),
           foregroundColor: Colors.white,
-          elevation: 4.0,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.5),
+        ),
+        cardTheme: CardTheme(
+          color: const Color(0xFF152238),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red.shade700,
+            backgroundColor: const Color(0xFF2979FF),
             foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF152238),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.35)),
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+        ),
+        dividerColor: Colors.white.withOpacity(0.08),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFF0F1E36),
+          selectedItemColor: Color(0xFF2979FF),
+          unselectedItemColor: Color(0xFF546E8A),
+          type: BottomNavigationBarType.fixed,
+          selectedLabelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: TextStyle(fontSize: 10),
         ),
       ),
       home: const _SplashLoader(),
@@ -44,46 +70,61 @@ class _SplashLoader extends StatefulWidget {
   State<_SplashLoader> createState() => _SplashLoaderState();
 }
 
-class _SplashLoaderState extends State<_SplashLoader> {
+class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scaleAnim;
+
   @override
   void initState() {
     super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
+    _scaleAnim = Tween<double>(begin: 0.9, end: 1.1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     _startApp();
   }
 
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
   Future<void> _startApp() async {
-    // Uygulamayı hemen aç, arka planda sync başsın
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-      // Arka planda veriyi güncelle (7 günden eskiyse)
-      SynchronizationService().runFullSynchronization();
-    });
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+    SynchronizationService().runFullSynchronization();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.red.shade700,
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('🚌', style: TextStyle(fontSize: 80)),
-            SizedBox(height: 16),
-            Text(
-              'Samsun Ulaşım',
-              style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Color(0xFF0A1628), Color(0xFF1A2940), Color(0xFF0F1E36)],
+          ),
+        ),
+        child: Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            ScaleTransition(
+              scale: _scaleAnim,
+              child: Container(
+                width: 100, height: 100,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 30, spreadRadius: 5)],
+                ),
+                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 48))),
+              ),
             ),
-            SizedBox(height: 8),
-            Text(
-              'Yükleniyor...',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            SizedBox(height: 24),
-            CircularProgressIndicator(color: Colors.white),
-          ],
+            const SizedBox(height: 28),
+            const Text('Samsun Ulaşım', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 8),
+            Text('Akıllı Toplu Taşıma', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, letterSpacing: 2)),
+            const SizedBox(height: 40),
+            SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2.5, color: const Color(0xFF2979FF).withOpacity(0.7))),
+          ]),
         ),
       ),
     );
