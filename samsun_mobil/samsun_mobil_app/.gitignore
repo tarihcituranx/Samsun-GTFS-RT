@@ -5,41 +5,73 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
-migrate_working_dir/
 
-# IntelliJ related
+# IntelliJ
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Flutter/Dart/Pub
 .dart_tool/
-.flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
-/coverage/
+/ios/Flutter/App.framework
+/ios/Flutter/engine.xcconfig
+/ios/Flutter/pod_runner.xcconfig
+/ios/Flutter/Generated.xcconfig
 
-# Symbolication related
-app.*.symbols
+# Android
+/android/key.properties
+/android/*.keystore
+/android/gradlew
+/android/gradle.bat
+/android/local.properties
+/android/.gradle/
+/android/app/src/main/assets/flutter_assets/
+/android/app/build/
+/android/app/intermediates/
+/android/app/outputs/
 
-# Obfuscation related
-app.*.map.json
+# iOS
+/ios/Pods/
+/ios/.symlinks/
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+/ios/Runner/Pods-Runner-frameworks.sh
+/ios/Runner/Runner.app
+/ios/Runner/Runner.ipa
+/ios/Runner/Runner.xcarchive
+/ios/Runner/Runner-Bridging-Header.h
+/ios/Flutter/app.flx
+/ios/Flutter/snapshot.d
+/ios/Flutter/vm_snapshot_data
+/ios/Flutter/vm_snapshot_instr
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# macOS
+/macos/Flutter/ephemeral
+/macos/Flutter/app.flx
+/macos/Flutter/snapshot.d
+/macos/Flutter/vm_snapshot_data
+/macos/Flutter/vm_snapshot_instr
+/macos/Pods/
+/macos/.symlinks/
+
+# Linux
+/linux/flutter/ephemeral
+/linux/flutter/app.flx
+/linux/flutter/snapshot.d
+/linux/flutter/vm_snapshot_data
+/linux/flutter/vm_snapshot_instr
+
+# Windows
+/windows/flutter/ephemeral
+/windows/flutter/app.flx
+/windows/flutter/snapshot.d
+/windows/flutter/vm_snapshot_data
+/windows/flutter/vm_snapshot_instr
