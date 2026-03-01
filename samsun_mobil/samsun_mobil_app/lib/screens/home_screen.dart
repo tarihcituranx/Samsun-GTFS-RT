@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import '../services/db_service.dart';
-import '../services/api_service.dart';
-import 'alarm_screen.dart';
-import 'offline_wakeup_screen.dart';
 
+import 'package:flutter/material.dart';
+import 'package:samsun_transit/helpers/database_helper.dart';
+
+// Yeniden yapılandırılmış ana ekran.
+// Artık verileri doğrudan ve güvenilir bir şekilde yerel veritabanından çeker.
+// Bu, samsun.py'nin web arayüzünün mobil karşılığıdır.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -14,316 +13,121 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final MapController _mapController = MapController();
-  List<Map<String, dynamic>> _duraklar = [];
-  bool _isLoading = true;
-  
-  // Routing variables
-  final TextEditingController _baslangicController = TextEditingController();
-  final TextEditingController _hedefController = TextEditingController();
-  List<LatLng> _routePolyline = [];
-  List<Map<String, dynamic>> _routeResults = [];
-  bool _isRouting = false;
+  // Veritabanından gelen hatları tutacak olan Future
+  late Future<List<Map<String, dynamic>>> _hatlarFuture;
+  final dbHelper = DatabaseHelper.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadDuraklar();
+    // Ekran ilk yüklendiğinde veritabanından hatları çek
+    _hatlarFuture = _fetchHatsFromDb();
   }
 
-  Future<void> _loadDuraklar() async {
-    final duraklar = await DBService().getDuraklar();
-    setState(() {
-      _duraklar = duraklar;
-      _isLoading = false;
-    });
+  // Veritabanından hatları çeken asenkron fonksiyon
+  Future<List<Map<String, dynamic>>> _fetchHatsFromDb() async {
+    final db = await dbHelper.database;
+    // Hatları kategorilerine göre sırala (samsun.py gibi)
+    return await db.query(DatabaseHelper.tableHat, orderBy: 'kat, name');
   }
 
-  Future<void> _calculateRoute() async {
-    // Tam bağımlılıksız (Offline) Rota Hesaplayıcı
-    if (_hedefController.text.isEmpty) return;
-    
-    setState(() {
-      _isRouting = true;
-      _routePolyline = [];
-      _routeResults = [];
-    });
+  // Hat kategorisine göre ikon ve renk belirleyen yardımcı fonksiyon
+  Widget _getIconForCategory(String? category) {
+    IconData iconData;
+    Color color;
 
-    try {
-      // Çevrimiçi Geocoding yerine mobil GPS konumu (Şimdilik Map'in ortası: Meydan)
-      double startLat = 41.2867;
-      double startLon = 36.3300; 
-
-      // Hedef GPS konumu (Şimdilik örnek olarak Atakum/Türkiş GPS'i)
-      // Normal bir uygulamada Offline Tersine-Geocoding kütüphanesi veya 
-      // kullanıcı haritadan pin seçerek bu koordinatları verir.
-      double destLat = 41.3323; 
-      double destLon = 36.2570; 
-
-      if (_hedefController.text.toLowerCase().contains("çarşamba") || _hedefController.text.toLowerCase().contains("carsamba")) {
-        destLat = 41.2009; destLon = 36.7329;
-      }
-      
-      final offlineRoutes = await DBService().calculateRouteLocally(
-        startLat, startLon, destLat, destLon, radiusParams: 2.0 // 2km çevresi
-      );
-
-      if (offlineRoutes.isNotEmpty) {
-        setState(() {
-          _routeResults = offlineRoutes;
-          
-          if (_routeResults[0]['polyline'] != null && (_routeResults[0]['polyline'] as List).isNotEmpty) {
-            final List<dynamic> coords = _routeResults[0]['polyline'];
-            _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
-            
-            final bounds = LatLngBounds.fromPoints(_routePolyline);
-            _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
-          }
-        });
-        _showRouteResultsBottomSheet();
-      } else {
-        _showError("Bu iki nokta arasında offline rota bulunamadı.");
-      }
-    } catch (e) {
-      _showError("Offline Hesaplama hatası: $e");
-    } finally {
-      setState(() {
-        _isRouting = false;
-      });
+    switch (category) {
+      case 'tramvay':
+        iconData = Icons.tram;
+        color = Colors.orange;
+        break;
+      case 'ring':
+        iconData = Icons.sync_alt;
+        color = Colors.amber;
+        break;
+      case 'ekspres':
+        iconData = Icons.rocket_launch;
+        color = Colors.purple;
+        break;
+      case 'havalimani':
+        iconData = Icons.airplanemode_active;
+        color = Colors.red;
+        break;
+      case 'ilce':
+        iconData = Icons.holiday_village;
+        color = Colors.teal;
+        break;
+      default: // otobus ve diğerleri
+        iconData = Icons.directions_bus;
+        color = Colors.blue;
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
-  }
-
-  void _showRouteResultsBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("📍 Bulunan Rotalar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _routeResults.length,
-                  itemBuilder: (context, index) {
-                    final r = _routeResults[index];
-                    final isDirect = r['type'] == 'DIRECT';
-                    return Card(
-                      color: isDirect ? Colors.green.shade50 : Colors.amber.shade50,
-                      child: ListTile(
-                        leading: Icon(isDirect ? Icons.directions_bus : Icons.transfer_within_a_station, color: isDirect ? Colors.green : Colors.amber.shade800),
-                        title: Text(isDirect ? "Doğrudan Hat" : "Aktarmalı Rota (Tahmini)"),
-                        subtitle: Text("Puan: ${r['total_score']}"),
-                        onTap: () {
-                          // Update polyline on map if user clicks another route
-                          if (r['polyline'] != null) {
-                            setState(() {
-                              final List<dynamic> coords = r['polyline'];
-                              _routePolyline = coords.map((c) => LatLng(c[0] as double, c[1] as double)).toList();
-                            });
-                            Navigator.pop(context);
-                          }
-                        },
-                      ),
-                    );
-                  },
-                ),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _onDurakTapped(Map<String, dynamic> durak) async {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return const Center(child: CircularProgressIndicator());
-      },
-    );
-
-    String stopId = durak['id'].toString();
-    final araclar = await ApiService.getDuragaYaklasanAraclar(stopId);
-
-    Navigator.pop(context);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          height: MediaQuery.of(context).size.height * 0.65,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                durak['ad'],
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AlarmScreen(durak: durak))),
-                    icon: const Icon(Icons.alarm_on, size: 18),
-                    label: const Text("Sabah Alarmı"),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OfflineWakeUpScreen(durak: durak))),
-                    icon: const Icon(Icons.bedtime, size: 18),
-                    label: const Text("Uyku Modu"),
-                  ),
-                ],
-              ),
-              const Divider(height: 30),
-              const Text("Yaklaşan Araçlar (Canlı):", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-              const SizedBox(height: 10),
-              if (araclar.isEmpty)
-                const Expanded(child: Center(child: Text("Yaklaşan araç verisi bulunamadı.")))
-              else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: araclar.length,
-                    itemBuilder: (context, index) {
-                      final a = araclar[index];
-                      return ListTile(
-                        leading: const Icon(Icons.directions_bus, color: Colors.blue),
-                        title: Text(a['hatKodu'] ?? 'Bilinmeyen Hat'),
-                        trailing: Text("${a['kalanSure'] ?? '?'} dk", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.green)),
-                      );
-                    },
-                  ),
-                )
-            ],
-          ),
-        );
-      },
-    );
+    return Icon(iconData, color: color);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kişisel Araç Asistanı'),
-        elevation: 0,
+        title: const Text('Samsun Ulaşım Rehberi'),
+        centerTitle: true,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Routing Input Panel
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _baslangicController,
-                              decoration: const InputDecoration(
-                                hintText: "Başlangıç (Örn: Mevcut Konum, Atakum)",
-                                prefixIcon: Icon(Icons.my_location, color: Colors.blue),
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _hedefController,
-                              decoration: const InputDecoration(
-                                hintText: "Nereye gideceksiniz? (Örn: Çarşamba)",
-                                prefixIcon: Icon(Icons.place, color: Colors.red),
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: _isRouting ? null : _calculateRoute,
-                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                            child: _isRouting ? const SizedBox(width:20, height:20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.search),
-                          )
-                        ],
-                      ),
-                    ],
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _hatlarFuture,
+        builder: (context, snapshot) {
+          // Veri yükleniyor durumunda
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          // Hata durumunda
+          if (snapshot.hasError) {
+            return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+          }
+          // Veri yok veya boş ise
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.bus_alert, size: 60, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Yerel veritabanında hat bulunamadı.\nUygulamayı yeniden başlatmayı deneyin.',
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                
-                // Map Area
-                Expanded(
-                  child: FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: const LatLng(41.2867, 36.33),
-                      initialZoom: 13.0,
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.samsun.serverless',
-                      ),
-                      
-                      // Routing Polyline Layer
-                      if (_routePolyline.isNotEmpty)
-                        PolylineLayer(
-                          polylines: [
-                            Polyline(
-                              points: _routePolyline,
-                              strokeWidth: 5.0,
-                              color: Colors.blue,
-                            ),
-                          ],
-                        ),
+                ],
+              ),
+            );
+          }
 
-                      MarkerLayer(
-                        markers: _duraklar.take(500).map((d) {
-                          return Marker(
-                            point: LatLng(d['lat'], d['lon']),
-                            width: 30,
-                            height: 30,
-                            child: GestureDetector(
-                              onTap: () => _onDurakTapped(d),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.blueGrey,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ),
+          // Veri başarıyla yüklendiğinde
+          final hatlar = snapshot.data!;
+          return ListView.builder(
+            itemCount: hatlar.length,
+            itemBuilder: (context, index) {
+              final hat = hatlar[index];
+              final hatAdi = hat['name'] as String? ?? 'Bilinmiyor';
+              final hatKodu = hat['code'] as String? ?? '';
+              final hatKategorisi = hat['kat'] as String?;
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: ListTile(
+                  leading: _getIconForCategory(hatKategorisi),
+                  title: Text(hatAdi),
+                  subtitle: Text(hatKodu),
+                  onTap: () {
+                    // TODO: Hat detay ekranına gitme fonksiyonu eklenecek.
+                    // Bu ekranda, seçilen hattın durakları ve canlı araçları gösterilecek.
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Detaylar yakında: $hatKodu')),
+                    );
+                  },
                 ),
-              ],
-            ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
