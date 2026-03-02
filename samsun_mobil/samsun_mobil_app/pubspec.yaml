@@ -28,9 +28,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/samsun_mobil.db
-    - assets/logo.png
+    - "assets/SBB Logo 9.png"
     - assets/samulas.png
     - assets/odak.png
     - assets/samair.png
+    - assets/samtaksi.png
     - assets/bus.png
     - assets/bus_stop.png

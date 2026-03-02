@@ -148,7 +148,7 @@ class _HatlarScreenState extends State<HatlarScreen> {
                     leadingIcon = Text(icon, style: const TextStyle(fontSize: 20)); // Tekne için samulas logosu tam uymayabilir, emoji kalabilir veya logo.png eklenebilir.
                   } else if (kat == 'otobus' || kat == 'ring' || kat == 'ekspres' || kat == 'tramvay') {
                     // Ana Samulas taşıtları için logo
-                    leadingIcon = Image.asset('assets/logo.png', width: 28, height: 28, fit: BoxFit.contain, color: Colors.white, colorBlendMode: BlendMode.srcIn); // Beyazlatılmış Icon tarzı kullanım için
+                    leadingIcon = Image.asset('assets/SBB Logo 9.png', width: 28, height: 28, fit: BoxFit.contain, color: Colors.white, colorBlendMode: BlendMode.srcIn); // Beyazlatılmış Icon tarzı kullanım için
                   } else {
                     leadingIcon = Text(icon, style: const TextStyle(fontSize: 20));
                   }

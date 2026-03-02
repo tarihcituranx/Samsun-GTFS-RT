@@ -111,7 +111,7 @@ class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderS
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset('assets/logo.png', width: 80, height: 80, fit: BoxFit.contain,
+                child: Image.asset('assets/SBB Logo 9.png', width: 80, height: 80, fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) => Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFF152238), borderRadius: BorderRadius.circular(16)),
                     child: const Center(child: Text('SBB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))),
               ),

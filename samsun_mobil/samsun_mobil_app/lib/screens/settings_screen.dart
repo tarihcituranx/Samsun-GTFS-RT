@@ -161,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             ClipRRect(borderRadius: BorderRadius.circular(12),
-              child: Image.asset('assets/logo.png', width: 48, height: 48, fit: BoxFit.contain,
+              child: Image.asset('assets/SBB Logo 9.png', width: 48, height: 48, fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => const SizedBox(width: 48))),
             const SizedBox(width: 12),
             ClipRRect(borderRadius: BorderRadius.circular(12),
