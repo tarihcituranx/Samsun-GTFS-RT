@@ -132,7 +132,6 @@ class ApiService {
     List<Map<String, dynamic>> vehicles = [];
     for (var item in data) {
       if (item is Map<String, dynamic>) {
-        // Proxy endpoint farklı key isimleri kullanabilir
         final lat = double.tryParse((item['Latitude'] ?? item['enlem'] ?? '0').toString()) ?? 0.0;
         final lon = double.tryParse((item['Longitude'] ?? item['boylam'] ?? '0').toString()) ?? 0.0;
         if (lat > 40 && lat < 43 && lon > 34 && lon < 38) {
@@ -141,7 +140,15 @@ class ApiService {
             'lon': lon,
             'plate': (item['PlateNumber'] ?? item['plaka'] ?? '').toString(),
             'speed': (item['Speed'] ?? item['hiz'] ?? '0').toString(),
-            'lineCode': _fixAndCleanText((item['LineCode'] ?? lineCode).toString()),
+            'lineCode': _fixAndCleanText((item['LineCode'] ?? item['HatKodu'] ?? lineCode).toString()),
+            // KVKK-güvenli ek alanlar
+            'gunlukYolcu': (item['gunlukYolcu'] ?? '0').toString(),
+            'seferYolcu': (item['seferYolcu'] ?? '0').toString(),
+            'toplamHasilat': (item['toplamHasilat'] ?? '0').toString(),
+            'maxHiz': (item['maxHiz'] ?? '0').toString(),
+            'yon': (item['yon'] ?? item['Direction'] ?? '0').toString(),
+            'mesafe': (item['mesafe'] ?? '0').toString(),
+            'lastUpdate': (item['editDate'] ?? item['LastLocationTime'] ?? '').toString(),
           });
         }
       }

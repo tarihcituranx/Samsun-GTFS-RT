@@ -339,16 +339,35 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
               // Canlı Araçlar
               if (_liveVehicles.isNotEmpty) ...[
                 Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text("🚌 Canlı Araçlar", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white.withOpacity(0.9)))),
-                ...(_liveVehicles.map((v) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFF1A2940), borderRadius: BorderRadius.circular(10)),
-                  child: ListTile(
-                    leading: Container(width: 36, height: 36, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFD50000)]), borderRadius: BorderRadius.circular(8)),
-                      child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 16))),
-                    title: Text(v['plate']?.toString() ?? 'Bilinmiyor', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                    subtitle: Text("${v['speed']} km/s", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.5))),
-                  ),
-                ))),
+                ...(_liveVehicles.map((v) {
+                  final gunlukYolcu = v['gunlukYolcu'] ?? '0';
+                  final seferYolcu = v['seferYolcu'] ?? '0';
+                  final hasilat = v['toplamHasilat'] ?? '0';
+                  final maxHiz = v['maxHiz'] ?? '0';
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFF1A2940), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFF5252).withOpacity(0.15))),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      // Plaka + Hız
+                      Row(children: [
+                        Container(width: 36, height: 36, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFD50000)]), borderRadius: BorderRadius.circular(8)),
+                          child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 16))),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(v['plate']?.toString() ?? 'Bilinmiyor', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white))),
+                        Text("${v['speed']} km/s", style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w600)),
+                      ]),
+                      const SizedBox(height: 8),
+                      // İstatistikler
+                      Row(children: [
+                        _vehicleStat(Icons.people, "$seferYolcu", "Sefer"),
+                        _vehicleStat(Icons.groups, "$gunlukYolcu", "Günlük"),
+                        _vehicleStat(Icons.payments, "₺$hasilat", "Hasılat"),
+                        _vehicleStat(Icons.speed, "$maxHiz", "Max km/s"),
+                      ]),
+                    ]),
+                  );
+                })),
               ],
 
               // Sefer Saatleri
@@ -406,6 +425,17 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
         Text(label, style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.4))),
       ]),
     ));
+  }
+
+  Widget _vehicleStat(IconData icon, String value, String label) {
+    return Expanded(child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 12, color: Colors.white.withOpacity(0.4)),
+        const SizedBox(width: 3),
+        Text(value, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withOpacity(0.7))),
+      ]),
+      Text(label, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.3))),
+    ]));
   }
 
   Widget _buildSpecialBanner() {

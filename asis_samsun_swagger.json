@@ -242,14 +242,21 @@
                   "message": "",
                   "data": [
                     {
-                      "LineCode": "SAMULAŞ EKSPRES 4-GİDİŞ",
-                      "LastLocationTime": "2026-02-27T13:42:15.000",
-                      "Lat": "41.3145",
-                      "Lng": "36.2763",
-                      "PlateNumber": "55SBB102",
-                      "Speed": "35",
-                      "Direction": "FORWARD",
-                      "BusType": "12M"
+                      "plaka": "55 BBL 23",
+                      "enlem": "41.33427500",
+                      "boylam": "36.25690167",
+                      "renk": "00FF00",
+                      "hiz": "20.00",
+                      "mesafe": "114480",
+                      "gunlukYolcu": "206",
+                      "seferYolcu": "18",
+                      "durakYolcu": "0",
+                      "toplamHasilat": "1912.50",
+                      "maxHiz": "78",
+                      "yon": "117",
+                      "HatKodu": "R13 KORUPARK",
+                      "tarih": "2026-03-02T14:44:19+03:00",
+                      "KVKK_NOTU": "Gerçek API 'surucu' alanı da (isim/telefon) döndürür ancak KVKK/gizlilik nedeniyle public endpointlere veya clientlara aktarılmaz."
                     }
                   ]
                 }

@@ -3641,27 +3641,38 @@ def start_samair_updater():
     update_thread.start()
     log.info(f"✓ Samair otomatik güncelleme thread'i aktif (her {int(os.environ.get('SAMAIR_INTERVAL', '7200'))//3600} saat)")
 
-# Render.com Free Tier Uyku Önleyici — 7/24 aktif tutar
+# Render.com Free Tier Uyku Önleyici — 50sn uyku sınırına karşı 40sn ping
 def start_keep_alive_ping():
     def pinger():
         import requests as _req
+        import random
+        targets = [
+            "https://www.google.com",
+            "https://1.1.1.1",
+            "https://api.github.com/zen"
+        ]
         while True:
-            time.sleep(14 * 60) # 14 dakika
+            time.sleep(40) # Render 50 saniyede uyur, biz 40'ta uyandırıyoruz
             try:
+                # 1. Kendi API'mizi pingleyelim
                 url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8000")
                 _req.get(f"{url}/api/health", timeout=5)
                 
+                # 2. Rastgele dış bir siteye istek atarak ağ aktivitesi yaratalım
+                ext = random.choice(targets)
+                _req.get(ext, timeout=5)
+                
                 tr_hour = (datetime.utcnow().hour + 3) % 24
                 if tr_hour >= 23 or tr_hour < 9:
-                    log.debug("💤 Gece modu: Sadece keep-alive ping gönderildi")
+                    log.debug("💤 Gece modu: Sadece keep-alive (40s) ping gönderildi")
                 else:
-                    log.info("💓 Keep-Alive ping gönderildi")
+                    log.debug("💓 Keep-Alive (40s) ağ aktivitesi yaratıldı")
             except Exception:
                 pass
 
     ping_thread = threading.Thread(target=pinger, daemon=True)
     ping_thread.start()
-    log.info("✓ Keep-Alive pinger aktif (Her 14dk, 7/24)")
+    log.info("✓ Keep-Alive pinger aktif (Her 40 saniyede bir ağ aktivitesi)")
 
 # Eğer app oluşturulduysa (örneğin Render 'uvicorn samsun:app' dediğinde) updater'ı başlat.
 if app:
