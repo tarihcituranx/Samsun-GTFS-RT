@@ -30,26 +30,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _divider(),
             _infoItem(Icons.dark_mode, Colors.purple, 'Tema', 'Karanlık Mod'),
             _divider(),
-            _chevronItem(Icons.language, Colors.orange, 'Dil Seçimi', subtitle: 'Türkçe'),
+            _chevronItem(Icons.language, Colors.orange, 'Dil Seçimi', subtitle: 'Türkçe', onTap: () => _showComingSoon(context)),
           ]),
           const SizedBox(height: 20),
 
           // Ulaşım Tercihleri
           _sectionHeader('Ulaşım Tercihleri'),
           _card([
-            _chevronItem(Icons.directions_bus, const Color(0xFF00BFA5), 'Favori Hatlar'),
+            _chevronItem(Icons.directions_bus, const Color(0xFF00BFA5), 'Favori Hatlar', onTap: () => _showComingSoon(context)),
             _divider(),
-            _chevronItem(Icons.location_on, const Color(0xFF00BFA5), 'Favori Duraklar'),
+            _chevronItem(Icons.location_on, const Color(0xFF00BFA5), 'Favori Duraklar', onTap: () => _showComingSoon(context)),
             _divider(),
-            _chevronItem(Icons.commute, const Color(0xFF00BFA5), 'Varsayılan Ulaşım Türü', subtitle: 'Otobüs'),
+            _chevronItem(Icons.commute, const Color(0xFF00BFA5), 'Varsayılan Ulaşım Türü', subtitle: 'Otobüs', onTap: () => _showComingSoon(context)),
           ]),
           const SizedBox(height: 20),
 
           // Hesap ve Güvenlik
           _sectionHeader('Hesap ve Güvenlik'),
           _card([
-            _chevronItem(Icons.vpn_key, Colors.red, 'Admin Panel Girişi', onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminScreen()));
+            _chevronItem(Icons.vpn_key, Colors.red, 'Admin Panel Girişi', onTap: () async {
+              const url = 'https://samsun-gtfs-rt.onrender.com/admin';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+              }
             }),
           ]),
           const SizedBox(height: 20),
@@ -57,7 +60,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Bilgi
           _sectionHeader('Bilgi'),
           _card([
-            _chevronItem(Icons.description, Colors.grey, 'Kullanım Koşulları'),
+            _chevronItem(Icons.description, Colors.grey, 'Kullanım Koşulları', onTap: () => _showComingSoon(context)),
             _divider(),
             _chevronItem(Icons.info, Colors.grey, 'Hakkında', onTap: () {
               _showAboutDialog(context);
@@ -75,6 +78,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('🚧 Bu özellik çok yakında eklenecek!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF152238),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

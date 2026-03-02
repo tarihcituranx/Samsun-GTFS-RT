@@ -309,6 +309,26 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
                   padding: const EdgeInsets.all(8), itemCount: _duraklar.length,
                   itemBuilder: (_, i) {
                     final d = _duraklar[i];
+                    
+                    // Bu durakta olan/yaklaşan odak araçlarını bul (yaklaşık 250 metre çapında eşleştirme)
+                    final dLat = (d['lat'] as num?)?.toDouble();
+                    final dLon = (d['lon'] as num?)?.toDouble();
+                    List<dynamic> onThisStop = [];
+                    
+                    if (dLat != null && dLon != null && _vehicles.isNotEmpty) {
+                      for (var v in _vehicles) {
+                        if (v is! Map) continue;
+                        final vLat = double.tryParse(v['lat']?.toString() ?? '0') ?? 0.0;
+                        final vLon = double.tryParse(v['lon']?.toString() ?? v['lng']?.toString() ?? '0') ?? 0.0;
+                        if (vLat == 0) continue;
+                        const Distance distance = Distance();
+                        final meter = distance(LatLng(dLat, dLon), LatLng(vLat, vLon));
+                        if (meter < 250) { // 250 mt hata payı
+                          onThisStop.add(v);
+                        }
+                      }
+                    }
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 4),
                       decoration: BoxDecoration(color: const Color(0xFF152238), borderRadius: BorderRadius.circular(10)),
@@ -317,7 +337,29 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
                           decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF00BFA5), Color(0xFF00897B)]), borderRadius: BorderRadius.circular(8)),
                           child: Center(child: Text("${i + 1}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))),
                         ),
-                        title: Text(d['ad']?.toString() ?? '', style: const TextStyle(fontSize: 13, color: Colors.white)),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(d['ad']?.toString() ?? '', style: const TextStyle(fontSize: 13, color: Colors.white))),
+                            if (onThisStop.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: onThisStop.map((v) => Container(
+                                  margin: const EdgeInsets.only(left: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(color: const Color(0xFFFF5252), borderRadius: BorderRadius.circular(6)),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.directions_bus, color: Colors.white, size: 10),
+                                      SizedBox(width: 3),
+                                      Text("SAMSUN", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                )).toList(),
+                              )
+                          ],
+                        ),
                         subtitle: Text("Tam: ₺${d['fiyat'] ?? '?'} / İnd: ₺${d['fiyat_ogr'] ?? '?'}", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.4))),
                         dense: true,
                       ),
