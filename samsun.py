@@ -49,6 +49,21 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Başlatma zamanı (uptime hesaplama)
 _START_TIME = time.time()
 
+# On-Demand GTFS-RT: Sadece aktif olarak izlenen hatları sorgula
+_active_lines = {}  # {hat_code: son_istek_zamani}
+_active_lines_lock = threading.Lock()
+_ACTIVE_TTL = 300  # 5 dakika boyunca aktif say
+
+# Admin runtime config (DB'den yüklenir, restart gerektirmez)
+_admin_config = {
+    'gtfs_rt_enabled': True,
+    'gtfs_rt_interval': 60,     # saniye
+    'gtfs_rt_mode': 'ondemand', # 'ondemand' veya 'all'
+    'gtfs_rt_max_lines': 10,    # 'all' modunda max hat sayısı
+    'samair_interval': 7200,    # 2 saat
+}
+_api_stats = {'asis_calls': 0, 'ybs_calls': 0, 'last_reset': time.time()}
+
 DB = "samsun_v25.db"
 ASIS = "https://api.samsun.bel.tr/OHSSoapToJson/api/Asis"
 YBS = "https://ybs.samsun.bel.tr/service"
@@ -612,6 +627,9 @@ class Database:
                 shape_pt_lat REAL NOT NULL, shape_pt_lon REAL NOT NULL,
                 shape_pt_sequence INTEGER NOT NULL, shape_dist_traveled REAL,
                 PRIMARY KEY (shape_id, shape_pt_sequence)
+            );
+            CREATE TABLE IF NOT EXISTS app_config(
+                key TEXT PRIMARY KEY, value TEXT
             );
             
             CREATE INDEX IF NOT EXISTS idx_hd ON hat_durak(hat);
@@ -2634,43 +2652,66 @@ def create_app(db, col):
         asyncio.create_task(update_gtfs_feed())
 
     async def update_gtfs_feed():
-        """GTFS-RT vehicle positions feed'ini periyodik güncelle.
-        Gece 23:00-09:00 arası API'ye istek atmaz (proxy tasarrufu).
-        GTFS_RT_INTERVAL env var ile güncelleme aralığı ayarlanabilir (default: 30sn).
-        GTFS_RT_ENABLED=false ile tamamen kapatılabilir.
+        """GTFS-RT — On-Demand modunda sadece aktif hatları sorgular.
+        Admin panelden ayarlanabilir: mode, interval, max_lines.
+        Gece 23:00-09:00 arası API'ye istek atmaz.
         """
         http_client = col.http
-        interval = int(os.environ.get('GTFS_RT_INTERVAL', '30'))  # saniye
         
         while True:
-            # Gece modu kontrolü (Türkiye saati UTC+3)
-            tr_hour = (datetime.utcnow().hour + 3) % 24
+            cfg = _admin_config
+            interval = cfg.get('gtfs_rt_interval', 60)
             
-            if os.environ.get('GTFS_RT_ENABLED', 'true').lower() == 'false':
-                await asyncio.sleep(60)
+            # Kapalıysa bekle
+            if not cfg.get('gtfs_rt_enabled', True):
+                await asyncio.sleep(30)
                 continue
             
+            # Gece modu (23-09 TR)
+            tr_hour = (datetime.utcnow().hour + 3) % 24
             if tr_hour >= 23 or tr_hour < 9:
-                # Gece 23:00-09:00 arası ASIS'e istek atma
-                log.debug(f"🌙 Gece modu aktif (saat {tr_hour:02d}:xx TR). GTFS-RT duraklatıldı.")
-                await asyncio.sleep(300)  # 5dk sonra tekrar kontrol
+                log.debug(f"🌙 Gece modu (saat {tr_hour:02d}:xx TR). GTFS-RT duraklatıldı.")
+                await asyncio.sleep(300)
                 continue
             
             try:
-                lines = db.get("SELECT code FROM hat WHERE kat NOT IN ('tramvay', 'odak', 'samair', 'tekne', 'teleferik')")
+                mode = cfg.get('gtfs_rt_mode', 'ondemand')
+                now = time.time()
                 
+                # Hangi hatları sorgulayacağımızı belirle
+                if mode == 'ondemand':
+                    # Sadece son 5dk içinde kullanıcı istekte bulunan hatlar
+                    with _active_lines_lock:
+                        # Süresi dolmuş hatları temizle
+                        expired = [k for k, t in _active_lines.items() if now - t > _ACTIVE_TTL]
+                        for k in expired:
+                            del _active_lines[k]
+                        target_codes = list(_active_lines.keys())
+                    
+                    if not target_codes:
+                        log.debug("📡 GTFS-RT: Aktif hat yok, bekleniyor...")
+                        await asyncio.sleep(interval)
+                        continue
+                else:
+                    # All mode: DB'den çek, max_lines ile sınırla
+                    max_l = cfg.get('gtfs_rt_max_lines', 10)
+                    lines = db.get("SELECT code FROM hat WHERE kat NOT IN ('tramvay', 'odak', 'samair', 'tekne', 'teleferik')")
+                    target_codes = [l['code'] for l in lines[:max_l]]
+                
+                # Feed oluştur
                 feed = gtfs_realtime_pb2.FeedMessage()
                 feed.header.gtfs_realtime_version = "2.0"
-                feed.header.timestamp = int(time.time())
+                feed.header.timestamp = int(now)
                 
                 vehicle_count = 0
                 seen_plates = set()
                 
-                for line in lines[:50]:
+                for code in target_codes:
                     try:
                         data = await asyncio.to_thread(
-                            http_client.asis, 'RealTimeData', lineCode=line['code']
+                            http_client.asis, 'RealTimeData', lineCode=code
                         )
+                        _api_stats['asis_calls'] += 1
                         
                         for d in data or []:
                             lat = parse_float(d.get('enlem'))
@@ -2686,8 +2727,8 @@ def create_app(db, col):
                             
                             entity = feed.entity.add()
                             entity.id = plaka
-                            entity.vehicle.trip.route_id = line['code']
-                            entity.vehicle.trip.trip_id = f"{line['code']}_{plaka}_{int(time.time() // 3600)}"
+                            entity.vehicle.trip.route_id = code
+                            entity.vehicle.trip.trip_id = f"{code}_{plaka}_{int(now // 3600)}"
                             entity.vehicle.position.latitude = lat
                             entity.vehicle.position.longitude = lon
                             entity.vehicle.position.speed = hiz / 3.6
@@ -2699,7 +2740,7 @@ def create_app(db, col):
                             except Exception:
                                 pass
                             
-                            entity.vehicle.timestamp = int(time.time())
+                            entity.vehicle.timestamp = int(now)
                             entity.vehicle.vehicle.id = plaka
                             entity.vehicle.vehicle.label = plaka
                             
@@ -2720,11 +2761,11 @@ def create_app(db, col):
                             vehicle_count += 1
                             
                     except Exception as e:
-                        log.debug(f"GTFS-RT hat hatası ({line.get('code', '?')}): {e}")
+                        log.debug(f"GTFS-RT hat hatası ({code}): {e}")
                 
                 with _gtfs_feed_lock:
                     gtfs_feed = feed
-                log.info(f"GTFS-RT: {vehicle_count} araç güncellendi")
+                log.info(f"GTFS-RT: {vehicle_count} araç / {len(target_codes)} hat ({mode})")
                 
             except Exception as e:
                 log.error(f"GTFS loop error: {e}")
@@ -2936,6 +2977,191 @@ def create_app(db, col):
         
         return JSONResponse(results)
 
+    # ==========================================
+    # 🔐 ADMIN KONTROL PANELİ (ADMIN_KEY ile korumalı)
+    # ==========================================
+    ADMIN_KEY = os.environ.get('ADMIN_KEY', '')
+    
+    def _check_admin(key: str):
+        """Admin key doğrulama"""
+        if not ADMIN_KEY:
+            return False  # ADMIN_KEY set edilmemişse admin paneli kapalı
+        return key == ADMIN_KEY
+    
+    def _save_config():
+        """Config'i SQLite'a kaydet"""
+        for k, v in _admin_config.items():
+            db.ex("INSERT OR REPLACE INTO app_config(key, value) VALUES(?, ?)", (k, str(v)))
+    
+    def _load_config():
+        """Config'i SQLite'dan yükle"""
+        try:
+            rows = db.get("SELECT key, value FROM app_config")
+            for row in rows:
+                k, v = row['key'], row['value']
+                if k in _admin_config:
+                    if isinstance(_admin_config[k], bool):
+                        _admin_config[k] = v.lower() in ('true', '1', 'yes')
+                    elif isinstance(_admin_config[k], int):
+                        _admin_config[k] = int(v)
+                    else:
+                        _admin_config[k] = v
+            log.info(f"⚙️ Admin config yüklendi: mode={_admin_config['gtfs_rt_mode']}, interval={_admin_config['gtfs_rt_interval']}s")
+        except Exception:
+            pass  # İlk başlatmada tablo boş olabilir
+    
+    _load_config()
+    
+    @app.get("/api/admin/config")
+    async def admin_get_config(key: str = ''):
+        if not _check_admin(key):
+            return JSONResponse({"error": "Yetkisiz"}, status_code=403)
+        return JSONResponse(_admin_config)
+    
+    @app.post("/api/admin/config")
+    async def admin_set_config(key: str = '', gtfs_rt_enabled: bool = None, gtfs_rt_interval: int = None,
+                                gtfs_rt_mode: str = None, gtfs_rt_max_lines: int = None, samair_interval: int = None):
+        if not _check_admin(key):
+            return JSONResponse({"error": "Yetkisiz"}, status_code=403)
+        
+        if gtfs_rt_enabled is not None: _admin_config['gtfs_rt_enabled'] = gtfs_rt_enabled
+        if gtfs_rt_interval is not None: _admin_config['gtfs_rt_interval'] = max(10, gtfs_rt_interval)
+        if gtfs_rt_mode in ('ondemand', 'all'): _admin_config['gtfs_rt_mode'] = gtfs_rt_mode
+        if gtfs_rt_max_lines is not None: _admin_config['gtfs_rt_max_lines'] = max(1, min(50, gtfs_rt_max_lines))
+        if samair_interval is not None: _admin_config['samair_interval'] = max(600, samair_interval)
+        
+        _save_config()
+        log.info(f"⚙️ Admin config güncellendi: {_admin_config}")
+        return JSONResponse({"ok": True, "config": _admin_config})
+    
+    @app.get("/api/admin/stats")
+    async def admin_stats(key: str = ''):
+        if not _check_admin(key):
+            return JSONResponse({"error": "Yetkisiz"}, status_code=403)
+        
+        with _active_lines_lock:
+            now = time.time()
+            active = {k: int(now - t) for k, t in _active_lines.items() if now - t < _ACTIVE_TTL}
+        
+        with _gtfs_feed_lock:
+            vehicle_count = len(gtfs_feed.entity)
+        
+        uptime = int(time.time() - _START_TIME)
+        stats_age = int(time.time() - _api_stats['last_reset'])
+        
+        return JSONResponse({
+            "uptime_seconds": uptime,
+            "config": _admin_config,
+            "active_lines": active,
+            "active_line_count": len(active),
+            "gtfs_rt_vehicles": vehicle_count,
+            "api_stats": {
+                "asis_calls": _api_stats['asis_calls'],
+                "ybs_calls": _api_stats['ybs_calls'],
+                "period_seconds": stats_age,
+                "asis_per_minute": round(_api_stats['asis_calls'] / max(1, stats_age / 60), 1),
+            },
+            "proxy_active": bool(col.http.s.proxies),
+            "tr_hour": (datetime.utcnow().hour + 3) % 24,
+        })
+    
+    @app.get("/admin", response_class=HTMLResponse)
+    async def admin_panel(key: str = ''):
+        if not _check_admin(key):
+            return HTMLResponse("<h1>403 - Yetkisiz</h1><p>URL'e ?key=ADMIN_KEY ekleyin</p>", status_code=403)
+        
+        return HTMLResponse(f'''<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🔐 Samsun Transit Admin</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px;max-width:700px;margin:0 auto}}
+h1{{color:#4fc3f7;margin-bottom:20px;font-size:1.5em}}
+.card{{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin-bottom:15px}}
+.card h2{{color:#64ffda;font-size:1.1em;margin-bottom:12px}}
+label{{display:block;margin:8px 0 4px;color:#aaa;font-size:0.9em}}
+input,select{{width:100%;padding:8px 12px;background:#0d1117;border:1px solid #444;border-radius:6px;color:#e0e0e0;font-size:0.95em}}
+.toggle{{display:flex;align-items:center;gap:10px;margin:8px 0}}
+.toggle input[type=checkbox]{{width:20px;height:20px;accent-color:#4fc3f7}}
+button{{background:#4fc3f7;color:#000;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1em;margin-top:12px;width:100%}}
+button:hover{{background:#29b6f6}}
+.stat{{display:inline-block;background:#0d1117;padding:6px 12px;border-radius:6px;margin:3px;font-size:0.85em}}
+.stat b{{color:#4fc3f7}}
+#status{{margin-top:10px;padding:10px;border-radius:6px;display:none}}
+.ok{{background:#1b5e20;display:block!important}}
+.err{{background:#b71c1c;display:block!important}}
+#lines{{margin-top:8px;font-size:0.85em;color:#aaa}}
+</style></head>
+<body>
+<h1>🔐 Samsun Transit Admin Panel</h1>
+
+<div class="card">
+<h2>📡 GTFS-RT Ayarları</h2>
+<div class="toggle">
+<input type="checkbox" id="enabled" {"checked" if _admin_config["gtfs_rt_enabled"] else ""}>
+<label for="enabled" style="display:inline;color:#e0e0e0">GTFS-RT Aktif</label>
+</div>
+<label>Mod</label>
+<select id="mode">
+<option value="ondemand" {"selected" if _admin_config["gtfs_rt_mode"]=="ondemand" else ""}>On-Demand (Sadece bakılan hatlar)</option>
+<option value="all" {"selected" if _admin_config["gtfs_rt_mode"]=="all" else ""}>All (Tüm hatlar, max_lines ile sınırlı)</option>
+</select>
+<label>Güncelleme Aralığı (saniye)</label>
+<input type="number" id="interval" value="{_admin_config["gtfs_rt_interval"]}" min="10" max="300">
+<label>Max Hat Sayısı (All modunda)</label>
+<input type="number" id="maxlines" value="{_admin_config["gtfs_rt_max_lines"]}" min="1" max="50">
+</div>
+
+<div class="card">
+<h2>✈️ SamAir Ayarları</h2>
+<label>Güncelleme Aralığı (saniye)</label>
+<input type="number" id="samair" value="{_admin_config["samair_interval"]}" min="600" max="86400">
+</div>
+
+<button onclick="save()">💾 Kaydet</button>
+<div id="status"></div>
+
+<div class="card" style="margin-top:15px">
+<h2>📊 Canlı Durum</h2>
+<div id="stats">Yükleniyor...</div>
+<div id="lines"></div>
+</div>
+
+<script>
+const K='{key}';
+const API=window.location.origin;
+async function save(){{
+  const s=document.getElementById('status');
+  try{{
+    const r=await fetch(API+'/api/admin/config?key='+K,{{method:'POST',headers:{{'Content-Type':'application/x-www-form-urlencoded'}},
+      body:'gtfs_rt_enabled='+document.getElementById('enabled').checked+'&gtfs_rt_interval='+document.getElementById('interval').value+'&gtfs_rt_mode='+document.getElementById('mode').value+'&gtfs_rt_max_lines='+document.getElementById('maxlines').value+'&samair_interval='+document.getElementById('samair').value}});
+    const d=await r.json();
+    s.className=d.ok?'ok':'err'; s.textContent=d.ok?'✅ Kaydedildi!':'❌ Hata';
+  }}catch(e){{s.className='err';s.textContent='❌ '+e}}
+  setTimeout(()=>s.style.display='none',3000);
+}}
+async function loadStats(){{
+  try{{
+    const r=await fetch(API+'/api/admin/stats?key='+K);
+    const d=await r.json();
+    const h=document.getElementById('stats');
+    h.innerHTML=`
+      <span class="stat">⏱ Uptime: <b>${{Math.floor(d.uptime_seconds/60)}}dk</b></span>
+      <span class="stat">🚌 Araç: <b>${{d.gtfs_rt_vehicles}}</b></span>
+      <span class="stat">📡 Aktif Hat: <b>${{d.active_line_count}}</b></span>
+      <span class="stat">📊 ASIS: <b>${{d.api_stats.asis_per_minute}}/dk</b></span>
+      <span class="stat">🌐 Proxy: <b>${{d.proxy_active?'✅':'❌'}}</b></span>
+      <span class="stat">🕐 TR Saat: <b>${{d.tr_hour}}:xx</b></span>`;
+    const al=Object.entries(d.active_lines);
+    document.getElementById('lines').innerHTML=al.length?
+      '🔴 Aktif Hatlar: '+al.map(([k,v])=>`<span class="stat">${{k}} <b>${{v}}sn önce</b></span>`).join(''):'💤 Kimse araç takip etmiyor';
+  }}catch(e){{}}
+}}
+loadStats(); setInterval(loadStats, 10000);
+</script>
+</body></html>''')
+
     # --- Standart API Endpointleri ---
     @app.get("/gtfs-rt/vehicle-positions")
     async def get_vehicle_positions():
@@ -3021,6 +3247,10 @@ def create_app(db, col):
     @app.get("/api/hat/arac/{code:path}")
     async def api_arac(code: str):
         c = urllib.parse.unquote(code).strip()
+        
+        # On-Demand: Bu hattı aktif olarak işaretle (GTFS-RT sadece aktif hatları sorgular)
+        with _active_lines_lock:
+            _active_lines[c] = time.time()
         
         # Önce Samair hattı mı kontrol et
         samair_hat = None
@@ -3330,8 +3560,8 @@ app = create_app(db, col)
 def start_samair_updater():
     def samair_periodic_update():
         consecutive_errors = 0
-        interval = int(os.environ.get('SAMAIR_INTERVAL', '7200'))  # Default: 2 saat (7200sn)
         while True:
+            interval = _admin_config.get('samair_interval', 7200)
             time.sleep(interval)
             # Gece kontrolü (23-09 arası güncelleme yapma)
             tr_hour = (datetime.utcnow().hour + 3) % 24
