@@ -504,7 +504,7 @@ class Collector:
         # Ekspres hatları
         if 'EKSPRES' in c or (c.startswith('E') and len(c) > 1 and c[1].isdigit()): return 'ekspres'
         # İlçe hatları
-        if any(x in n for x in ['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK','SALIPAZARI','TEKKEKÖY']): return 'ilce'
+        if any(x in n for x in ['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK','SALIPAZARI','TEKKEKÖY', 'ALAÇAM', 'AYVACIK', 'VEZİRKÖPRÜ', 'YAKAKENT', '19 MAYIS', 'ONDOKUZMAYIS']): return 'ilce'
         
         return 'otobus'
 

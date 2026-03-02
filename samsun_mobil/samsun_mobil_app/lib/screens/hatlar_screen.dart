@@ -307,7 +307,11 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
                     },
                   ),
                   children: [
-                    TileLayer(urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+                    TileLayer(
+                      urlTemplate: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+                      subdomains: const ['a', 'b', 'c', 'd'],
+                      userAgentPackageName: 'com.samsun.transit',
+                    ),
                     PolylineLayer(polylines: [Polyline(
                       points: _duraklar.where((d) => (d['lat'] as num?)?.toDouble() != null).map((d) => LatLng((d['lat'] as num).toDouble(), (d['lon'] as num).toDouble())).toList(),
                       strokeWidth: 4.0, color: _katColor,
@@ -399,12 +403,52 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
               ..._duraklar.asMap().entries.map((entry) {
                 final i = entry.key;
                 final d = entry.value;
+                
+                // Bu durakta olan/yaklaşan araçları bul (yaklaşık 150 metre çapında eşleştirme)
+                final dLat = (d['lat'] as num?)?.toDouble();
+                final dLon = (d['lon'] as num?)?.toDouble();
+                List<Map<String, dynamic>> onThisStop = [];
+                
+                if (dLat != null && dLon != null && _liveVehicles.isNotEmpty) {
+                  for (var v in _liveVehicles) {
+                    final vLat = v['lat'] as double;
+                    final vLon = v['lon'] as double;
+                    const Distance distance = Distance();
+                    final meter = distance(LatLng(dLat, dLon), LatLng(vLat, vLon));
+                    if (meter < 250) { // 250 mt hata payı
+                      onThisStop.add(v);
+                    }
+                  }
+                }
+
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
                   child: ListTile(
                     leading: Container(width: 28, height: 28, decoration: BoxDecoration(gradient: LinearGradient(colors: [_katColor, _katColor.withOpacity(0.6)]), borderRadius: BorderRadius.circular(8)),
                       child: Center(child: Text("${i + 1}", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)))),
-                    title: Text(d['ad']?.toString() ?? '', style: const TextStyle(fontSize: 13, color: Colors.white)),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text(d['ad']?.toString() ?? '', style: const TextStyle(fontSize: 13, color: Colors.white))),
+                        if (onThisStop.isNotEmpty)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: onThisStop.map((v) => Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: const Color(0xFFFF5252), borderRadius: BorderRadius.circular(6)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.directions_bus, color: Colors.white, size: 10),
+                                  const SizedBox(width: 3),
+                                  Text(v['plate'].toString().replaceAll(RegExp(r'\s+'), ''), style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            )).toList(),
+                          )
+                      ],
+                    ),
                     dense: true,
                   ),
                 );

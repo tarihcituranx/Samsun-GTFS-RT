@@ -449,58 +449,74 @@ class Http:
     def asis(self, ep, **p):
         """
         ASIS API çağrısı - Swagger spesifikasyonuna uyumlu
-        
-        Endpoints:
-        - Lines, OrjLines: parametre yok
-        - StopsStations: lineCode (str), stopId (int)
-        - SmartStations: stationId (int)
-        - LineDirections: lineCode (str)
-        - RealTimeData: lineCode (str)
-        - Schedules: lineCode (str), scheduleDate (datetime)
         """
+        import requests.adapters
+        from urllib3.util.retry import Retry
+        
+        # Sadece ASIS için özel, hata toleranslı geçici bir session oluştur
+        session = requests.Session()
+        retry = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[ 500, 502, 503, 504 ],
+            allowed_methods=["HEAD", "GET", "OPTIONS"]
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        
+        # Proxy ayarları varsa kullan
+        if PROXY_HOST and PROXY_PORT:
+            if PROXY_USER and PROXY_PASS:
+                proxy_url = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
+            else:
+                proxy_url = f"http://{PROXY_HOST}:{PROXY_PORT}"
+            session.proxies = {"http": proxy_url, "https": proxy_url}
+
         try:
             url = f"{ASIS}/{ep}"
             params = {}
             
-            # Parametreleri temizle ve tip kontrolü yap
             for k, v in p.items():
-                if v is None:
-                    continue
-                
-                # Integer parametreler (Swagger'a göre)
+                if v is None: continue
                 if k in ['stopId', 'stationId']:
                     v_int = parse_int(v)
                     if v_int is not None:
                         params[k] = v_int
                     else:
-                        log.warning(f"⚠️ ASIS {ep}: {k} integer olmalı, atlanıyor: {v}")
                         continue
                 else:
-                    # String parametreler
+                    # String parametreler için gereksiz boşlukları silip url encoding'in garantili olmasını sağla
                     params[k] = str(v).strip()
             
             log.debug(f"→ ASIS {ep} | Params: {params}")
-            r = self.s.get(url, params=params, timeout=30)
+            
+            # Bazı lineCode değerleri özel karakter barındırabiliyor, headers'a generic User-Agent ekle
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Accept': 'application/json',
+                'Connection': 'keep-alive'
+            }
+            
+            r = session.get(url, params=params, headers=headers, timeout=12)
             
             if r.ok:
                 d = r.json()
                 result = d.get('data', []) if isinstance(d, dict) else d
-                count = len(result) if isinstance(result, list) else "1"
-                log.debug(f"← ASIS {ep} | {count} kayıt")
                 return result
             else:
                 log.error(f"✗ ASIS {ep} | HTTP {r.status_code}")
-                if r.text:
-                    log.error(f"  Response: {r.text[:200]}")
                     
         except requests.exceptions.Timeout:
             log.error(f"⏱ ASIS {ep} | Timeout")
-        except requests.exceptions.ConnectionError:
-            log.error(f"🔌 ASIS {ep} | Bağlantı hatası")
+        except requests.exceptions.ConnectionError as e:
+            log.error(f"🔌 ASIS {ep} | Bağlantı hatası (RemoteDisconnected vs): {e}")
         except json.JSONDecodeError as e:
             log.error(f"📄 ASIS {ep} | JSON parse hatası: {e}")
         except Exception as e:
             log.error(f"⌫ ASIS {ep} | {type(e).__name__}: {str(e)}")
+        finally:
+            session.close()
         
         return []
 
@@ -742,7 +758,7 @@ class Collector:
         # Ekspres hatları
         if 'EKSPRES' in c or (c.startswith('E') and len(c) > 1 and c[1].isdigit()): return 'ekspres'
         # İlçe hatları
-        if any(x in n for x in ['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK','SALIPAZARI','TEKKEKÖY']): return 'ilce'
+        if any(x in n for x in ['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK','SALIPAZARI','TEKKEKÖY', 'ALAÇAM', 'AYVACIK', 'VEZİRKÖPRÜ', 'YAKAKENT', '19 MAYIS', 'ONDOKUZMAYIS']): return 'ilce'
         
         return 'otobus'
 
