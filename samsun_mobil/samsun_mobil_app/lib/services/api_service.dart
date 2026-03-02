@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String ASIS_BASE = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
-
-  // --- samsun.py'den Port Edilen Veri Temizleme Mantığı ---
+  // Render Proxy (Geo-block bypass) — tüm ASIS çağrıları buradan geçer
+  static const String _renderBase = 'https://samsun-gtfs-rt.onrender.com/api';
+  
+  // Doğrudan ASIS (fallback — sadece Türk IP'li cihazlar)
+  static const String _asisDirect = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
 
   // API'den gelen bozuk Türkçe karakterleri düzelten harita
   static final Map<String, String> _turkishCharacterFixes = {
@@ -23,127 +25,127 @@ class ApiService {
     '®': 'ç', 'æ': 'ç',
   };
 
-  // Gösterilmesini istemediğimiz, alakasız hat isimlerini içeren anahtar kelimeler
   static final List<String> _skipKeywords = [
     'OTOPARK', 'KENT MÜZESİ', 'GÖREVLİ', 'BAŞVURU', 'İADE', 'IADE', 
     'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ'
   ];
 
-  // API'den gelen metni temizler
   static String _fixAndCleanText(String text) {
     String fixedText = text;
-    // 1. Bozuk Türkçe karakterleri düzelt
     _turkishCharacterFixes.forEach((key, value) {
       fixedText = fixedText.replaceAll(key, value);
     });
     return fixedText.trim();
   }
 
-  // --- Ana API Fonksiyonu ---
-
-  // Belirli bir durağa yaklaşan araçları ZEKİ FİLTRELEME ile çeker
+  /// Durağa yaklaşan araçları çeker — önce Render proxy, başarısız olursa direkt ASIS
   static Future<List<dynamic>> getDuragaYaklasanAraclar(String stopId) async {
+    // 1. Render Proxy üzerinden dene (Geo-block bypass)
     try {
-      final headers = {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36',
+      final url = Uri.parse('$_renderBase/proxy/smart_stations?stationId=$stopId');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
         'Accept': 'application/json',
-      };
-
-      final url = Uri.parse('$ASIS_BASE/SmartStations?stationId=$stopId');
-      final response = await http.get(url, headers: headers);
+      }).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        final List<dynamic> data;
-        try {
-          var decodedData = json.decode(response.body);
-          data = decodedData is List ? decodedData : [decodedData];
-        } catch (e) {
-          throw Exception("API Hatası (JSON Ayrıştırma) - İnternet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.");
-        }
-
-        // --- VERİYİ İŞLEME VE TEMİZLEME (samsun.py Mantığı) ---
-        List<dynamic> cleanedData = [];
-        for (var item in data) {
-          if (item is Map<String, dynamic> && item.containsKey('BusLineCode')) {
-            String busLineCode = _fixAndCleanText(item['BusLineCode'] as String);
-
-            // 2. İstenmeyen hatları filtrele
-            bool shouldSkip = _skipKeywords.any((keyword) => busLineCode.toUpperCase().contains(keyword));
-            if (shouldSkip) {
-              continue; // Bu otobüsü atla ve listeye ekleme
-            }
-
-            // Diğer alanları da temizle (Örn: plaka, kalan süre vb. - şimdilik sadece hat kodu)
-            item['BusLineCode'] = busLineCode;
-            
-            // Temizlenmiş ve filtrelenmiş veriyi yeni listeye ekle
-            cleanedData.add(item);
-          }
-        }
-        
-        return cleanedData;
-
-      } else {
-        throw Exception("API Hatası (Yanıt Kodu: ${response.statusCode}) - İnternet bağlantınızı kontrol edin.");
+        final data = json.decode(response.body);
+        if (data is List) return _cleanSmartStationData(data);
       }
     } catch (e) {
-      throw Exception("Bağlantı Hatası: İnternet bağlantınızı kontrol edin. ($e)");
+      print("Proxy SmartStations hatası, direkt deneniyor: $e");
     }
-  }
 
-  // Hat bazlı canlı araç takibi (RealTimeData API)
-  static Future<List<Map<String, dynamic>>> getHattakiAraclar(String lineCode) async {
+    // 2. Fallback: Doğrudan ASIS (Türk IP'li cihazlar)
     try {
-      final headers = {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
+      final url = Uri.parse('$_asisDirect/SmartStations?stationId=$stopId');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K)',
         'Accept': 'application/json',
-      };
-
-      final url = Uri.parse('$ASIS_BASE/RealTimeData?lineCode=$lineCode');
-      final response = await http.get(url, headers: headers);
+      }).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        try {
-          var decodedData = json.decode(response.body);
-          List<dynamic> data = decodedData is List ? decodedData : [decodedData];
-
-          List<Map<String, dynamic>> vehicles = [];
-          for (var item in data) {
-            if (item is Map<String, dynamic> && item.containsKey('Latitude')) {
-              vehicles.add({
-                'lat': double.tryParse(item['Latitude']?.toString() ?? '0') ?? 0.0,
-                'lon': double.tryParse(item['Longitude']?.toString() ?? '0') ?? 0.0,
-                'plate': item['PlateNumber']?.toString() ?? '',
-                'speed': item['Speed']?.toString() ?? '0',
-                'lineCode': _fixAndCleanText(item['LineCode']?.toString() ?? lineCode),
-              });
-            }
-          }
-          return vehicles;
-        } catch (e) {
-          throw Exception("Araç Takip JSON Hatası - İnternet bağlantınızı kontrol edin.");
-        }
+        final decoded = json.decode(response.body);
+        final data = decoded is List ? decoded : [decoded];
+        return _cleanSmartStationData(data);
       }
-      throw Exception("API Yanıt Vermedi - İnternet bağlantınızı kontrol edin.");
+    } catch (e) {
+      throw Exception("Bağlantı Hatası: İnternet bağlantınızı kontrol edin.");
+    }
+    return [];
+  }
+
+  /// SmartStation verisini temizle ve filtrele
+  static List<dynamic> _cleanSmartStationData(List<dynamic> data) {
+    List<dynamic> cleaned = [];
+    for (var item in data) {
+      if (item is Map<String, dynamic> && item.containsKey('BusLineCode')) {
+        String busLineCode = _fixAndCleanText(item['BusLineCode'] as String);
+        bool shouldSkip = _skipKeywords.any((kw) => busLineCode.toUpperCase().contains(kw));
+        if (shouldSkip) continue;
+        item['BusLineCode'] = busLineCode;
+        cleaned.add(item);
+      }
+    }
+    return cleaned;
+  }
+
+  /// Hat canlı araç takibi — önce Render proxy, fallback direkt ASIS
+  static Future<List<Map<String, dynamic>>> getHattakiAraclar(String lineCode) async {
+    // 1. Render Proxy üzerinden dene
+    try {
+      final url = Uri.parse('$_renderBase/proxy/realtime?lineCode=${Uri.encodeComponent(lineCode)}');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final data = json.decode(response.body);
+        if (data is List) return _parseRealTimeData(data, lineCode);
+      }
+    } catch (e) {
+      print("Proxy RealTimeData hatası, direkt deneniyor: $e");
+    }
+
+    // 2. Fallback: Doğrudan ASIS
+    try {
+      final url = Uri.parse('$_asisDirect/RealTimeData?lineCode=${Uri.encodeComponent(lineCode)}');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K)',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        final decoded = json.decode(response.body);
+        final data = decoded is List ? decoded : [decoded];
+        return _parseRealTimeData(data, lineCode);
+      }
     } catch (e) {
       throw Exception("Araç Takip Başarısız - İnternet bağlantınızı kontrol edin.");
     }
-  }
-
-  // --- YBS API Proxy Methods (Kod sağlığı taraması ve geriye dönük uyumluluk için) ---
-  // Uygulama genelinde modülerlik için YbsApiService kullanılıyor olsa da,
-  // api_service.dart üzerinden de bu servislere erişim sağlanmıştır:
-  
-  static Future<String?> getGuestToken() async {
-    // Proxy to YBS API Service getGuestToken
-    return null; // YBS API Service handles its own token 
-  }
-
-  static Future<List<dynamic>> odakSamsun_Crud() async {
     return [];
   }
 
-  static Future<List<dynamic>> samair_ucaksefersaatleri_public(int hatId) async {
-    return [];
+  /// RealTimeData verisini parse et
+  static List<Map<String, dynamic>> _parseRealTimeData(List<dynamic> data, String lineCode) {
+    List<Map<String, dynamic>> vehicles = [];
+    for (var item in data) {
+      if (item is Map<String, dynamic>) {
+        // Proxy endpoint farklı key isimleri kullanabilir
+        final lat = double.tryParse((item['Latitude'] ?? item['enlem'] ?? '0').toString()) ?? 0.0;
+        final lon = double.tryParse((item['Longitude'] ?? item['boylam'] ?? '0').toString()) ?? 0.0;
+        if (lat > 40 && lat < 43 && lon > 34 && lon < 38) {
+          vehicles.add({
+            'lat': lat,
+            'lon': lon,
+            'plate': (item['PlateNumber'] ?? item['plaka'] ?? '').toString(),
+            'speed': (item['Speed'] ?? item['hiz'] ?? '0').toString(),
+            'lineCode': _fixAndCleanText((item['LineCode'] ?? lineCode).toString()),
+          });
+        }
+      }
+    }
+    return vehicles;
   }
 }

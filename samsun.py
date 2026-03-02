@@ -2872,6 +2872,37 @@ def create_app(db, col):
             log.error(f"YBS Proxy SamAir Araclar Hatası (WAF/Timeout): {e}")
             return JSONResponse([])
 
+    @app.get("/api/proxy/smart_stations")
+    async def proxy_smart_stations(stationId: str):
+        """Mobil uygulama için SmartStations proxy (Durağa yaklaşan araçlar)"""
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'SmartStations', stationId=int(stationId)),
+                timeout=8
+            )
+            _api_stats['asis_calls'] += 1
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy SmartStations Hatası: {e}")
+            return JSONResponse([])
+
+    @app.get("/api/proxy/realtime")
+    async def proxy_realtime(lineCode: str):
+        """Mobil uygulama için RealTimeData proxy (Hat canlı araç)"""
+        # On-Demand: Bu hattı aktif olarak işaretle
+        with _active_lines_lock:
+            _active_lines[lineCode] = time.time()
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'RealTimeData', lineCode=lineCode),
+                timeout=8
+            )
+            _api_stats['asis_calls'] += 1
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy RealTimeData Hatası: {e}")
+            return JSONResponse([])
+
     # ==========================================
 
     @app.get("/api/rota")

@@ -1,0 +1,27 @@
+{
+    "default": {
+        "tam": 17.00,
+        "indirimli": 12.00
+    },
+    "tramvay": {
+        "tam": 25.00,
+        "indirimli": 18.00
+    },
+    "teleferik": {
+        "tam": 25.00,
+        "indirimli": 15.00
+    },
+    "ekspres": {
+        "tam": 22.00,
+        "indirimli": 16.00
+    },
+    "SAMSUNUM-1": {
+        "tam": 200.00,
+        "indirimli": 200.00
+    },
+    "ALTINKAYA": {
+        "tam": 15.00,
+        "indirimli": 15.00,
+        "arac": 75.00
+    }
+}
