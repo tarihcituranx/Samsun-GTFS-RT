@@ -104,26 +104,54 @@ class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderS
             colors: [Color(0xFF0A1628), Color(0xFF1A2940), Color(0xFF0F1E36)],
           ),
         ),
-        child: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        child: SafeArea(
+          child: Column(children: [
+            const Spacer(flex: 2),
+            // SBB + Samulaş Logoları
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset('assets/logo.png', width: 80, height: 80, fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFF152238), borderRadius: BorderRadius.circular(16)),
+                    child: const Center(child: Text('SBB', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(width: 1, height: 40, color: Colors.white.withOpacity(0.15)),
+              ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset('assets/samulas.png', width: 80, height: 80, fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFF152238), borderRadius: BorderRadius.circular(16)),
+                    child: const Center(child: Text('Samulaş', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))))),
+              ),
+            ]),
+            const SizedBox(height: 32),
+            // Uygulama İkonu (büyütülmüş)
             ScaleTransition(
               scale: _scaleAnim,
               child: Container(
-                width: 100, height: 100,
+                width: 130, height: 130,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 30, spreadRadius: 5)],
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 40, spreadRadius: 8)],
                 ),
-                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 48))),
+                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 60))),
               ),
             ),
             const SizedBox(height: 28),
-            const Text('Samsun Ulaşım', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const Text('Samsun Ulaşım', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 8),
             Text('Akıllı Toplu Taşıma', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, letterSpacing: 2)),
             const SizedBox(height: 40),
             SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 2.5, color: const Color(0xFF2979FF).withOpacity(0.7))),
+            const Spacer(flex: 3),
+            // Kredi
+            Text('By Turan KAYA', style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 12, letterSpacing: 1.5, fontStyle: FontStyle.italic)),
+            const SizedBox(height: 4),
+            Container(width: 60, height: 1, color: Colors.white.withOpacity(0.08)),
+            const SizedBox(height: 16),
           ]),
         ),
       ),

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stop Details - Samsun Ulaşım</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-dark": "#192633",
+                        "border-dark": "#233648",
+                        "text-secondary": "#92adc9"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased overflow-hidden">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-hidden max-w-md mx-auto border-x border-border-dark shadow-2xl">
+<!-- Header Section -->
+<header class="flex flex-col gap-4 bg-surface-dark p-5 pt-8 pb-6 border-b border-border-dark">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary uppercase tracking-wider">Durak #1042</span>
+</div>
+<h1 class="text-white tracking-tight text-2xl font-bold leading-tight">Atatürk Bulvarı Durağı</h1>
+<p class="text-text-secondary text-sm mt-1">İlkadım, Samsun</p>
+</div>
+<button class="flex items-center justify-center size-10 rounded-full bg-border-dark/50 text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[24px]">star</span>
+</button>
+</div>
+<div class="flex gap-3 mt-2">
+<button class="flex flex-1 items-center justify-center rounded-lg h-10 px-4 bg-primary text-white gap-2 text-sm font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]">map</span>
+<span>Haritada Gör</span>
+</button>
+<button class="flex items-center justify-center rounded-lg h-10 px-4 bg-border-dark text-white gap-2 text-sm font-semibold hover:bg-border-dark/80 transition-colors">
+<span class="material-symbols-outlined text-[20px]">share</span>
+</button>
+</div>
+</header>
+<!-- Main Content: Upcoming Buses -->
+<main class="flex-1 overflow-y-auto bg-background-dark custom-scrollbar">
+<div class="p-5 pb-2">
+<h3 class="text-white text-lg font-bold leading-tight tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">schedule</span>
+                    Yaklaşan Otobüsler
+                </h3>
+</div>
+<!-- List Items -->
+<div class="flex flex-col gap-1 px-3">
+<!-- Item 1: High Occupancy -->
+<div class="group flex items-center gap-4 bg-surface-dark/50 hover:bg-surface-dark border border-transparent hover:border-border-dark p-4 rounded-xl transition-all">
+<!-- Bus Line Badge -->
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-lg shadow-inner shadow-white/10">
+                        E1
+                    </div>
+<!-- Details -->
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<p class="text-white text-base font-semibold truncate pr-2">Belediyeevleri</p>
+<p class="text-emerald-400 text-sm font-bold whitespace-nowrap">3 dk</p>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-text-secondary text-xs">Express Hat</span>
+<!-- Occupancy Badge: Empty/Green -->
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+<span class="material-symbols-outlined text-[14px] text-emerald-400">person</span>
+<span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">Boş</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 2: Medium Occupancy -->
+<div class="group flex items-center gap-4 bg-surface-dark/50 hover:bg-surface-dark border border-transparent hover:border-border-dark p-4 rounded-xl transition-all">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-orange-600 text-white font-bold text-lg shadow-inner shadow-white/10">
+                        24
+                    </div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<p class="text-white text-base font-semibold truncate pr-2">Ondokuz Mayıs Üni.</p>
+<p class="text-emerald-400 text-sm font-bold whitespace-nowrap">7 dk</p>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-text-secondary text-xs">Ring R11</span>
+<!-- Occupancy Badge: Medium/Yellow -->
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20">
+<div class="flex -space-x-1">
+<span class="material-symbols-outlined text-[14px] text-yellow-400">person</span>
+<span class="material-symbols-outlined text-[14px] text-yellow-400">person</span>
+</div>
+<span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wide">Normal</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 3: Full Occupancy -->
+<div class="group flex items-center gap-4 bg-surface-dark/50 hover:bg-surface-dark border border-transparent hover:border-border-dark p-4 rounded-xl transition-all">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-lg shadow-inner shadow-white/10">
+                        15
+                    </div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<p class="text-white text-base font-semibold truncate pr-2">Otogar</p>
+<p class="text-emerald-400 text-sm font-bold whitespace-nowrap">12 dk</p>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-text-secondary text-xs">Normal Hat</span>
+<!-- Occupancy Badge: Full/Red -->
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+<div class="flex -space-x-1">
+<span class="material-symbols-outlined text-[14px] text-red-400">person</span>
+<span class="material-symbols-outlined text-[14px] text-red-400">person</span>
+<span class="material-symbols-outlined text-[14px] text-red-400">person</span>
+</div>
+<span class="text-[10px] font-bold text-red-400 uppercase tracking-wide">Dolu</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 4: Unknown Occupancy -->
+<div class="group flex items-center gap-4 bg-surface-dark/50 hover:bg-surface-dark border border-transparent hover:border-border-dark p-4 rounded-xl transition-all">
+<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-lg shadow-inner shadow-white/10">
+                        T3
+                    </div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start">
+<p class="text-white text-base font-semibold truncate pr-2">Tekkeköy</p>
+<p class="text-text-secondary text-sm font-medium whitespace-nowrap">24 dk</p>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-text-secondary text-xs">Tramvay Bağlantı</span>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-dark border border-border-dark">
+<span class="material-symbols-outlined text-[14px] text-text-secondary">help</span>
+<span class="text-[10px] font-bold text-text-secondary uppercase tracking-wide">Bilinmiyor</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Other Lines passing through -->
+<div class="p-5 pb-2 pt-6">
+<h3 class="text-white text-lg font-bold leading-tight tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-text-secondary">alt_route</span>
+                    Duraktan Geçen Diğer Hatlar
+                </h3>
+</div>
+<div class="px-3 pb-24 grid grid-cols-2 gap-2">
+<div class="flex items-center gap-3 p-3 bg-surface-dark rounded-lg border border-border-dark/50">
+<span class="flex h-8 w-8 items-center justify-center rounded bg-zinc-700 text-white text-sm font-bold">12</span>
+<span class="text-text-secondary text-sm font-medium">Çatalarmut</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface-dark rounded-lg border border-border-dark/50">
+<span class="flex h-8 w-8 items-center justify-center rounded bg-zinc-700 text-white text-sm font-bold">19</span>
+<span class="text-text-secondary text-sm font-medium">Hasköy</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface-dark rounded-lg border border-border-dark/50">
+<span class="flex h-8 w-8 items-center justify-center rounded bg-zinc-700 text-white text-sm font-bold">R6</span>
+<span class="text-text-secondary text-sm font-medium">Baruthane</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface-dark rounded-lg border border-border-dark/50">
+<span class="flex h-8 w-8 items-center justify-center rounded bg-zinc-700 text-white text-sm font-bold">E3</span>
+<span class="text-text-secondary text-sm font-medium">Meydan</span>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="absolute bottom-0 left-0 w-full z-10 border-t border-border-dark bg-surface-dark/95 backdrop-blur-md px-2 pb-5 pt-2">
+<div class="flex justify-between items-center px-1">
+<!-- Nav Item: Bus (Active) -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-primary group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">directions_bus</span>
+<span class="text-[10px] font-medium">Otobüs</span>
+</a>
+<!-- Nav Item: Tram -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-text-secondary hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">tram</span>
+<span class="text-[10px] font-medium">Tramvay</span>
+</a>
+<!-- Nav Item: Map -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-text-secondary hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">map</span>
+<span class="text-[10px] font-medium">Harita</span>
+</a>
+<!-- Nav Item: Tickets -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-text-secondary hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">confirmation_number</span>
+<span class="text-[10px] font-medium">Biletim</span>
+</a>
+<!-- Nav Item: Favorites -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-text-secondary hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">star</span>
+<span class="text-[10px] font-medium">Favoriler</span>
+</a>
+<!-- Nav Item: Settings -->
+<a class="flex flex-1 flex-col items-center justify-end gap-1 rounded-xl py-1 text-text-secondary hover:text-white transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform">settings</span>
+<span class="text-[10px] font-medium">Ayarlar</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>

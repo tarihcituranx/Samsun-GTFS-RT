@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Samsun Ulaşım - Admin Panel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #2979FF;
+            --secondary: #00BFA5;
+            --background: #0A1628;
+            --surface: #152238;
+            --surfaceAlt: #0F1E36;
+            --surfaceLight: #1A2940;
+            --error: #FF5252;
+            --warning: #FFAB00;
+            --text: #FFFFFF;
+            --textMuted: #546E8A;
+            --divider: rgba(255, 255, 255, 0.08);
+            --busColor: #1877F2;
+            --tramColor: #E53935;
+            --boatColor: #0D47A1;
+            --samairGreen: #43A047;
+            --adminCyan: #4FC3F7;
+        }
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 0 2px var(--surfaceAlt);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        .switch-checkbox {
+            right: 0;
+            top: 0;
+            z-index: 10;
+        }.glass-card {
+            background: rgba(21, 34, 56, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-screen flex flex-col relative overflow-hidden">
+<header class="h-14 flex items-center justify-between px-4 bg-[var(--surfaceAlt)] shadow-md z-20" style="box-shadow: 0 4px 10px rgba(0,0,0,0.26);">
+<div class="flex items-center gap-2">
+<h1 class="text-xl font-bold text-[var(--adminCyan)] tracking-tight">🔐 Admin Panel</h1>
+</div>
+<button class="p-2 rounded-full active:bg-[var(--surfaceLight)] text-[var(--textMuted)] hover:text-[var(--error)] transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+<div class="glass-card rounded-[14px] p-4 relative overflow-hidden">
+<div class="flex justify-between items-center mb-3">
+<h2 class="text-sm font-semibold text-[var(--textMuted)] uppercase tracking-wider">Sunucu Durumu</h2>
+<div class="flex items-center gap-1 animate-pulse">
+<span class="w-2 h-2 rounded-full bg-[var(--secondary)]"></span>
+<span class="text-xs text-[var(--secondary)]">Canlı</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-4">
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--adminCyan)]">timer</span>
+<span class="text-[11px] font-semibold">Uptime: 4g 12s</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--busColor)]">directions_bus</span>
+<span class="text-[11px] font-semibold">Araç: 142</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--secondary)]">sensors</span>
+<span class="text-[11px] font-semibold">Aktif Hat: 8</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--warning)]">bar_chart</span>
+<span class="text-[11px] font-semibold">ASIS/dk: 450</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--error)]">dns</span>
+<span class="text-[11px] font-semibold">Proxy: 2</span>
+</div>
+<div class="flex items-center gap-1.5 bg-[var(--surfaceLight)] px-3 py-1.5 rounded-[20px] border border-[var(--divider)]">
+<span class="material-symbols-outlined text-xs text-[var(--textMuted)]">schedule</span>
+<span class="text-[11px] font-semibold">14:32:05</span>
+</div>
+</div>
+<div class="border-t border-[var(--divider)] pt-3">
+<p class="text-xs text-[var(--textMuted)] mb-2">Şu an takip edilen hatlar:</p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-[var(--primary)] text-white text-[10px] font-bold px-2 py-0.5 rounded-[4px]">E1 Ekspres</span>
+<span class="bg-[var(--primary)] text-white text-[10px] font-bold px-2 py-0.5 rounded-[4px]">24 Tramvay</span>
+<span class="bg-[var(--primary)] text-white text-[10px] font-bold px-2 py-0.5 rounded-[4px]">R11 Ring</span>
+<span class="bg-[var(--surfaceLight)] text-[var(--textMuted)] text-[10px] px-2 py-0.5 rounded-[4px] border border-[var(--divider)]">+5 diğer</span>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] p-4 border border-[var(--divider)]">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[var(--primary)]">settings_input_antenna</span>
+<h3 class="text-base font-bold text-white">GTFS-RT Ayarları</h3>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-[var(--surfaceAlt)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--secondary)]"></div>
+</label>
+</div>
+<div class="mb-5">
+<label class="block text-xs text-[var(--textMuted)] mb-1.5 ml-1">Çalışma Modu</label>
+<div class="relative">
+<select class="w-full bg-[var(--surfaceAlt)] text-white text-sm rounded-[12px] border border-[var(--divider)] px-3 py-2.5 appearance-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] outline-none">
+<option value="smart">On-Demand (Akıllı)</option>
+<option value="all">Tümünü Çek</option>
+<option value="manual">Manuel Seçim</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--textMuted)]">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+</div>
+<div class="mb-5">
+<div class="flex justify-between mb-2">
+<label class="text-xs text-[var(--textMuted)] ml-1">Güncelleme Aralığı</label>
+<span class="text-xs font-bold text-[var(--primary)]">15 sn</span>
+</div>
+<input class="w-full h-1 bg-[var(--surfaceAlt)] rounded-lg appearance-none cursor-pointer" max="300" min="10" type="range" value="15"/>
+<div class="flex justify-between text-[10px] text-[var(--textMuted)] mt-1 px-1">
+<span>10s</span>
+<span>300s</span>
+</div>
+</div>
+<div class="mb-1">
+<div class="flex justify-between mb-2">
+<label class="text-xs text-[var(--textMuted)] ml-1">Max Eşzamanlı Hat</label>
+<span class="text-xs font-bold text-[var(--primary)]">12 hat</span>
+</div>
+<input class="w-full h-1 bg-[var(--surfaceAlt)] rounded-lg appearance-none cursor-pointer" max="50" min="1" type="range" value="12"/>
+<div class="flex justify-between text-[10px] text-[var(--textMuted)] mt-1 px-1">
+<span>1</span>
+<span>50</span>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] p-4 border border-[var(--divider)]">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[var(--samairGreen)]">flight_takeoff</span>
+<h3 class="text-base font-bold text-white">SamAir Ayarları</h3>
+</div>
+<div class="mb-1">
+<div class="flex justify-between mb-2">
+<label class="text-xs text-[var(--textMuted)] ml-1">Sefer Kontrol Periyodu</label>
+<span class="text-xs font-bold text-[var(--samairGreen)]">4 Saat</span>
+</div>
+<style>
+                    .samair-range::-webkit-slider-thumb {
+                        background: var(--samairGreen) !important;
+                    }
+                </style>
+<input class="samair-range w-full h-1 bg-[var(--surfaceAlt)] rounded-lg appearance-none cursor-pointer" max="24" min="1" type="range" value="4"/>
+<div class="flex justify-between text-[10px] text-[var(--textMuted)] mt-1 px-1">
+<span>1s</span>
+<span>24s</span>
+</div>
+</div>
+</div>
+<button class="w-full bg-[var(--secondary)] active:bg-[#00897B] text-white font-bold py-3.5 rounded-[12px] flex items-center justify-center gap-2 shadow-lg transition-all mt-2">
+<span class="material-symbols-outlined">save</span>
+<span>Ayarları Kaydet</span>
+</button>
+</main>
+<nav class="h-[84px] bg-[var(--surfaceAlt)] border-t border-[var(--divider)] flex justify-around items-start pt-3 pb-8 absolute bottom-0 w-full z-30">
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">map</span>
+<span class="text-[10px] text-[var(--textMuted)]">Harita</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">directions_bus</span>
+<span class="text-[10px] text-[var(--textMuted)]">Hatlar</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">near_me</span>
+<span class="text-[10px] text-[var(--textMuted)]">Yakınım</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">directions</span>
+<span class="text-[10px] text-[var(--textMuted)]">Rota</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">tour</span>
+<span class="text-[10px] text-[var(--textMuted)]">Odak</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--textMuted)] text-[24px]">flight</span>
+<span class="text-[10px] text-[var(--textMuted)]">SamAir</span>
+</button>
+<button class="flex flex-col items-center gap-1 w-14">
+<span class="material-symbols-outlined text-[var(--primary)] text-[24px]">admin_panel_settings</span>
+<span class="text-[11px] font-semibold text-[var(--primary)]">Admin</span>
+</button>
+</nav>
+
+</body></html>

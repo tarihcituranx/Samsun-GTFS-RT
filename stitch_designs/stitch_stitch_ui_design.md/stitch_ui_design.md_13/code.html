@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Samsun Ulaşım Splash Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --background-start: #0A1628;
+            --background-end: #152238;
+            --primary: #2979FF;
+            --secondary: #00BFA5;
+            --text-muted: #546E8A;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .animate-spin-slow {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-screen w-full m-0 p-0 flex flex-col items-center justify-center bg-gradient-to-b from-[var(--background-start)] to-[var(--background-end)] select-none overflow-hidden text-white">
+<div class="relative group mb-8">
+<div class="absolute -inset-1 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-[28px] opacity-30 blur-lg transition duration-1000 group-hover:duration-200"></div>
+<div class="relative w-[100px] h-[100px] bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-[28px] flex items-center justify-center shadow-lg shadow-[#2979ff]/30">
+<span aria-label="Bus" class="text-[48px] transform hover:scale-110 transition-transform duration-500 cursor-default leading-none" role="img">
+                🚌
+            </span>
+</div>
+</div>
+<div class="text-center space-y-1 z-10">
+<h1 class="text-[30px] font-bold tracking-tight text-white drop-shadow-sm">
+            Samsun Ulaşım
+        </h1>
+<p class="text-[14px] font-medium tracking-[0.15em] text-[var(--text-muted)] uppercase">
+            Akıllı Toplu Taşıma
+        </p>
+</div>
+<div class="absolute bottom-16">
+<div class="w-8 h-8 border-[2.5px] border-t-[var(--primary)] border-r-[var(--primary)] border-b-transparent border-l-transparent rounded-full animate-spin-slow opacity-80"></div>
+</div>
+
+</body></html>

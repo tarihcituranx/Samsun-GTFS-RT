@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="tr" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Odak Samsun Tourist Routes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #2979FF;
+            --secondary: #00BFA5;
+            --background: #0A1628;
+            --surface: #152238;
+            --surfaceAlt: #0F1E36;
+            --surfaceLight: #1A2940;
+            --text: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-muted: #546E8A;
+            --divider: rgba(255, 255, 255, 0.08);
+            --warning: #FFAB00;
+        }
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-card {
+            background: rgba(21, 34, 56, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab-item {
+            @apply flex flex-col items-center justify-center py-2 min-w-[56px] text-[10px] text-[#546E8A] transition-colors;
+        }
+        .tab-item.active {
+            @apply text-[var(--primary)];
+        }
+        .tab-item.active span {
+            @apply font-semibold;
+        }
+        .tab-item .material-symbols-outlined {
+            font-size: 24px;
+            margin-bottom: 2px;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tab-item.active .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-screen flex flex-col overflow-hidden select-none">
+<header class="pt-12 pb-6 px-5 shadow-lg bg-gradient-to-br from-[#2979FF] to-[#0D47A1]">
+<div class="flex flex-col items-start space-y-4">
+<div class="w-full max-w-[240px] h-[52px] bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex items-center px-4">
+<span class="text-white font-bold text-xl tracking-wide flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 24px;">travel_explore</span>
+            ODAK SAMSUN
+        </span>
+</div>
+<div class="flex flex-col space-y-1">
+<p class="text-[14px] text-white/90 font-medium max-w-[280px]" style="">
+            Şehrin turistik ve kültürel rotalarını keşfedin.
+        </p>
+</div>
+</div>
+</header>
+<div class="bg-[#FFAB00] px-4 py-3 flex items-start space-x-3 shadow-md z-10 relative">
+<span class="material-symbols-outlined text-[#0A1628] mt-0.5" style="font-size: 20px;">warning</span>
+<p class="text-[#0A1628] text-[13px] font-bold leading-snug" style="">
+            Bu veriler Odak Samsun API'sinden alınır, güncel olmayabilir.
+        </p>
+</div>
+<main class="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R1 - Şahinkaya Kanyonu</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Hafta sonu 09:00 - 18:00</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R2 - Amazon Köyü</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Her gün 10:00 - 17:00</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R3 - Ladik Akdağ</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Kış sezonu aktif</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R4 - Bandırma Vapuru</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Pazartesi hariç her gün</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R5 - Kuş Cenneti</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Bahar dönemi turları</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+<div class="glass-card rounded-[14px] p-4 flex items-center space-x-4 active:bg-[var(--surfaceLight)] transition-colors cursor-pointer">
+<div class="w-[42px] h-[42px] rounded-xl bg-gradient-to-br from-[#00BFA5] to-[#00897B] flex items-center justify-center shadow-lg text-[20px]" style="">
+                🎯
+            </div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[17px] font-bold text-white truncate" style="">R6 - Amisos Tepesi</h3>
+<p class="text-[12px] text-[var(--text-muted)] mt-0.5" style="">Teleferik bağlantılı</p>
+</div>
+<span class="material-symbols-outlined text-[var(--text-muted)]" style="">chevron_right</span>
+</div>
+</main>
+<nav class="bg-[var(--surfaceAlt)] border-t border-[var(--divider)] pb-6 pt-1 px-1 flex justify-between items-end fixed bottom-0 w-full z-50">
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">map</span>
+<span class="" style="">Harita</span>
+</a>
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">directions_bus</span>
+<span class="" style="">Hatlar</span>
+</a>
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">near_me</span>
+<span class="" style="">Yakınım</span>
+</a>
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">alt_route</span>
+<span class="" style="">Rota</span>
+</a>
+<a class="tab-item active" href="#" style="">
+<span class="material-symbols-outlined" style="">tour</span>
+<span class="" style="">Odak</span>
+</a>
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">flight</span>
+<span class="" style="">SamAIR</span>
+</a>
+<a class="tab-item" href="#" style="">
+<span class="material-symbols-outlined" style="">admin_panel_settings</span>
+<span class="" style="">Admin</span>
+</a>
+</nav>
+</body></html>

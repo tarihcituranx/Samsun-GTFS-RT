@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Samsun Ulaşım - Ayarlar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#13ecec", 
+                        "primary-dark": "#0ea5a5",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#0A1628", // Matches user request
+                        "surface-dark": "#152238", // Matches user request
+                        "text-main": "#ffffff",
+                        "text-muted": "#94A3B8",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen flex flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-[#1F2937]">
+<div class="flex items-center justify-between px-4 h-14">
+<button class="flex items-center justify-center w-10 h-10 rounded-full text-slate-900 dark:text-text-main hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[24px]">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold text-slate-900 dark:text-text-main">⚙️ Ayarlar</h1>
+<div class="w-10"></div> <!-- Spacer for centering -->
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+<!-- Section 1: Uygulama Ayarları -->
+<section>
+<h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 ml-1">Uygulama Ayarları</h2>
+<div class="bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/5">
+<!-- Item: Notifications -->
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 last:border-0">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Bildirimler</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Item: Theme -->
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 last:border-0">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400">
+<span class="material-symbols-outlined text-[20px]">dark_mode</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Tema</span>
+</div>
+<span class="text-sm text-text-muted">Karanlık Mod</span>
+</div>
+<!-- Item: Language -->
+<div class="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined text-[20px]">language</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Dil Seçimi</span>
+</div>
+<div class="flex items-center gap-2 text-text-muted">
+<span class="text-sm">Türkçe</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Ulaşım Tercihleri -->
+<section>
+<h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 ml-1">Ulaşım Tercihleri</h2>
+<div class="bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/5">
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-teal-100 dark:bg-primary/20 text-teal-600 dark:text-primary">
+<span class="material-symbols-outlined text-[20px]">directions_bus</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Favori Hatlar</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-teal-100 dark:bg-primary/20 text-teal-600 dark:text-primary">
+<span class="material-symbols-outlined text-[20px]">location_on</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Favori Duraklar</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-teal-100 dark:bg-primary/20 text-teal-600 dark:text-primary">
+<span class="material-symbols-outlined text-[20px]">commute</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Varsayılan Ulaşım Türü</span>
+</div>
+<div class="flex items-center gap-2 text-text-muted">
+<span class="text-sm">Otobüs</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Hesap ve Güvenlik -->
+<section>
+<h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 ml-1">Hesap ve Güvenlik</h2>
+<div class="bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/5">
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</div>
+<div class="flex flex-col">
+<span class="text-slate-900 dark:text-text-main font-medium">Profil Bilgileri</span>
+<span class="text-xs text-text-muted">ahmet.yilmaz@mail.com</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+<span class="material-symbols-outlined text-[20px]">vpn_key</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Admin Panel Girişi</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Section 4: Bilgi -->
+<section>
+<h2 class="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 ml-1">Bilgi</h2>
+<div class="bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-white/5">
+<div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-white/5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Kullanım Koşulları</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-500/20 text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined text-[20px]">info</span>
+</div>
+<span class="text-slate-900 dark:text-text-main font-medium">Hakkında</span>
+</div>
+<span class="material-symbols-outlined text-text-muted text-[16px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Logout & Version -->
+<div class="pt-4 flex flex-col items-center gap-4">
+<button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-lg shadow-red-500/20">
+                Çıkış Yap
+            </button>
+<p class="text-sm text-text-muted">Samsun Ulaşım v2.4.1 (Build 108)</p>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 w-full z-40 bg-background-light dark:bg-surface-dark border-t border-gray-200 dark:border-[#1F2937] pb-safe pt-2 px-2">
+<div class="flex justify-between items-end w-full max-w-lg mx-auto">
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:text-slate-400 text-[24px]">home</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary dark:text-slate-400">Ana Sayfa</span>
+</a>
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:text-slate-400 text-[24px]">schedule</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary dark:text-slate-400">Seferler</span>
+</a>
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:text-slate-400 text-[24px]">map</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary dark:text-slate-400">Harita</span>
+</a>
+<!-- Central Active/Highlighted Tab -->
+<a class="flex flex-1 flex-col items-center -mt-6" href="#">
+<div class="flex items-center justify-center w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30 border-4 border-background-light dark:border-background-dark">
+<span class="material-symbols-outlined text-slate-900 text-[28px]">qr_code_scanner</span>
+</div>
+<span class="text-[10px] font-medium text-primary mt-1">Bilet</span>
+</a>
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:text-slate-400 text-[24px]">credit_card</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary dark:text-slate-400">Kartım</span>
+</a>
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary dark:text-slate-400 text-[24px]">directions_subway</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary dark:text-slate-400">Hatlar</span>
+</a>
+<a class="flex flex-1 flex-col items-center gap-1 group pb-2" href="#">
+<span class="material-symbols-outlined text-primary text-[24px] font-variation-settings-fill">settings</span>
+<span class="text-[10px] font-medium text-primary">Ayarlar</span>
+</a>
+</div>
+<!-- Safe area for iPhone home indicator -->
+<div class="h-4 w-full"></div>
+</nav>
+<style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        
+        .font-variation-settings-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</body></html>

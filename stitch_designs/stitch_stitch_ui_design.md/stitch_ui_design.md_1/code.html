@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Samsun Ulaşım - Hatlar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #2979FF;
+            --secondary: #00BFA5;
+            --background: #0A1628;
+            --surface: #152238;
+            --surface-alt: #0F1E36;
+            --surface-light: #1A2940;
+            --error: #FF5252;
+            --warning: #FFAB00;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-muted: #546E8A;
+            --divider: rgba(255, 255, 255, 0.08);
+            --bus-color: #1877F2;
+            --tram-color: #E53935;
+            --boat-color: #00BFA5;
+            --samair-green: #43A047;
+            --price-green: #43A047;
+            --occupancy-low: #43A047;
+            --occupancy-medium: #FB8C00;
+            --occupancy-high: #E53935;
+        }
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-nav {
+            background: rgba(15, 30, 54, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--divider);
+        }
+        .safe-area-top {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+        .safe-area-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-screen flex flex-col overflow-hidden selection:bg-[var(--primary)] selection:text-white">
+<div class="flex-none bg-[var(--surface-alt)] shadow-[0_4px_10px_rgba(0,0,0,0.26)] z-20">
+<div class="safe-area-top px-4 pt-4 pb-2">
+<div class="relative mb-4">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-[var(--text-muted)]">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 rounded-xl bg-[var(--surface)] border-none text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:ring-1 focus:ring-[var(--primary)] text-[15px]" placeholder="Hat ara... (örn: E1, Atakum)" type="text"/>
+</div>
+<div class="flex space-x-2 overflow-x-auto no-scrollbar pb-2">
+<button class="flex-none px-4 py-2 rounded-[20px] bg-[var(--primary)] text-white text-[13px] font-semibold transition-colors">
+                    Tümü
+                </button>
+<button class="flex-none px-4 py-2 rounded-[20px] bg-[var(--surface-light)] text-[var(--text-secondary)] text-[13px] font-medium transition-colors hover:bg-[var(--surface)]">
+                    🚌 Otobüs
+                </button>
+<button class="flex-none px-4 py-2 rounded-[20px] bg-[var(--surface-light)] text-[var(--text-secondary)] text-[13px] font-medium transition-colors hover:bg-[var(--surface)]">
+                    🚋 Tramvay
+                </button>
+<button class="flex-none px-4 py-2 rounded-[20px] bg-[var(--surface-light)] text-[var(--text-secondary)] text-[13px] font-medium transition-colors hover:bg-[var(--surface)]">
+                    ⛴ Vapur
+                </button>
+<button class="flex-none px-4 py-2 rounded-[20px] bg-[var(--surface-light)] text-[var(--text-secondary)] text-[13px] font-medium transition-colors hover:bg-[var(--surface)]">
+                    🚡 Teleferik
+                </button>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-24 space-y-3">
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(24,119,242,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚌</span>
+<span class="text-[16px] font-bold text-[var(--bus-color)]">E1</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Ekspres - Üniversite</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Belediye Evleri - OMÜ Kampüs</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[var(--occupancy-low)] bg-[rgba(67,160,71,0.15)] border border-[rgba(67,160,71,0.3)]" title="Doluluk: Boş">
+<span class="material-symbols-outlined text-[10px] leading-none">person</span>
+<span class="text-[9px] font-bold uppercase tracking-wide">Boş</span>
+</div>
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">17.00 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(229,57,53,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚋</span>
+<span class="text-[16px] font-bold text-[var(--tram-color)]">T1</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Tramvay Hattı</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Gar - OMÜ Rektörlük</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">12.11 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(24,119,242,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚌</span>
+<span class="text-[16px] font-bold text-[var(--bus-color)]">24</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Atakum - Şehir Merkezi</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Türkiş - Cumhuriyet Meydanı</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[var(--occupancy-medium)] bg-[rgba(251,140,0,0.15)] border border-[rgba(251,140,0,0.3)]" title="Doluluk: Orta">
+<span class="material-symbols-outlined text-[10px] leading-none">group</span>
+<span class="text-[9px] font-bold uppercase tracking-wide">Orta</span>
+</div>
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">14.00 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(24,119,242,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚌</span>
+<span class="text-[16px] font-bold text-[var(--bus-color)]">R11</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Ring - Kampüs İçi</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Rektörlük - Lojmanlar</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[var(--occupancy-high)] bg-[rgba(229,57,53,0.15)] border border-[rgba(229,57,53,0.3)]" title="Doluluk: Dolu">
+<span class="material-symbols-outlined text-[10px] leading-none">groups</span>
+<span class="text-[9px] font-bold uppercase tracking-wide">Dolu</span>
+</div>
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">Ücretsiz</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(0,191,165,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">⛴</span>
+<span class="text-[16px] font-bold text-[var(--boat-color)]">F1</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Samsunum-1</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Sahil Turu</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">50.00 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(24,119,242,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚌</span>
+<span class="text-[16px] font-bold text-[var(--bus-color)]">E5</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Ekspres - Araştırma</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Otogar - Eğitim Araştırma</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="flex items-center space-x-0.5 px-1.5 py-0.5 rounded text-[var(--occupancy-low)] bg-[rgba(67,160,71,0.15)] border border-[rgba(67,160,71,0.3)]" title="Doluluk: Boş">
+<span class="material-symbols-outlined text-[10px] leading-none">person</span>
+<span class="text-[9px] font-bold uppercase tracking-wide">Boş</span>
+</div>
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">17.00 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-[var(--surface)] rounded-[14px] border border-[var(--divider)] p-4 active:scale-[0.98] transition-transform duration-100 ease-out">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-4 flex-1">
+<div class="w-14 h-14 rounded-xl flex items-center justify-center bg-[var(--surface-light)] border border-[rgba(229,57,53,0.2)]">
+<div class="flex flex-col items-center">
+<span class="text-[12px] mb-[-2px]">🚋</span>
+<span class="text-[16px] font-bold text-[var(--tram-color)]">T3</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="text-[15px] font-normal text-white truncate">Tramvay - Stadyum</h3>
+<p class="text-[12px] text-[var(--text-muted)] truncate">Belediye Evleri - Tekkeköy</p>
+</div>
+</div>
+<div class="flex flex-col items-end justify-between self-stretch pl-2 h-[60px]">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[20px]">chevron_right</span>
+<div class="flex items-center space-x-1.5 mt-auto">
+<div class="px-2 py-0.5 rounded-full bg-[rgba(67,160,71,0.2)]">
+<span class="text-[10px] font-bold text-[var(--price-green)]">10.00 TL</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-none glass-nav safe-area-bottom z-30 relative">
+<div class="flex justify-between items-center px-2 py-2">
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">map</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">Harita</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--primary)] text-[24px]">directions_bus</span>
+<span class="text-[11px] font-semibold text-[var(--primary)]">Hatlar</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">near_me</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">Yakınım</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">directions</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">Rota</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">location_on</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">Odak</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">flight</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">SamAIR</span>
+</button>
+<button class="flex flex-col items-center justify-center w-full space-y-1 py-1">
+<span class="material-symbols-outlined text-[var(--text-muted)] text-[24px]">admin_panel_settings</span>
+<span class="text-[10px] font-medium text-[var(--text-muted)]">Admin</span>
+</button>
+</div>
+</div>
+</body></html>

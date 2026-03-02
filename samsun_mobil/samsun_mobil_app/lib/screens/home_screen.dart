@@ -13,6 +13,7 @@ import 'hatlar_screen.dart';
 import 'samair_screen.dart';
 import 'odak_screen.dart';
 import 'admin_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -737,7 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildRotaScreen(),
       const OdakScreen(),
       const SamAirScreen(),
-      const AdminScreen(),
+      const SettingsScreen(),
     ];
 
     return Scaffold(
@@ -786,7 +787,7 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.route_outlined), activeIcon: Icon(Icons.route), label: "Rota"),
           BottomNavigationBarItem(icon: Icon(Icons.explore_outlined), activeIcon: Icon(Icons.explore), label: "Odak"),
           BottomNavigationBarItem(icon: Icon(Icons.flight_takeoff_outlined), activeIcon: Icon(Icons.flight_takeoff), label: "SamAIR"),
-          BottomNavigationBarItem(icon: Icon(Icons.admin_panel_settings_outlined), activeIcon: Icon(Icons.admin_panel_settings), label: "Admin"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: "Ayarlar"),
         ],
       ),
     );

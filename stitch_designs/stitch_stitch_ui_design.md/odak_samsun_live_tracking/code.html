@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Odak Samsun Live Tracking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ecec",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#102222",
+                        "surface-dark": "#1a2c2c",
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hiding for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased overflow-hidden">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- App Bar -->
+<div class="z-20 flex items-center bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md px-4 py-3 justify-between border-b border-slate-200 dark:border-slate-800 shadow-sm">
+<button class="text-slate-900 dark:text-slate-100 flex size-10 shrink-0 items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">
+                📍 Odak Samsun Canlı Takip
+            </h2>
+</div>
+<!-- Main Content Area (Map) -->
+<div class="relative flex-1 w-full bg-slate-200 dark:bg-[#0d1a1a] overflow-hidden">
+<!-- Simulated Map Background -->
+<div class="absolute inset-0 bg-cover bg-center opacity-60 dark:opacity-80 mix-blend-multiply" data-alt="Dark themed map of Samsun city streets" data-location="Samsun, Turkey" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3yAxuZSkNJkIrw4lFjqvDyhE8e87bJwbikDLIsZhK1ey4j18Y_iS7tOBHe3qDTMMAifX1OtiGUhTAKeyt11S362BkgasxLKbDKP0n9wmUckAZKzAI318oUjIDgU5kp4wRU0ksP95pbEqPG9YISr8T4hLfKGNAXL_WT3z4_MM4SogkGY8L3xMt_vAbBLhH7vld5wcLX_3lzrfoxRqlJWB6Doj1ugY0nPMOnDL-4W-1Ulaf7KTmumST7XpPEDS4F1eDxT3M8oGIQk8'); filter: grayscale(100%) invert(100%);">
+</div>
+<!-- Map Overlay Gradient for depth -->
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark/20 via-transparent to-background-dark/90 pointer-events-none"></div>
+<!-- Floating Search Bar on Map -->
+<div class="absolute top-4 left-4 right-4 z-10">
+<div class="flex w-full items-center rounded-xl bg-surface-light dark:bg-surface-dark shadow-lg border border-slate-200 dark:border-slate-700 h-12">
+<div class="text-slate-400 dark:text-slate-400 flex items-center justify-center pl-4">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="flex w-full min-w-0 flex-1 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none px-3 text-base font-normal h-full" placeholder="Hat veya durak ara..."/>
+</div>
+</div>
+<!-- Map Controls (Zoom) -->
+<div class="absolute top-20 right-4 flex flex-col gap-2 z-10">
+<button class="flex size-10 items-center justify-center rounded-lg bg-surface-light dark:bg-surface-dark text-slate-900 dark:text-white shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="flex size-10 items-center justify-center rounded-lg bg-surface-light dark:bg-surface-dark text-slate-900 dark:text-white shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+<!-- Current Location Button -->
+<div class="absolute bottom-64 right-4 z-10">
+<button class="flex size-12 items-center justify-center rounded-full bg-primary text-background-dark shadow-lg hover:bg-primary/90 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">my_location</span>
+</button>
+</div>
+<!-- Refresh Button -->
+<div class="absolute bottom-48 right-4 z-10">
+<button class="flex size-12 items-center justify-center rounded-full bg-surface-light dark:bg-surface-dark text-primary shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition-transform">
+<span class="material-symbols-outlined animate-spin-slow">refresh</span>
+</button>
+</div>
+<!-- Map Markers (Simulated) -->
+<!-- Marker 1: Active Bus -->
+<div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-0">
+<div class="bg-surface-dark/80 backdrop-blur px-2 py-1 rounded text-xs text-primary font-bold whitespace-nowrap border border-primary/30">
+                    55 A 1234
+                </div>
+<div class="relative flex items-center justify-center size-10">
+<div class="absolute inset-0 bg-primary/30 rounded-full animate-ping"></div>
+<div class="relative bg-background-dark border-2 border-primary rounded-full p-1.5 shadow-xl">
+<span class="material-symbols-outlined text-primary text-base">directions_bus</span>
+</div>
+</div>
+</div>
+<!-- Marker 2: Stop -->
+<div class="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-0 opacity-80">
+<div class="bg-surface-light dark:bg-white text-background-dark rounded-full p-1 shadow-md border-2 border-slate-300">
+<span class="material-symbols-outlined text-sm">nature_people</span>
+</div>
+<span class="mt-1 text-xs font-semibold text-slate-900 dark:text-white drop-shadow-md">Batı Park</span>
+</div>
+<!-- Marker 3: Stop -->
+<div class="absolute top-[40%] right-1/4 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-0 opacity-80">
+<div class="bg-surface-light dark:bg-white text-background-dark rounded-full p-1 shadow-md border-2 border-slate-300">
+<span class="material-symbols-outlined text-sm">museum</span>
+</div>
+<span class="mt-1 text-xs font-semibold text-slate-900 dark:text-white drop-shadow-md">Müze</span>
+</div>
+<!-- Bottom Sheet / Active Route Info -->
+<div class="absolute bottom-4 left-4 right-4 z-20">
+<div class="flex flex-col gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-surface-light dark:bg-surface-dark p-4 shadow-2xl backdrop-blur-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined">tour</span>
+</div>
+<div class="flex flex-col">
+<h3 class="text-slate-900 dark:text-white text-base font-bold leading-tight">Şahinkaya Hattı</h3>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="inline-block size-2 rounded-full bg-green-500 animate-pulse"></span>
+<p class="text-slate-500 dark:text-slate-400 text-xs font-medium">Canlı Takip Aktif</p>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">42 <span class="text-xs font-medium text-slate-500 dark:text-slate-400">km/s</span></p>
+</div>
+</div>
+<div class="h-px w-full bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex items-center justify-between gap-4">
+<div class="flex flex-col flex-1">
+<span class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">Sonraki Durak</span>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="material-symbols-outlined text-primary text-sm">schedule</span>
+<span class="text-sm font-medium text-slate-900 dark:text-slate-200">Batı Park (5 dk)</span>
+</div>
+</div>
+<button class="bg-primary hover:bg-cyan-400 text-background-dark text-sm font-bold py-2 px-4 rounded-lg transition-colors shadow-lg shadow-primary/20">
+                            Detaylar
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Navigation -->
+<div class="z-30 flex w-full border-t border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark pb-6 pt-2 shadow-lg">
+<!-- Nav Item 1 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">map</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Harita</span>
+</a>
+<!-- Nav Item 2 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">directions_bus</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Otobüs</span>
+</a>
+<!-- Nav Item 3 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">tram</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Tramvay</span>
+</a>
+<!-- Nav Item 4 (Active/Center) -->
+<a class="flex flex-1 flex-col items-center justify-center gap-1 px-1 relative -top-5" href="#">
+<div class="flex size-14 items-center justify-center rounded-full bg-primary text-background-dark shadow-xl border-4 border-surface-light dark:border-surface-dark">
+<span class="material-symbols-outlined text-3xl">track_changes</span>
+</div>
+<span class="text-[10px] font-bold text-primary">Odak</span>
+</a>
+<!-- Nav Item 5 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">directions_boat</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Vapur</span>
+</a>
+<!-- Nav Item 6 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">confirmation_number</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Bilet</span>
+</a>
+<!-- Nav Item 7 -->
+<a class="group flex flex-1 flex-col items-center justify-center gap-1 px-1" href="#">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors text-2xl">settings</span>
+<span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 group-hover:text-primary">Ayarlar</span>
+</a>
+</div>
+</div>
+</body></html>
