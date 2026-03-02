@@ -2634,26 +2634,40 @@ def create_app(db, col):
         asyncio.create_task(update_gtfs_feed())
 
     async def update_gtfs_feed():
-        """GTFS-RT vehicle positions feed'ini 15 saniyede bir güncelle"""
-        http_client = col.http  # Mevcut Http instance'ını kullan (connection pool)
+        """GTFS-RT vehicle positions feed'ini periyodik güncelle.
+        Gece 23:00-09:00 arası API'ye istek atmaz (proxy tasarrufu).
+        GTFS_RT_INTERVAL env var ile güncelleme aralığı ayarlanabilir (default: 30sn).
+        GTFS_RT_ENABLED=false ile tamamen kapatılabilir.
+        """
+        http_client = col.http
+        interval = int(os.environ.get('GTFS_RT_INTERVAL', '30'))  # saniye
         
         while True:
+            # Gece modu kontrolü (Türkiye saati UTC+3)
+            tr_hour = (datetime.utcnow().hour + 3) % 24
+            
+            if os.environ.get('GTFS_RT_ENABLED', 'true').lower() == 'false':
+                await asyncio.sleep(60)
+                continue
+            
+            if tr_hour >= 23 or tr_hour < 9:
+                # Gece 23:00-09:00 arası ASIS'e istek atma
+                log.debug(f"🌙 Gece modu aktif (saat {tr_hour:02d}:xx TR). GTFS-RT duraklatıldı.")
+                await asyncio.sleep(300)  # 5dk sonra tekrar kontrol
+                continue
+            
             try:
-                # 1. Tüm hat kodlarını çek (tramvay hariç - ASIS'te yok)
                 lines = db.get("SELECT code FROM hat WHERE kat NOT IN ('tramvay', 'odak', 'samair', 'tekne', 'teleferik')")
                 
-                # 2. Feed oluştur
                 feed = gtfs_realtime_pb2.FeedMessage()
                 feed.header.gtfs_realtime_version = "2.0"
                 feed.header.timestamp = int(time.time())
                 
                 vehicle_count = 0
-                seen_plates = set()  # Aynı plakayı birden fazla kez ekleme
+                seen_plates = set()
                 
-                # 3. Her hat için araç verisi çek (thread'de çalıştır - blocking IO)
-                for line in lines[:50]:  # İlk 50 hat (performans için)
+                for line in lines[:50]:
                     try:
-                        # requests tabanlı mevcut API çağrısı (thread'de)
                         data = await asyncio.to_thread(
                             http_client.asis, 'RealTimeData', lineCode=line['code']
                         )
@@ -2664,43 +2678,31 @@ def create_app(db, col):
                             plaka = d.get('plaka', '?')
                             hiz = parse_float(d.get('hiz', 0))
                             
-                            # Koordinat ve plaka kontrolü
                             if not (40 < lat < 43 and 34 < lon < 38):
                                 continue
                             if plaka in seen_plates:
                                 continue
                             seen_plates.add(plaka)
                             
-                            # GTFS-RT Entity ekle (GELİŞTİRİLMİŞ)
                             entity = feed.entity.add()
                             entity.id = plaka
-                            
-                            # Trip bilgisi
                             entity.vehicle.trip.route_id = line['code']
-                            # YENİ: trip_id (plaka bazlı benzersiz trip)
                             entity.vehicle.trip.trip_id = f"{line['code']}_{plaka}_{int(time.time() // 3600)}"
-                            
-                            # Konum bilgisi
                             entity.vehicle.position.latitude = lat
                             entity.vehicle.position.longitude = lon
-                            entity.vehicle.position.speed = hiz / 3.6  # km/h -> m/s
+                            entity.vehicle.position.speed = hiz / 3.6
                             
-                            # YENİ: Bearing (yön) hesapla
                             try:
                                 aci = parse_float(d.get('aci', 0))
                                 if aci > 0:
                                     entity.vehicle.position.bearing = aci
                             except Exception:
-                                pass  # Bearing opsiyonel, hata kritik değil
+                                pass
                             
-                            # Zaman damgası
                             entity.vehicle.timestamp = int(time.time())
-                            
-                            # Araç bilgisi
                             entity.vehicle.vehicle.id = plaka
                             entity.vehicle.vehicle.label = plaka
                             
-                            # YENİ: Occupancy (doluluk) - API'den geliyorsa
                             try:
                                 kapasite_oran = parse_float(d.get('kapasite', 0))
                                 if kapasite_oran > 0:
@@ -2713,14 +2715,13 @@ def create_app(db, col):
                                     else:
                                         entity.vehicle.occupancy_status = gtfs_realtime_pb2.VehiclePosition.FULL
                             except Exception:
-                                pass  # Doluluk opsiyonel
+                                pass
                             
                             vehicle_count += 1
                             
                     except Exception as e:
                         log.debug(f"GTFS-RT hat hatası ({line.get('code', '?')}): {e}")
                 
-                # 4. Global feed'i thread-safe güncelle
                 with _gtfs_feed_lock:
                     gtfs_feed = feed
                 log.info(f"GTFS-RT: {vehicle_count} araç güncellendi")
@@ -2728,7 +2729,7 @@ def create_app(db, col):
             except Exception as e:
                 log.error(f"GTFS loop error: {e}")
             
-            await asyncio.sleep(15)
+            await asyncio.sleep(interval)
 
     @app.get("/", response_class=HTMLResponse)
     async def home(): return HTML
@@ -3327,12 +3328,17 @@ app = create_app(db, col)
 
 # Arka plan Samair güncelleyici fonksiyonu
 def start_samair_updater():
-    def samair_hourly_update():
+    def samair_periodic_update():
         consecutive_errors = 0
+        interval = int(os.environ.get('SAMAIR_INTERVAL', '7200'))  # Default: 2 saat (7200sn)
         while True:
-            time.sleep(3600)  # 1 saat bekle
+            time.sleep(interval)
+            # Gece kontrolü (23-09 arası güncelleme yapma)
+            tr_hour = (datetime.utcnow().hour + 3) % 24
+            if tr_hour >= 23 or tr_hour < 9:
+                continue
             try:
-                log.info("⏰ Samair seferleri güncelleniyor (saatlik)...")
+                log.info(f"✈️ Samair seferleri güncelleniyor ({interval//3600}h aralıkla)...")
                 col.samair_seferler_guncelle(force=True)
                 consecutive_errors = 0
             except Exception as e:
@@ -3342,27 +3348,31 @@ def start_samair_updater():
                     log.warning("⚠️ Samair güncelleme başarısız, sonraki döngüye atlanıyor")
                     consecutive_errors = 0
 
-    update_thread = threading.Thread(target=samair_hourly_update, daemon=True)
+    update_thread = threading.Thread(target=samair_periodic_update, daemon=True)
     update_thread.start()
-    log.info("✓ Samair otomatik güncelleme thread'i aktif (her saat)")
+    log.info(f"✓ Samair otomatik güncelleme thread'i aktif (her {int(os.environ.get('SAMAIR_INTERVAL', '7200'))//3600} saat)")
 
-# YENİ: Render.com Free Tier Uyku Önleyici (Her 14 dakikada bir kendini dürter)
+# Render.com Free Tier Uyku Önleyici — 7/24 aktif tutar
 def start_keep_alive_ping():
     def pinger():
-        import requests
+        import requests as _req
         while True:
             time.sleep(14 * 60) # 14 dakika
             try:
-                # Render URL'inizi buraya da hardcode edebilirsiniz, ancak env var daha güvenli
                 url = os.environ.get("RENDER_EXTERNAL_URL", "http://localhost:8000")
-                requests.get(f"{url}/api/health", timeout=5)
-                log.info("💓 Keep-Alive ping gönderildi")
+                _req.get(f"{url}/api/health", timeout=5)
+                
+                tr_hour = (datetime.utcnow().hour + 3) % 24
+                if tr_hour >= 23 or tr_hour < 9:
+                    log.debug("💤 Gece modu: Sadece keep-alive ping gönderildi")
+                else:
+                    log.info("💓 Keep-Alive ping gönderildi")
             except Exception:
                 pass
 
     ping_thread = threading.Thread(target=pinger, daemon=True)
     ping_thread.start()
-    log.info("✓ Keep-Alive pinger aktif (Her 14dk)")
+    log.info("✓ Keep-Alive pinger aktif (Her 14dk, 7/24)")
 
 # Eğer app oluşturulduysa (örneğin Render 'uvicorn samsun:app' dediğinde) updater'ı başlat.
 if app:
