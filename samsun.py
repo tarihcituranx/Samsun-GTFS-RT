@@ -2872,6 +2872,34 @@ def create_app(db, col):
             log.error(f"YBS Proxy SamAir Araclar Hatası (WAF/Timeout): {e}")
             return JSONResponse([])
 
+    @app.get("/api/proxy_odak_araclar")
+    async def proxy_odak_araclar(hatid: int):
+        """Odak turistik hat canlı araç konumları — 20 Mayıs 2026'dan itibaren aktif"""
+        # Tarih kapısı: 20 Mayıs 2026 öncesi devre dışı
+        if datetime.utcnow() < datetime(2026, 5, 20):
+            return JSONResponse({"active": False, "message": "Odak canlı araç takibi 20 Mayıs 2026'dan itibaren aktif olacaktır.", "vehicles": []})
+        
+        http_client = col.http
+        token = await get_ybs_token(http_client.session)
+        if not token:
+            return JSONResponse({"active": True, "vehicles": [], "error": "Token alınamadı"})
+        
+        try:
+            resp = await asyncio.to_thread(
+                http_client.session.get,
+                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&submethod=AraclarList&hatid={hatid}&token={token}",
+                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"},
+                timeout=8
+            )
+            data = resp.json()
+            vehicles = data.get('data', data.get('root', []))
+            if isinstance(vehicles, list):
+                return JSONResponse({"active": True, "vehicles": vehicles})
+            return JSONResponse({"active": True, "vehicles": []})
+        except Exception as e:
+            log.error(f"YBS Proxy Odak Araclar Hatası: {e}")
+            return JSONResponse({"active": True, "vehicles": [], "error": str(e)})
+
     @app.get("/api/proxy/smart_stations")
     async def proxy_smart_stations(stationId: str):
         """Mobil uygulama için SmartStations proxy (Durağa yaklaşan araçlar)"""

@@ -141,4 +141,22 @@ class YbsApiService {
     }
     return [];
   }
+
+  /// Odak turistik hat canlı araç konumları — 20 Mayıs 2026 sonrası aktif
+  Future<Map<String, dynamic>> getOdakAraclar(int hatId) async {
+    try {
+      final uri = Uri.parse("$_renderBase/proxy_odak_araclar?hatid=$hatId");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      print("Odak Araclar Proxy Error: $e");
+    }
+    return {"active": false, "vehicles": []};
+  }
 }

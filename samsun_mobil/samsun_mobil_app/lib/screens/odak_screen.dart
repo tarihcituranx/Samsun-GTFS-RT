@@ -149,7 +149,11 @@ class OdakDetailScreen extends StatefulWidget {
 
 class _OdakDetailScreenState extends State<OdakDetailScreen> {
   List<Map<String, dynamic>> _duraklar = [];
+  List<dynamic> _vehicles = [];
   bool _isLoading = true;
+  bool _vehiclesLoading = false;
+  bool _odakActive = false;
+  String _odakMessage = '';
 
   @override
   void initState() { super.initState(); _loadDuraklar(); }
@@ -158,6 +162,22 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
     final id = widget.odak['id']?.toString() ?? '';
     final duraklar = await DBService().getOdakDuraklari(id);
     if (mounted) setState(() { _duraklar = duraklar; _isLoading = false; });
+  }
+
+  Future<void> _loadVehicles() async {
+    final hatId = int.tryParse(widget.odak['id']?.toString() ?? '') ?? 0;
+    if (hatId == 0) return;
+    
+    setState(() => _vehiclesLoading = true);
+    final result = await YbsApiService().getOdakAraclar(hatId);
+    if (mounted) {
+      setState(() {
+        _odakActive = result['active'] == true;
+        _odakMessage = result['message']?.toString() ?? '';
+        _vehicles = (result['vehicles'] as List<dynamic>?) ?? [];
+        _vehiclesLoading = false;
+      });
+    }
   }
 
   @override
@@ -187,8 +207,48 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
                       Text("₺${_duraklar.first['fiyat'] ?? '?'}", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                       Text("Tam", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.5))),
                     ]),
+                  if (_vehicles.isNotEmpty)
+                    Column(children: [
+                      Text("${_vehicles.length}", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFFFF5252))),
+                      Text("Araç", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.5))),
+                    ]),
                 ]),
               ),
+
+              // Canlı Araç Butonu
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _vehiclesLoading ? null : _loadVehicles,
+                    icon: _vehiclesLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.directions_bus, size: 18),
+                    label: Text(_vehiclesLoading ? 'Yükleniyor...' : '🚌 Canlı Araç Takip'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00BFA5),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Durum mesajı
+              if (_odakMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: const Color(0xFF2A2200), borderRadius: BorderRadius.circular(8)),
+                    child: Row(children: [
+                      const Icon(Icons.schedule, size: 16, color: Color(0xFFFFAB00)),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(_odakMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFFFAB00)))),
+                    ]),
+                  ),
+                ),
 
               // Harita
               if (_duraklar.isNotEmpty) Container(
@@ -210,17 +270,35 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
               },
             ),
           ),
-                    MarkerLayer(markers: _duraklar.where((d) => (d['lat'] as num?)?.toDouble() != null && (d['lat'] as num).toDouble() > 0).map((d) {
-                      final sira = (d['sira'] as num?)?.toInt() ?? 0;
-                      return Marker(
-                        point: LatLng((d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()),
-                        width: 22, height: 22,
-                        child: Container(
-                          decoration: BoxDecoration(color: const Color(0xFF00BFA5), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
-                          child: Center(child: Text("$sira", style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold))),
-                        ),
-                      );
-                    }).toList()),
+                    MarkerLayer(markers: [
+                      // Durak markerları
+                      ..._duraklar.where((d) => (d['lat'] as num?)?.toDouble() != null && (d['lat'] as num).toDouble() > 0).map((d) {
+                        final sira = (d['sira'] as num?)?.toInt() ?? 0;
+                        return Marker(
+                          point: LatLng((d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()),
+                          width: 22, height: 22,
+                          child: Container(
+                            decoration: BoxDecoration(color: const Color(0xFF00BFA5), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.5)),
+                            child: Center(child: Text("$sira", style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold))),
+                          ),
+                        );
+                      }),
+                      // Canlı araç markerları
+                      ..._vehicles.where((v) => v is Map && v['lat'] != null).map((v) {
+                        final lat = double.tryParse(v['lat']?.toString() ?? '0') ?? 0.0;
+                        final lon = double.tryParse(v['lon']?.toString() ?? v['lng']?.toString() ?? '0') ?? 0.0;
+                        if (lat == 0) return null;
+                        return Marker(
+                          point: LatLng(lat, lon),
+                          width: 28, height: 28,
+                          child: Container(
+                            decoration: BoxDecoration(color: const Color(0xFFFF5252), shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [BoxShadow(color: const Color(0xFFFF5252).withOpacity(0.4), blurRadius: 6)]),
+                            child: const Center(child: Icon(Icons.directions_bus, size: 14, color: Colors.white)),
+                          ),
+                        );
+                      }).whereType<Marker>(),
+                    ]),
                   ],
                 ),
               ),
@@ -251,3 +329,4 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
     );
   }
 }
+
