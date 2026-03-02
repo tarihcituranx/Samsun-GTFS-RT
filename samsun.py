@@ -2878,9 +2878,13 @@ def create_app(db, col):
         """Sistem durum kontrolü"""
         with _gtfs_feed_lock:
             vehicle_count = len(gtfs_feed.entity)
+        
+        proxy_status = "active" if col.http.s.proxies else "disabled"
+        
         return JSONResponse({
             "status": "ok",
             "uptime_seconds": int(time.time() - _START_TIME),
+            "proxy": proxy_status,
             "db": {
                 "hat": db.cnt('hat'),
                 "durak": db.cnt('durak'),
@@ -2891,6 +2895,45 @@ def create_app(db, col):
             "last_update": db.get_meta('son_guncelleme'),
             "gtfs_rt_vehicles": vehicle_count,
         })
+
+    @app.get("/api/debug/proxy")
+    async def debug_proxy():
+        """Proxy bağlantı testi — ASIS ve YBS erişilebilir mi?"""
+        results = {}
+        http = col.http
+        
+        # Proxy durumu
+        results["proxy_configured"] = bool(http.s.proxies)
+        results["proxy_env"] = {
+            "PROXY_HOST": os.environ.get("PROXY_HOST", "NOT SET"),
+            "PROXY_PORT": os.environ.get("PROXY_PORT", "NOT SET"),
+            "PROXY_USER": "***" if os.environ.get("PROXY_USER") else "NOT SET",
+        }
+        
+        # IP testi
+        try:
+            r = await asyncio.to_thread(http.s.get, "https://api.ipify.org", timeout=5)
+            results["proxy_ip"] = r.text
+        except Exception as e:
+            results["proxy_ip"] = f"ERROR: {e}"
+        
+        # ASIS testi
+        try:
+            r = await asyncio.to_thread(http.s.get, f"{ASIS}/Lines", timeout=10)
+            data = r.json()
+            lines = data.get('data', data) if isinstance(data, dict) else data
+            results["asis"] = {"status": r.status_code, "hat_count": len(lines) if isinstance(lines, list) else "?"}
+        except Exception as e:
+            results["asis"] = {"error": str(e)}
+        
+        # YBS token testi
+        try:
+            tok = http.ybs_token()
+            results["ybs_token"] = tok[:6] + "..." if tok else "FAILED"
+        except Exception as e:
+            results["ybs_token"] = f"ERROR: {e}"
+        
+        return JSONResponse(results)
 
     # --- Standart API Endpointleri ---
     @app.get("/gtfs-rt/vehicle-positions")
