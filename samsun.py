@@ -486,19 +486,23 @@ class Http:
                     else:
                         continue
                 else:
-                    # String parametreler için gereksiz boşlukları silip url encoding'in garantili olmasını sağla
+                    # String parametreler için url encoding
                     params[k] = str(v).strip()
             
             log.debug(f"→ ASIS {ep} | Params: {params}")
             
-            # Bazı lineCode değerleri özel karakter barındırabiliyor, headers'a generic User-Agent ekle
+            # Bazı lineCode değerleri özel karakter barındırabiliyor, url encoding zorla (requests bazen türkçe karakterleri bozar)
+            import urllib.parse
+            query_string = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+            full_url = f"{url}?{query_string}" if params else url
+            
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                 'Accept': 'application/json',
                 'Connection': 'keep-alive'
             }
             
-            r = session.get(url, params=params, headers=headers, timeout=12)
+            r = session.get(full_url, headers=headers, timeout=12)
             
             if r.ok:
                 d = r.json()
