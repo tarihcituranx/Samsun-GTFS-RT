@@ -68,9 +68,10 @@ class PriceService {
     }
     
     // Default fallback
+    final defaultPrices = prices["default"];
     return {
-      "tam": (prices["default"]["tam"] ?? 17.0).toDouble(),
-      "indirimli": (prices["default"]["indirimli"] ?? 12.0).toDouble()
+      "tam": (defaultPrices?["tam"] ?? 17.0).toDouble(),
+      "indirimli": (defaultPrices?["indirimli"] ?? 12.0).toDouble()
     };
   }
 }

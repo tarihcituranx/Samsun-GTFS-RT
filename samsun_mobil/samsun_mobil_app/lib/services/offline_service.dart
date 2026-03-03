@@ -7,19 +7,25 @@ class OfflineService {
   OfflineService._internal();
 
   bool isOffline = false;
-  final StreamController<bool> _offlineController = StreamController<bool>.broadcast();
+  StreamController<bool> _offlineController = StreamController<bool>.broadcast();
   Stream<bool> get offlineStream => _offlineController.stream;
 
   Timer? _timer;
 
   /// Servisi başlatır ve her 10 saniyede bir bağlantıyı kontrol eder.
   void startMonitoring() {
+    if (_offlineController.isClosed) {
+      _offlineController = StreamController<bool>.broadcast();
+    }
     _checkConnection();
     _timer = Timer.periodic(const Duration(seconds: 10), (_) => _checkConnection());
   }
 
   void stopMonitoring() {
     _timer?.cancel();
+    if (!_offlineController.isClosed) {
+      _offlineController.close();
+    }
   }
 
   Future<void> _checkConnection() async {
@@ -37,7 +43,9 @@ class OfflineService {
     }
 
     if (previousState != isOffline) {
-      _offlineController.add(isOffline);
+      if (!_offlineController.isClosed) {
+        _offlineController.add(isOffline);
+      }
     }
   }
 }

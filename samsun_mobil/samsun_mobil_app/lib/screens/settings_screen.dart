@@ -591,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           Text('Geliştirici: Turan KAYA', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontStyle: FontStyle.italic)),
           const SizedBox(height: 4),
-          Text('Versiyon: 2.4.1', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
+          Text('Versiyon: 2.5.0', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11)),
           const SizedBox(height: 12),
           // Partnerler
           Text('İş Ortakları', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1)),

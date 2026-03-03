@@ -261,7 +261,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Widget _buildStatsCard() {
     final s = _stats!;
-    final uptime = (s['uptime_seconds'] ?? 0) as int;
+    final uptime = (s['uptime_seconds'] as num?)?.toInt() ?? 0;
     final vehicles = s['gtfs_rt_vehicles'] ?? 0;
     final activeCount = s['active_line_count'] ?? 0;
     final proxyActive = s['proxy_active'] ?? false;

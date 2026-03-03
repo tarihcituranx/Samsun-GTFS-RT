@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../services/api_service.dart';
 import '../services/db_service.dart';
 import '../services/ybs_api_service.dart';
 
@@ -165,18 +166,31 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
   }
 
   Future<void> _loadVehicles() async {
-    final hatId = int.tryParse((widget.odak['id'] ?? widget.odak['kodu'] ?? '').toString()) ?? 0;
-    if (hatId == 0) return;
+    // Tüm araçlar (Odak dahil) ASIS RealTimeData ile konum gösteriyor
+    // Tramvay ve Teleferik hariç — onlar RealTimeData'da yok
+    final kod = (widget.odak['kod'] ?? widget.odak['kodu'] ?? '').toString();
+    if (kod.isEmpty) return;
     
     setState(() => _vehiclesLoading = true);
-    final result = await YbsApiService().getOdakAraclar(hatId);
-    if (mounted) {
-      setState(() {
-        _odakActive = result['active'] == true;
-        _odakMessage = result['message']?.toString() ?? '';
-        _vehicles = (result['vehicles'] as List<dynamic>?) ?? [];
-        _vehiclesLoading = false;
-      });
+    try {
+      final vehicles = await ApiService.getHattakiAraclar(kod);
+      if (mounted) {
+        setState(() {
+          _odakActive = vehicles.isNotEmpty;
+          _odakMessage = vehicles.isEmpty ? 'Aktif araç bulunamadı' : '';
+          _vehicles = vehicles;
+          _vehiclesLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _odakActive = false;
+          _odakMessage = 'Araç bilgileri alınamadı. İnternet bağlantınızı kontrol edin.';
+          _vehicles = [];
+          _vehiclesLoading = false;
+        });
+      }
     }
   }
 
