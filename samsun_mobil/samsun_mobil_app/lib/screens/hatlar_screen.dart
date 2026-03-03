@@ -7,7 +7,8 @@ import '../services/api_service.dart';
 import '../services/price_service.dart';
 
 class HatlarScreen extends StatefulWidget {
-  const HatlarScreen({Key? key}) : super(key: key);
+  final void Function(String lineCode)? onLineSelected;
+  const HatlarScreen({Key? key, this.onLineSelected}) : super(key: key);
   @override
   State<HatlarScreen> createState() => _HatlarScreenState();
 }
@@ -177,7 +178,10 @@ class _HatlarScreenState extends State<HatlarScreen> {
                         decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
                         child: Text(kat.toUpperCase(), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
                       ),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HatDetailScreen(code: code, name: name, kat: kat))),
+                      onTap: () {
+                        widget.onLineSelected?.call(code.split(' ').first.split('/').first);
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => HatDetailScreen(code: code, name: name, kat: kat)));
+                      },
                     ),
                   );
                 },
