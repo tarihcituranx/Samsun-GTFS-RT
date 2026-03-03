@@ -5,7 +5,7 @@ class SamAirService {
   static const String ASIS_BASE = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
 
   // H1, H2, H3, H4 hatlarını takip edeceğiz
-  static final List<String> SAMAIR_LINES = ['H1', 'H2', 'H3', 'H4'];
+  static final List<String> SAMAIR_LINES = ['H1', 'H2', 'H3', 'H4', 'H5'];
 
   static Future<List<Map<String, dynamic>>> getLiveSamAirBuses() async {
     List<Map<String, dynamic>> allVehicles = [];

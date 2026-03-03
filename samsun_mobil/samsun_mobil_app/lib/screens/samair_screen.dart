@@ -32,7 +32,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _fetchLiveBuses();
     _timer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchLiveBuses());
   }
@@ -78,6 +78,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
               Tab(text: "H2 TTTM"),
               Tab(text: "H3 Bafra"),
               Tab(text: "H4 Çarşamba"),
+              Tab(text: "H5"),
             ],
           ),
         ),
@@ -93,6 +94,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
               _SamAirScheduleTab(lineId: 4, lineName: 'H2', color: const Color(0xFF00BFA5)),
               _SamAirScheduleTab(lineId: 5, lineName: 'H3', color: const Color(0xFFFF5252)),
               _SamAirScheduleTab(lineId: 9, lineName: 'H4', color: const Color(0xFFFFAB00)),
+              _SamAirScheduleTab(lineId: 10, lineName: 'H5', color: const Color(0xFF7C4DFF)),
             ],
           ),
         ),
