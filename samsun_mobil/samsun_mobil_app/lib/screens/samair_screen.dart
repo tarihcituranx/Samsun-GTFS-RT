@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../services/api_service.dart';
 import '../services/ybs_api_service.dart';
 import '../services/samair_service.dart';
 
@@ -45,15 +46,26 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   }
 
   Future<void> _fetchLiveBuses() async {
-    // 1. Önce YBS proxy dene
-    var buses = await YbsApiService().getSamairAraclar();
-    // 2. YBS boşsa, ASIS RealTimeData üzerinden H1-H4 çek
-    if (buses.isEmpty) {
-      buses = await SamAirService.getLiveSamAirBuses();
+    // Tüm araçlar (SamAir dahil) ASIS RealTimeData ile konum gösteriyor
+    // 1. Önce Render proxy üzerinden ASIS RealTimeData'yı dene (H1-H5 paralel)
+    List<dynamic> allBuses = [];
+    try {
+      final results = await Future.wait(
+        ['H1', 'H2', 'H3', 'H4', 'H5'].map((line) =>
+          ApiService.getHattakiAraclar(line).catchError((_) => <Map<String, dynamic>>[])
+        ),
+      );
+      for (var vehicles in results) {
+        allBuses.addAll(vehicles);
+      }
+    } catch (_) {}
+    // 2. Proxy başarısız olursa direkt ASIS dene (SamAirService)
+    if (allBuses.isEmpty) {
+      allBuses = await SamAirService.getLiveSamAirBuses();
     }
     if (mounted) {
       setState(() {
-        _liveBuses = buses;
+        _liveBuses = allBuses;
         _isLoading = false;
       });
     }
