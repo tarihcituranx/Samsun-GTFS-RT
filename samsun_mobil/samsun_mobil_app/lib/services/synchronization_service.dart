@@ -1,7 +1,7 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:samsun_transit/helpers/database_helper.dart';
+import 'package:samsun_mobil_app/helpers/database_helper.dart';
 import 'package:sqflite/sqflite.dart'; // Hata düzeltmesi için eklendi
 
 // samsun.py'nin Collector sınıfının mantığını Flutter/Dart'a taşıyan servis.

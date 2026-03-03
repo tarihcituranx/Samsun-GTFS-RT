@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:samsun_transit/services/synchronization_service.dart';
+import 'package:samsun_mobil_app/services/synchronization_service.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
