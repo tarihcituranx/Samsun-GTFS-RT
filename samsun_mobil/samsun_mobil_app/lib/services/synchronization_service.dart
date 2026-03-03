@@ -61,13 +61,22 @@ class SynchronizationService {
 
   Future<List<dynamic>> _ybsApiCall(String module, String method, {Map<String, String>? params}) async {
     try {
-      final uri = Uri.parse('$YBS_BASE/$module/$method').replace(queryParameters: params);
+      // YBS API query param formatı: ?method=<module>&submethod=<method>&token=...
+      final queryParams = <String, String>{
+        'method': module,
+        'submethod': method,
+        ...?params,
+      };
+      final uri = Uri.parse(YBS_BASE).replace(queryParameters: queryParams);
       final response = await http.get(uri, headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Referer': 'https://odak.samsun.bel.tr/',
       });
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         var decoded = json.decode(response.body);
-        return (decoded is Map && decoded.containsKey('data')) ? decoded['data'] : (decoded is List ? decoded : []);
+        if (decoded is Map && decoded.containsKey('data')) return decoded['data'] is List ? decoded['data'] : [];
+        if (decoded is Map && decoded.containsKey('root')) return decoded['root'] is List ? decoded['root'] : [];
+        if (decoded is List) return decoded;
       }
     } catch (e) {
       print('YBS API Hatası ($module/$method): $e');
@@ -230,7 +239,7 @@ class SynchronizationService {
       if (schedules.isNotEmpty) {
         final batch = db.batch();
         for (var d in schedules) {
-          String saat = d['time']?.toString() ?? d['saat']?.toString() ?? '';
+          String saat = d['saat']?.toString() ?? d['time']?.toString() ?? '';
           String yon = d['yon']?.toString() ?? '';
           if (saat.isNotEmpty) {
             batch.insert(DatabaseHelper.tableSefer, {
@@ -457,7 +466,7 @@ class SynchronizationService {
     if (n.contains('TELEFERİK')) return 'teleferik';
     if (c.startsWith('H') && c.length > 1 && int.tryParse(c.substring(1, 2)) != null) return 'havalimani';
     if (n.contains('EKSPRES') || (c.startsWith('E') && c.length > 1 && int.tryParse(c.substring(1, 2)) != null)) return 'ekspres';
-    if (['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK'].any((ilce) => n.contains(ilce))) return 'ilce';
+    if (['TERME','ÇARŞAMBA','BAFRA','HAVZA','LADİK','KAVAK','ASARCIK','SALIPAZARI','TEKKEKÖY','ALAÇAM','AYVACIK','VEZİRKÖPRÜ','YAKAKENT','19 MAYIS','ONDOKUZMAYIS'].any((ilce) => n.contains(ilce))) return 'ilce';
     
     return 'otobus';
   }

@@ -2815,10 +2815,10 @@ def create_app(db, col):
             return YBS_TOKEN_CACHE["token"]
             
         try:
+            # YBS API: GET ?method=getGuestToken (OpenAPI spec'e uygun)
             resp = await asyncio.to_thread(
-                http_client.post,
-                "https://ybs.samsun.bel.tr/service/",
-                json={"method": "getGuestToken"},
+                http_client.get,
+                "https://ybs.samsun.bel.tr/service/?method=getGuestToken",
                 headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
             )
             data = resp.json()
@@ -2840,12 +2840,14 @@ def create_app(db, col):
         try:
             resp = await asyncio.to_thread(
                 http_client.session.get,
-                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&token={token}",
+                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&submethod=HatlarAllList&token={token}",
                 headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"}
             )
             data = resp.json()
             if data.get('status') == 'SUCCESS' and data.get('data'):
                 return JSONResponse(data['data'])
+            if data.get('root'):
+                return JSONResponse(data['root'])
             return JSONResponse([])
         except Exception as e:
             log.error(f"YBS Proxy Odak Hatası (WAF/Timeout): {e}")

@@ -1,0 +1,799 @@
+openapi: "3.1.0"
+info:
+  title: Samsun Büyükşehir Belediyesi Asis Ulaşım API
+  summary: Samsun toplu taşıma, canlı araç takibi, sefer saatleri ve YBS servisleri
+  description: >
+    **Resmi şema tarafımca düzenlenmiştir:** Turan KAYA
+
+    **Orijinal Şema:** https://api.samsun.bel.tr/OHSSoapToJson/swagger/index.html
+
+    **SAMSUN TRANSIT - SUPER APP (MASTER API DOKÜMANTASYONU)**
+
+    Bu API şeması, Samsun Büyükşehir Belediyesine ait tüm toplu taşıma,
+    akıllı şehir bileşenleri, havaalanı transferleri ve turistik hatların
+    verilerini kapsar.
+
+    ---
+
+    ## Veri Kaynakları
+
+    **A. ASİS API (SOAP to JSON Adaptörü)**
+    - Sistemin ana omurgası. Otobüs hatları, tramvay saatleri ve 1600+ durak verisi.
+    - Lines/OrjLines: Hat ID'leri ve isimleri
+    - StopsStations: Durak koordinatları
+    - RealTimeData & Schedules: Anlık lokasyon ve sefer planları
+
+    **B. YBS (Yönetim Bilgi Sistemi) API'leri**
+    - Token mekanizması: `getGuestToken` ile ~200 saniyelik misafir token alınır
+    - Samair API: Havalimanı otobüs sefer saatleri
+    - Odak Samsun API: Turistik hatlar (Ayvacık Barajı, Şahinkaya Kanyonu vb.)
+    - **Önemli:** `odakSamsun_Crud` için `Referer: https://odak.samsun.bel.tr/` header zorunlu
+
+    **C. Samulaş Web Sitesi (Scraping)**
+    - Bilet fiyatları `samulas.com.tr/otobusler` adresinden HTML ayrıştırma ile alınır
+
+    ---
+
+    ## Önemli Notlar (Quirks)
+
+    - **ID Mapping:** H1 OMÜ=YBS ID 3, H2 TTTM=4, H3 BAFRA=5, H4 ÇARŞAMBA=9
+    - **Turistik Hat Hatası:** Odak API Şahinkaya/Kızılırmak/Ayvacık rotalarında
+      Gidiş/Dönüş değerlerini ters döndürür — `ODAK_ISIM_DUZELTME` tablosu ile düzeltilir
+    - **Encoding:** Windows-1254 kaynaklı bozuk Türkçe karakterler `fix_turkish` ile düzeltilir
+
+  version: "1.0.0"
+  contact:
+    name: Turan KAYA
+    url: https://github.com/tarihcituranx
+  license:
+    name: Resmi Belediye API — Gayriresmi şema düzenlemesi
+    url: https://github.com/tarihcituranx/TuranAPI
+
+servers:
+  - url: https://api.samsun.bel.tr/OHSSoapToJson
+    description: ASİS API Sunucusu
+  - url: https://ybs.samsun.bel.tr/service
+    description: YBS API Sunucusu
+  - url: https://samulas.com.tr
+    description: Samulaş Web API
+
+security: []
+
+components:
+  schemas:
+
+    ApiResponse:
+      type: object
+      description: Standart API yanıt zarfı
+      properties:
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: ""
+        data:
+          description: Yanıt verisi (liste veya nesne)
+
+    LineItem:
+      type: object
+      description: Hat bilgisi
+      properties:
+        lineCode:
+          type: string
+          description: Hat kodu
+          example: "13 TOKİ-BL.EVLERİ"
+        lineNo:
+          type: string
+          description: Hat numarası
+          example: "35"
+        lineName:
+          type: string
+          description: Hat tam adı
+          example: "13 KAMALI TOKİ - SOĞUKSU"
+        shortLineName:
+          type: string
+          description: Kısa hat adı (GTFS route_short_name)
+          example: "339"
+        tip:
+          type: string
+          description: Yön tipi (gidis/donus)
+          example: "donus"
+
+    StopItem:
+      type: object
+      description: Durak bilgisi
+      properties:
+        stopId:
+          type: string
+          description: Durak ID'si
+          example: "800"
+        stopName:
+          type: string
+          description: Durak adı
+          example: "İLK DURAK"
+        orderId:
+          type: string
+          description: Sıra numarası
+          example: "0"
+        latitude:
+          type: string
+          description: Enlem
+          example: "41.2915"
+        longitude:
+          type: string
+          description: Boylam
+          example: "36.3374"
+
+    RealTimeItem:
+      type: object
+      description: Canlı araç konumu (gerçek ASIS yanıt formatı)
+      properties:
+        plaka:
+          type: string
+          description: Araç plakası
+          example: "55 APK 901"
+        enlem:
+          type: string
+          description: Enlem (latitude)
+          example: "41.45349167"
+        boylam:
+          type: string
+          description: Boylam (longitude)
+          example: "36.12655833"
+        renk:
+          type: string
+          description: Harita ikonunda kullanılacak renk (hex)
+          example: "00FF00"
+        hiz:
+          type: string
+          description: Anlık hız (km/s)
+          example: "68.00"
+        mesafe:
+          type: string
+          description: Toplam kat edilen mesafe (metre)
+          example: "227523"
+        surucu:
+          type: string
+          description: Şoför adı ve telefon numarası (KVKK dikkat!)
+          example: "MUSTAFA ATEŞ ((535)359 34 60)"
+        gunlukYolcu:
+          type: string
+          description: Günlük toplam taşınan yolcu
+          example: "443"
+        seferYolcu:
+          type: string
+          description: Bu seferde taşınan yolcu
+          example: "47"
+        durakYolcu:
+          type: string
+          description: Durakta bekleyen yolcu sayısı
+          example: "0"
+        toplamHasilat:
+          type: string
+          description: Günlük toplam hasılat (TL)
+          example: "3618.00"
+        maxHiz:
+          type: string
+          description: Günlük maksimum hız (km/s)
+          example: "81"
+        yon:
+          type: string
+          description: Aracın yönü (derece, 0-360)
+          example: "126"
+        editDate:
+          type: string
+          description: Son güncelleme zamanı (ISO 8601)
+          example: "2026-03-02T16:50:20.533+03:00"
+        ImageUrl:
+          type: string
+          description: Harita ikonu URL'si
+          example: "images/icon/green_bus.gif"
+        HatKodu:
+          type: string
+          description: Hat kodu (aracın bağlı olduğu hat)
+          example: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
+        validatorNo:
+          type: string
+          description: Validatör (bilet okuyucu) numarası
+          example: "111"
+        tarih:
+          type: string
+          description: Konum verisinin zamanı (ISO 8601)
+          example: "2026-03-02T16:50:12+03:00"
+
+    ScheduleItem:
+      type: object
+      description: Sefer saati (gerçek ASIS yanıt formatı)
+      properties:
+        cizelgekodu:
+          type: string
+          description: Çizelge (program) kodu
+          example: "CZL001"
+        hatkodu:
+          type: string
+          description: Hat kodu
+          example: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
+        saat:
+          type: string
+          description: Kalkış saati (HH:MM)
+          example: "06:30"
+        yon:
+          type: string
+          description: Yön bilgisi
+          example: "gidis"
+
+paths:
+
+  /api/Asis/Lines:
+    get:
+      operationId: getLines
+      tags: [ASİS - Hat ve Güzergah]
+      summary: Tüm Aktif Hatları Getir
+      description: >
+        Sistemde tanımlı olan tüm toplu taşıma hatlarının
+        (Otobüs, Ekspres, Ring vb.) listesini döndürür.
+      responses:
+        '200':
+          description: Hat listesi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LineItem'
+              example:
+                statusCode: 200
+                message: ""
+                data:
+                  - lineCode: "13 TOKİ-BL.EVLERİ"
+                    lineNo: "35"
+                    lineName: "13 KAMALI TOKİ - SOĞUKSU"
+                    shortLineName: "339"
+                    tip: "donus"
+                  - lineCode: "SAMULAŞ EKSPRES"
+                    lineNo: "158"
+                    lineName: "E1 OMÜ - SOĞUKSU"
+                    shortLineName: "302"
+                    tip: "donus"
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/OrjLines:
+    get:
+      operationId: getOrjLines
+      tags: [ASİS - Hat ve Güzergah]
+      summary: Orijinal Hat Listesini Getir
+      description: Asis sistemindeki filtrelenmemiş/ham orijinal hat verilerini döndürür.
+      responses:
+        '200':
+          description: Ham hat listesi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LineItem'
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/StopsStations:
+    get:
+      operationId: getStopsStations
+      tags: [ASİS - Durak]
+      summary: Durak Bilgilerini Sorgula
+      description: >
+        Belirli bir hatta ait tüm durakların listesini veya
+        belirli bir durağa ait detayları getirir.
+        Koordinat ve durak sırası bilgilerini içerir.
+      parameters:
+        - name: lineCode
+          in: query
+          schema:
+            type: string
+          description: Sorgulanacak hattın tam kodu
+          example: "13 TOKİ-BL.EVLERİ"
+        - name: stopId
+          in: query
+          schema:
+            type: integer
+          description: Spesifik durağın ID numarası
+          example: 800
+      responses:
+        '200':
+          description: Durak veri seti
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StopItem'
+              example:
+                statusCode: 200
+                message: ""
+                data:
+                  - stopId: "800"
+                    stopName: "İLK DURAK"
+                    orderId: "0"
+                    latitude: "41.2915"
+                    longitude: "36.3374"
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/SmartStations:
+    get:
+      operationId: getSmartStations
+      tags: [ASİS - Durak]
+      summary: Akıllı Durak Ekran Görünümü
+      description: Fiziksel akıllı durak ekranlarındaki canlı bilgilendirme verilerini simüle eder.
+      parameters:
+        - name: stationId
+          in: query
+          schema:
+            type: integer
+          description: Akıllı Panel Kimlik Numarası
+      responses:
+        '200':
+          description: Akıllı durak verisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                statusCode: 200
+                message: ""
+                data: []
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/LineDirections:
+    get:
+      operationId: getLineDirections
+      tags: [ASİS - Hat ve Güzergah]
+      summary: Hat Yön Bilgilerini Getir
+      description: >
+        Belirtilen hattın Gidiş (Forward) ve Dönüş (Backward) olmak üzere
+        operasyonel yön bilgilerini verir.
+      parameters:
+        - name: lineCode
+          in: query
+          schema:
+            type: string
+          description: Yön bilgileri istenen hat kodu
+          example: "KAMALI TOP.KONT."
+      responses:
+        '200':
+          description: Hat yön bilgileri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                statusCode: 200
+                message: ""
+                data:
+                  - Direction: "CIRCULAR"
+                    lineCode: "KAMALI TOP.KONT."
+                    lineNo: "119"
+                    stopName: "İLK DURAK"
+                    orderId: "0"
+                    durakId: "800"
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/RealTimeData:
+    get:
+      operationId: getRealTimeData
+      tags: [ASİS - Canlı Araç Takibi]
+      summary: Canlı Araç Konumları
+      description: >
+        Seçilen hatta şu anda aktif olarak hizmet veren araçların
+        anlık GPS koordinatlarını ve plaka bilgilerini döndürür.
+      parameters:
+        - name: lineCode
+          in: query
+          schema:
+            type: string
+          description: Araçları takip edilecek hattın kodu
+          example: "SAMULAŞ EKSPRES 4-GİDİŞ"
+      responses:
+        '200':
+          description: Anlık lokasyon verisi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RealTimeItem'
+              example:
+                statusCode: 200
+                message: ""
+                data:
+                  - plaka: "55 APK 901"
+                    enlem: "41.45349167"
+                    boylam: "36.12655833"
+                    renk: "00FF00"
+                    hiz: "68.00"
+                    mesafe: "227523"
+                    surucu: "MUSTAFA ATEŞ ((535)359 34 60)"
+                    gunlukYolcu: "443"
+                    seferYolcu: "47"
+                    durakYolcu: "0"
+                    toplamHasilat: "3618.00"
+                    maxHiz: "81"
+                    yon: "126"
+                    editDate: "2026-03-02T16:50:20.533+03:00"
+                    ImageUrl: "images/icon/green_bus.gif"
+                    HatKodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
+                    validatorNo: "111"
+                    tarih: "2026-03-02T16:50:12+03:00"
+        '400':
+          description: Geçersiz istek
+
+  /api/Asis/Schedules:
+    get:
+      operationId: getSchedules
+      tags: [ASİS - Sefer Saatleri]
+      summary: Hareket Saatleri Planlaması
+      description: >
+        Otobüs veya tramvayların ilk duraktan kalkış saatleri planını
+        günlük formatta verir.
+      parameters:
+        - name: lineCode
+          in: query
+          schema:
+            type: string
+          description: Sefer saatleri istenen hattın kodu
+          example: "E1 OMÜ-SOĞUKSU"
+        - name: scheduleDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Sorgulanacak günün tarihi (YYYY-MM-DD)
+          example: "2026-02-27"
+      responses:
+        '200':
+          description: Sefer planı listesi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ScheduleItem'
+              example:
+                statusCode: 200
+                message: ""
+                data:
+                  - cizelgekodu: "CZL001"
+                    hatkodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
+                    saat: "06:30"
+                    yon: "gidis"
+                  - cizelgekodu: "CZL001"
+                    hatkodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
+                    saat: "07:00"
+                    yon: "gidis"
+        '400':
+          description: Geçersiz istek
+
+  /ybs/getGuestToken:
+    get:
+      operationId: getGuestToken
+      tags: [YBS - Yetkilendirme]
+      summary: Misafir Token Al (Guest Token)
+      description: >
+        **ÖNEMLİ:** YBS servislerinin büyük çoğunluğu her istekte güncel bir
+        `token` parametresine ihtiyaç duyar. Token süresi ~200 saniyedir.
+
+        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=getGuestToken`
+      servers:
+        - url: https://ybs.samsun.bel.tr/service
+          description: YBS API Sunucusu
+      responses:
+        '200':
+          description: Misafir token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "ikyRM7OdnfKl"
+              example:
+                token: "ikyRM7OdnfKl"
+        '400':
+          description: Geçersiz istek
+
+  /ybs/samair-ucaksefersaatleri:
+    get:
+      operationId: getSamairFlightSchedules
+      tags: [YBS - Samair Havaalanı]
+      summary: Havaalanı Sefer Saatleri
+      description: >
+        Samair otobüslerinin uçuş saatine göre kalkış detaylarını verir.
+
+        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=samair_ucaksefersaatleri_public`
+
+        **Hat ID Mapping:**
+        - H1 OMÜ = YBS ID 3
+        - H2 TTTM = YBS ID 4
+        - H3 BAFRA = YBS ID 5
+        - H4 ÇARŞAMBA = YBS ID 9
+      servers:
+        - url: https://ybs.samsun.bel.tr/service
+          description: YBS API Sunucusu
+      parameters:
+        - name: submethod
+          in: query
+          schema:
+            type: string
+          description: Alt metod adı (örn. HatlarList)
+          example: "HatlarList"
+        - name: hatid
+          in: query
+          schema:
+            type: integer
+          description: Hat ID'si (H1=3, H2=4, H3=5, H4=9)
+          example: 3
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Geçerli YBS token'ı (getGuestToken'dan alınır)
+      responses:
+        '200':
+          description: Sefer saatleri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "SUCCESS"
+                  data:
+                    type: array
+              example:
+                status: "SUCCESS"
+                data:
+                  - id: 21793
+                    hatid: 3
+                    saat: "00:30:00"
+                    varis_saati: "01:45:00"
+                    tarih: "2026-02-27"
+                    ucak_firmasi: "AJET"
+                    ucak_saatleri: "03:30"
+                    formatted_date: "27 Şubat 2026 Cuma"
+        '400':
+          description: Geçersiz istek
+        '401':
+          description: Token geçersiz
+
+  /ybs/samair-duraklar:
+    get:
+      operationId: getSamairStops
+      tags: [YBS - Samair Havaalanı]
+      summary: Samair Durak Listesi
+      description: >
+        Samair otobüslerine ait durak koordinatlarını ve bilet fiyatlandırmalarını listeler.
+
+        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=samair_duraklar_public`
+      servers:
+        - url: https://ybs.samsun.bel.tr/service
+          description: YBS API Sunucusu
+      parameters:
+        - name: submethod
+          in: query
+          schema:
+            type: string
+          description: Alt metod adı (örn. DuraklarList)
+          example: "DuraklarList"
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Geçerli YBS token'ı
+      responses:
+        '200':
+          description: Durak listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "SUCCESS"
+                  data:
+                    type: array
+              example:
+                status: "SUCCESS"
+                data:
+                  - id: 1
+                    durak_adi: "Rektörlük Tramvay İstasyonu"
+                    durak_lat: "36.225315980358843"
+                    durak_long: "41.3718854642756"
+                    durak_kodu: "31632"
+                    durak_fiyat: "130"
+        '400':
+          description: Geçersiz istek
+
+  /ybs/odakSamsun:
+    get:
+      operationId: getOdakSamsun
+      tags: [YBS - Odak (İlçe Hatlar)]
+      summary: Odak Samsun Hat ve Durak Verileri
+      description: >
+        Turistik hatlar (Ayvacık Barajı, Şahinkaya Kanyonu vb.) ve ilçe hatları.
+
+        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=odakSamsun_Crud`
+
+        **⚠️ Zorunlu Header:** `Referer: https://odak.samsun.bel.tr/`
+
+        **Gidiş/Dönüş Hatası:** Şahinkaya, Kızılırmak ve Ayvacık rotalarında
+        API Gidiş/Dönüş değerlerini ters döndürür. `ODAK_ISIM_DUZELTME` tablosu
+        ile düzeltilir.
+      servers:
+        - url: https://ybs.samsun.bel.tr/service
+          description: YBS API Sunucusu
+      parameters:
+        - name: submethod
+          in: query
+          schema:
+            type: string
+            enum: [HatlarAllList, HatlarList, GetHatDuraklar]
+          description: Alt metod adı
+          example: "HatlarAllList"
+        - name: id
+          in: query
+          schema:
+            type: integer
+          description: Hat ID'si (GetHatDuraklar için zorunlu)
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Geçerli YBS token'ı
+      responses:
+        '200':
+          description: Hat ve durak verileri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "SUCCESS"
+                  data:
+                    type: array
+              example:
+                status: "SUCCESS"
+                data:
+                  - id: 6
+                    durak_adi: "Toplu Taşıma Transfer Merkezi"
+                    durak_lat: null
+                    durak_long: null
+                    durak_kodu: "13831"
+                    durak_fiyat: "115,00"
+                    durak_fiyat_ogr: "92,00"
+        '400':
+          description: Geçersiz istek
+        '403':
+          description: Referer header eksik
+
+  /api/v1/lines/list:
+    get:
+      operationId: getSamulasLines
+      tags: [Samulaş Web API (V1)]
+      summary: Tüm Hatlar ve Kısa Kodları (Short Names)
+      description: >
+        Samulaş'ın yeni V1 API'si. GTFS route_short_name ve güzergah
+        ilk/son durak koordinatlarını sağlar.
+
+        Sunucu: `https://samulas.com.tr`
+      servers:
+        - url: https://samulas.com.tr
+          description: Samulaş Web API
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Sayfa numarası
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+          description: Sayfa başına kayıt sayısı
+      responses:
+        '200':
+          description: Hat listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  statusCode:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: array
+              example:
+                status: "success"
+                statusCode: 200
+                data:
+                  data:
+                    - text: "R2 CEZAEVİ-EĞİTİM ARAŞTIRMA-BÜYÜK CAMİ"
+                      id: 993
+                      line_code: "R2 CEZAEVİ-BÜYÜK CAMİ"
+                      short_line_name: "R2"
+                      first_station:
+                        station_name: "10052 - BÜYÜK CAMİ"
+                        latitude: "41.294762"
+                        longitude: "36.333906"
+                      last_station:
+                        station_name: "11872 - YENİ CEZAEVİ"
+                        latitude: "41.259421"
+                        longitude: "36.234579"
+        '400':
+          description: Geçersiz istek
+
+tags:
+  - name: ASİS - Hat ve Güzergah
+    description: Otobüs ve tramvay hat bilgileri
+  - name: ASİS - Durak
+    description: Durak koordinatları ve akıllı durak verileri
+  - name: ASİS - Canlı Araç Takibi
+    description: Anlık araç konumları
+  - name: ASİS - Sefer Saatleri
+    description: Günlük sefer planları
+  - name: YBS - Yetkilendirme
+    description: YBS token yönetimi
+  - name: YBS - Samair Havaalanı
+    description: Havalimanı otobüs servisleri
+  - name: YBS - Odak (İlçe Hatlar)
+    description: Turistik ve ilçe hatları
+  - name: Samulaş Web API (V1)
+    description: Samulaş GTFS zenginleştirici API
+
+# x-kaynak: Samsun Transit projesi — samsun.py
+# x-orijinal-swagger: https://api.samsun.bel.tr/OHSSoapToJson/swagger/index.html
+# x-not: Bu ortamdan API'ye erişilemiyor (Türkiye yerel sunucusu)
