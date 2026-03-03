@@ -2117,7 +2117,7 @@ HTML = '''<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🚌 Samsun Transit</title>
+<title>🚌 Samsun Ulaşım Sistemi</title>
 <link rel="stylesheet" href="/static/leaflet.css"/>
 <script src="/static/leaflet.js"></script>
 <style>
@@ -2325,14 +2325,27 @@ function shYakin(duraklar){
 async function shRotaUI(){
     clr();
     document.getElementById('ct').innerHTML=`<div class="sec">📍 Yol Tarifi</div>
-    <div style="padding:10px;text-align:center;color:#666">
-        <p>1. Konumunuz otomatik alındı.</p>
-        <p>2. Haritada gitmek istediğiniz yere <b>sağ tıklayın</b> (veya basılı tutun).</p>
-        <p>3. "Buraya Nasıl Giderim?" butonuna basın.</p>
-        <div style="margin-top:15px;font-size:0.7rem;color:#d35400">⚠️ Özellik: Aktarmalı Akıllı Rota (Otobüs + Tramvay) hesaplanır.</div>
+    <div style="padding:10px">
+        <input class="src" id="rotaInput" placeholder="Nereye? (Ör: Atakum, OMÜ, Meydan...)" style="margin-bottom:8px">
+        <button class="bk" onclick="calcRotaFromInput()" style="margin-bottom:8px">🧭 Rota Hesapla</button>
+        <div style="text-align:center;color:#888;font-size:0.65rem;margin-top:4px">
+            veya haritada sağ tıklayarak hedef seçin
+        </div>
+        <div style="margin-top:10px;font-size:0.7rem;color:#d35400;text-align:center">⚠️ Aktarmalı Akıllı Rota (Otobüs + Tramvay) hesaplanır.</div>
     </div>`;
 }
 
+async function calcRotaFromInput(){
+    const q=document.getElementById('rotaInput')?.value?.trim();
+    if(!q){showToast('Lütfen bir hedef girin');return}
+    if(!userLoc) return alert("Konum alınamadı!");
+    document.getElementById('ct').innerHTML='<div class="loading">📍 Hedef aranıyor...<br><small>'+q+'</small></div>';
+    try{
+        const res=await(await fetch(`/api/rota?lat1=${userLoc.lat}&lon1=${userLoc.lon}&end=${encodeURIComponent(q)}`)).json();
+        if(res.error){document.getElementById('ct').innerHTML=`<button class="bk" onclick="shRotaUI()">← Yeniden Ara</button><div class="no-data">${res.error}</div>`;return}
+        drawRotaResults(res,q);
+    }catch(e){document.getElementById('ct').innerHTML='<button class="bk" onclick="shRotaUI()">← Geri</button><div class="err">Rota hesaplanamadı.</div>'}
+}
 
 async function calcRota(){
     if(!userLoc || !targetLoc) return alert("Konum alınamadı!");
@@ -2340,22 +2353,35 @@ async function calcRota(){
     
     try {
         const res = await(await fetch(`/api/rota?lat1=${userLoc.lat}&lon1=${userLoc.lon}&lat2=${targetLoc.lat}&lon2=${targetLoc.lng}`)).json();
-        let x=`<div class="sec">📍 Gezi Planı</div><div class="lst">`;
-        
-        if(res.length){
-            res.forEach((r,i)=>{
-                x+= r.desc;
-            });
-        } else {
-            x+=`<div class="no-data">
-                Uygun toplu taşıma rotası bulunamadı.<br>
-                <small>mesafeler çok uzak olabilir veya aktarma bulunamadı.</small>
-            </div>`;
-        }
-        document.getElementById('ct').innerHTML=x+'</div>';
+        if(res.error){document.getElementById('ct').innerHTML=`<button class="bk" onclick="shRotaUI()">← Yeniden Ara</button><div class="no-data">${res.error}</div>`;return}
+        drawRotaResults(res);
     } catch(e){
-        document.getElementById('ct').innerHTML='<div class="err">Rota hesaplanamadı.</div>';
+        document.getElementById('ct').innerHTML='<button class="bk" onclick="shRotaUI()">← Geri</button><div class="err">Rota hesaplanamadı.</div>';
     }
+}
+
+function drawRotaResults(res,query){
+    // Önceki rota çizgilerini temizle
+    Object.keys(M).filter(k=>k.startsWith('rota_')).forEach(k=>{map.removeLayer(M[k]);delete M[k]});
+    let x=`<button class="bk" onclick="shRotaUI()">← Yeni Arama</button><div class="sec">📍 Gezi Planı${query?' — '+query:''}</div><div class="lst">`;
+    if(res.length){
+        res.forEach((r,i)=>{
+            x+=r.desc;
+            // Rota polyline çiz
+            if(r.polyline&&r.polyline.length>1){
+                const color=r.type==='DIRECT'?'#27ae60':'#e67e22';
+                const pl=L.polyline(r.polyline,{color:color,weight:5,opacity:0.8}).addTo(map);
+                M['rota_'+i]=pl;
+                if(i===0) map.fitBounds(pl.getBounds(),{padding:[40,40]});
+            }
+        });
+    } else {
+        x+=`<div class="no-data">
+            Uygun toplu taşıma rotası bulunamadı.<br>
+            <small>Mesafeler çok uzak olabilir veya aktarma bulunamadı.</small>
+        </div>`;
+    }
+    document.getElementById('ct').innerHTML=x+'</div>';
 }
 
 async function shDurakDetay(kod){
@@ -2615,10 +2641,11 @@ async function shO(){
     }catch(e){console.error(e)}
 }
 
-async function shOD(id){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[hl,dr]=await Promise.all([fetch('/api/odak').then(r=>r.json()),fetch('/api/odak/'+id+'/durak').then(r=>r.json())]);const h=(hl||[]).find(x=>x.id==id)||{},da=Array.isArray(dr)?dr:[],ilk=da[0]||{};let x=`<button class="bk" onclick="shO()">← Odak</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">🎯 ${h.kod||''} ${h.ad||''}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v">₺${ilk.fiyat||'?'}</div><div class="l">Tam</div></div></div>`;x+=`<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`;if(da.length){x+=`<div class="sec">📍 Güzergah</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:#27ae60">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat||'?'} / ₺${d.fiyat_ogr||'?'} <br> <small>(Sol: Tam, Sağ: İndirimli)</small></span></span></div>`;if(d.lat>0&&d.lon>0){co.push([d.lat,d.lon]);M['o'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,'#27ae60')}).addTo(map)}});if(co.length)map.fitBounds(co,{padding:[40,40]})}document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
+async function shOD(id){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[hl,dr]=await Promise.all([fetch('/api/odak').then(r=>r.json()),fetch('/api/odak/'+id+'/durak').then(r=>r.json())]);const h=(hl||[]).find(x=>x.id==id)||{},da=Array.isArray(dr)?dr:[],ilk=da[0]||{};let x=`<button class="bk" onclick="shO()">← Odak</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">🎯 ${h.kod||''} ${h.ad||''}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v">₺${ilk.fiyat||'?'}</div><div class="l">Tam</div></div><div class="ic"><div class="v" id="oacnt">0</div><div class="l">Araç</div></div></div>`;x+=`<div class="araclar"><div class="t">🎯 Canlı Araçlar</div><div id="ovlist">Yükleniyor...</div></div>`;x+=`<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`;if(da.length){x+=`<div class="sec">📍 Güzergah</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:#27ae60">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat||'?'} / ₺${d.fiyat_ogr||'?'} <br> <small>(Sol: Tam, Sağ: İndirimli)</small></span></span></div>`;if(d.lat>0&&d.lon>0){co.push([d.lat,d.lon]);M['o'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,'#27ae60')}).addTo(map)}});if(co.length)map.fitBounds(co,{padding:[40,40]})}document.getElementById('ct').innerHTML=x;upOdakV(id);liveT=setInterval(()=>upOdakV(id),5000)}catch(e){console.error(e)}}
 window.shOD=shOD;
+async function upOdakV(hatid){try{const r=await(await fetch('/api/proxy_odak_araclar?hatid='+hatid)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};const el=document.getElementById('ovlist'),cnt=document.getElementById('oacnt');if(!r||!r.vehicles||!r.vehicles.length){if(cnt)cnt.innerText='0';if(el)el.innerHTML='<div style="text-align:center;padding:10px;color:#999;font-size:0.7rem">Aktif araç yok</div>';return}if(cnt)cnt.innerText=r.vehicles.length;let html='';r.vehicles.forEach(v=>{const lat=parseFloat((v.Enlem||v.lat||'0').toString().replace(',','.'));const lon=parseFloat((v.Boylam||v.lon||'0').toString().replace(',','.'));const plaka=(v.Plaka||v.plate||'').toString();const hiz=(v.Hizi||v.speed||'0').toString();if(lat>0&&lon>0){V['ov'+plaka]=L.marker([lat,lon],{icon:bI('#27ae60',plaka)}).addTo(map);html+=`<div class="arac" onclick="map.setView([${lat},${lon}],16)"><div><div class="pl">${plaka}</div></div><div style="text-align:right"><div style="font-weight:700">${hiz} km/s</div></div></div>`}});if(el)el.innerHTML=html||'<div style="text-align:center;padding:10px;color:#999;font-size:0.7rem">Konum verisi yok</div>'}catch(e){}}
 
-async function shS(){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const d=await(await fetch('/api/samair')).json();if(!d||!d.length){document.getElementById('ct').innerHTML='<div class="no-data"><div class="icon">✈️</div>Veri yok</div>';return}let x=`<div class="header-logos"><img src="/static/images/samair.png" class="brand-logo" style="height:50px"></div><div class="sec">✈️ Samair Havalimanı Servisi</div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:#856404">⚠️ Bu veriler proje amaçlı test verileridir. Kesin bilgi için yukarıdaki numarayı arayınız.<br>📍 Veriler her saat başı otomatik güncellenir.</div><div class="lst">${d.map(h=>`<div class="it samair" onclick="shSD(${h.id}, '${h.kod}')">${h.ad}</div>`).join('')}</div>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
+async function shS(){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const d=await(await fetch('/api/samair')).json();if(!d||!d.length){document.getElementById('ct').innerHTML='<div class="no-data"><div class="icon">✈️</div>Veri yok</div>';return}let x=`<div style="text-align:center;padding:16px 0"><img src="/static/images/samair.png" class="brand-logo" style="height:80px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.15)"></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:#856404">⚠️ Bu veriler proje amaçlı test verileridir. Kesin bilgi için yukarıdaki numarayı arayınız.<br>📍 Veriler her saat başı otomatik güncellenir.</div><div class="lst">${d.map(h=>`<div class="it samair" onclick="shSD(${h.id}, '${h.kod}')">${h.ad}</div>`).join('')}</div>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
 
 async function shSD(id, kod){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[hl,dr,sf]=await Promise.all([fetch('/api/samair').then(r=>r.json()),fetch('/api/samair/'+id+'/durak').then(r=>r.json()),fetch('/api/samair/'+id+'/sefer').then(r=>r.json())]);const h=(hl||[]).find(x=>x.id==id)||{},da=Array.isArray(dr)?dr:[],seferler=sf.data||[],last_up=sf.last_update||'';let x=`<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">✈️ ${h.ad||''}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`;x+=`<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`;x+=`<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`;if(seferler.length){x+=`<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up?`<div style="text-align:center;font-size:0.6rem;color:#888;margin-bottom:5px">Son Güncelleme: ${last_up}</div>`:''}`;let cDay = "";seferler.forEach(s=>{if(s.gun_format !== cDay) { x += `<div class="dhead">${s.gun_format}</div>`; cDay = s.gun_format; }x+=`<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>`;});}else{x+=`<div class="no-data"><div class="icon">✈️</div>Uçuş bilgisi bekleniyor...</div>`}if(da.length){x+=`<div class="sec">📍 Duraklar (${da.length})</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:#8e44ad">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat||'?'}</span></span></div>`;if(d.lat>0&&d.lon>0){co.push([d.lat,d.lon]);M['s'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,'#8e44ad')}).addTo(map)}});if(co.length)map.fitBounds(co,{padding:[40,40]})}document.getElementById('ct').innerHTML=x;upV(kod,'#8e44ad'); liveT=setInterval(()=>upV(kod,'#8e44ad'),5000);}catch(e){console.error(e)}}
 window.shSD=shSD;
@@ -2648,7 +2675,7 @@ def create_app(db, col):
         log.error("Lütfen: pip install fastapi uvicorn")
         return None
 
-    app = FastAPI(title="Samsun Transit")
+    app = FastAPI(title="Samsun Ulaşım Sistemi")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
     if os.path.exists("static"): app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -3069,6 +3096,17 @@ def create_app(db, col):
             "gtfs_rt_vehicles": vehicle_count,
         })
 
+    @app.get("/api/app_version")
+    async def app_version():
+        """Mobil uygulama güncel sürüm bilgisi (repo gizli olduğu için proxy)"""
+        return JSONResponse({
+            "latest_version": "2.5.0",
+            "min_version": "2.0.0",
+            "release_notes": "• SamAir canlı araç takibi düzeltildi\n• Odak Samsun canlı sorgu aktif\n• Fiyatlar güncellendi\n• Yakın durak harita modu eklendi\n• Uygulama içi güncelleme kontrolü",
+            "download_url": "https://samsun-gtfs-rt.onrender.com/api/app_version",
+            "force_update": False,
+        })
+
     @app.get("/api/debug/proxy")
     async def debug_proxy():
         """Proxy bağlantı testi — ASIS ve YBS erişilebilir mi?"""
@@ -3204,7 +3242,7 @@ def create_app(db, col):
         return HTMLResponse(f'''<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🔐 Samsun Transit Admin</title>
+<title>🔐 Samsun Ulaşım Sistemi Admin</title>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px;max-width:700px;margin:0 auto}}
@@ -3225,7 +3263,7 @@ button:hover{{background:#29b6f6}}
 #lines{{margin-top:8px;font-size:0.85em;color:#aaa}}
 </style></head>
 <body>
-<h1>🔐 Samsun Transit Admin Panel</h1>
+<h1>🔐 Samsun Ulaşım Sistemi Admin Panel</h1>
 
 <div class="card">
 <h2>📡 GTFS-RT Ayarları</h2>

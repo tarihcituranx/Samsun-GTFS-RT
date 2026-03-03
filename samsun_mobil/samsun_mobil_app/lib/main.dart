@@ -14,7 +14,7 @@ class SamsunRouteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Samsun Ulaşım',
+      title: 'Samsun Ulaşım Sistemi',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorSchemeSeed: const Color(0xFF0A1628),
@@ -131,17 +131,17 @@ class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderS
             ScaleTransition(
               scale: _scaleAnim,
               child: Container(
-                width: 130, height: 130,
+                width: 170, height: 170,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 40, spreadRadius: 8)],
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 50, spreadRadius: 10)],
                 ),
-                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 60))),
+                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 80))),
               ),
             ),
             const SizedBox(height: 28),
-            const Text('Samsun Ulaşım', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const Text('Samsun Ulaşım Sistemi', style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 8),
             Text('Akıllı Toplu Taşıma', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, letterSpacing: 2)),
             const SizedBox(height: 40),

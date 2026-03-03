@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../services/db_service.dart';
 import '../services/api_service.dart';
 import '../services/price_service.dart';
@@ -240,24 +242,43 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _calculateRoute() async {
     if (_hedefCtrl.text.isEmpty && _targetLocation == null) return;
 
-    double destLat, destLon;
     if (_targetLocation != null) {
-      destLat = _targetLocation!.latitude;
-      destLon = _targetLocation!.longitude;
+      await _calculateRouteFromCoords(_targetLocation!.latitude, _targetLocation!.longitude);
     } else {
-      destLat = 41.3323; destLon = 36.2570;
-      final h = _hedefCtrl.text.toLowerCase();
-      if (h.contains('atakum'))        { destLat = 41.3323; destLon = 36.2570; }
-      else if (h.contains('canik') || h.contains('çanik')) { destLat = 41.2530; destLon = 36.3990; }
-      else if (h.contains('ilkadim') || h.contains('ilkadım')) { destLat = 41.2867; destLon = 36.3300; }
-      else if (h.contains('ondokuz') || h.contains('üniversite') || h.contains('universite')) { destLat = 41.3420; destLon = 36.2260; }
-      else if (h.contains('tekkeköy') || h.contains('tekkekov')) { destLat = 41.2020; destLon = 36.4660; }
-      else if (h.contains('carsamba') || h.contains('çarşamba')) { destLat = 41.2009; destLon = 36.7329; }
-      else if (h.contains('bafra'))    { destLat = 41.5680; destLon = 35.9100; }
-      else if (h.contains('terme'))    { destLat = 41.2100; destLon = 36.9800; }
-      else if (h.contains('meydan'))   { destLat = 41.2867; destLon = 36.3300; }
+      // Sunucu tarafında Nominatim geocoding kullan (gerçek mekan arama)
+      setState(() { _isRouting = true; _routePolyline = []; _routeResults = []; });
+      _toastLoading("🔍 '${_hedefCtrl.text}' aranıyor...");
+      try {
+        final query = Uri.encodeComponent(_hedefCtrl.text.trim());
+        final url = 'https://samsun-gtfs-rt.onrender.com/api/rota?lat1=${_myLocation.latitude}&lon1=${_myLocation.longitude}&end=$query';
+        final response = await http.get(Uri.parse(url), headers: {'User-Agent': 'SamsunMobilApp/2.0'}).timeout(const Duration(seconds: 15));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data is List && data.isNotEmpty) {
+            setState(() {
+              _routeResults = data.map<Map<String, dynamic>>((r) => Map<String, dynamic>.from(r)).toList();
+              final coords = _routeResults[0]['polyline'] as List?;
+              if (coords != null && coords.isNotEmpty) {
+                _routePolyline = coords.map((c) => LatLng((c[0] as num).toDouble(), (c[1] as num).toDouble())).toList();
+                if (_routePolyline.length > 1) {
+                  _mapController.fitCamera(CameraFit.bounds(bounds: LatLngBounds.fromPoints(_routePolyline), padding: const EdgeInsets.all(50)));
+                }
+              }
+            });
+            _toastSuccess("✅ ${_routeResults.length} rota bulundu");
+            _showRouteSheet();
+          } else {
+            _toastError("❌ '${_hedefCtrl.text}' için rota bulunamadı");
+          }
+        } else if (response.statusCode == 400) {
+          final err = json.decode(response.body);
+          _toastError("❌ ${err['error'] ?? 'Konum bulunamadı'}");
+        } else {
+          _toastError("❌ Sunucu hatası");
+        }
+      } catch (e) { _toastError("❌ Rota hatası: $e"); }
+      finally { setState(() => _isRouting = false); }
     }
-    await _calculateRouteFromCoords(destLat, destLon);
   }
 
   Future<void> _openInGoogleMaps() async {
@@ -775,7 +796,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             labelText: "Nereye gitmek istiyorsunuz?",
-            hintText: "Ör: Atakum, Üniversite, Tekkeköy...",
+            hintText: "Cadde, mahalle, mekan adı yazın...",
             prefixIcon: const Icon(Icons.location_on, color: Color(0xFFFF5252)),
             suffixIcon: IconButton(icon: Icon(Icons.clear, color: Colors.white.withOpacity(0.3)), onPressed: () => _hedefCtrl.clear()),
           ),
@@ -839,7 +860,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🚌 Samsun Ulaşım'),
+        title: const Text('🚌 Samsun Ulaşım Sistemi'),
         actions: [
           if (_liveVehicles.isNotEmpty)
             Padding(

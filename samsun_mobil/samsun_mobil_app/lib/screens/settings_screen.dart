@@ -131,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Versiyon
           Center(
-            child: Text('Samsun Ulaşım v2.4.1', style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13)),
+            child: Text('Samsun Ulaşım Sistemi v2.5.0', style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13)),
           ),
           const SizedBox(height: 4),
           Center(
@@ -146,59 +146,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // ─── GÜNCELLEME KONTROLÜ ───
   Future<void> _checkForUpdate() async {
     try {
-      final response = await http.get(Uri.parse('https://api.github.com/repos/tarihcituranx/Samsun-GTFS-RT/releases/latest'));
+      // Render proxy üzerinden sürüm kontrolü (repo gizli, GitHub API'ye doğrudan erişilemez)
+      final response = await http.get(
+        Uri.parse('https://samsun-gtfs-rt.onrender.com/api/app_version'),
+        headers: {'User-Agent': 'SamsunMobilApp/2.0', 'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final tagName = (data['tag_name'] as String).replaceAll(RegExp(r'^v'), '');
-        const currentVersion = '2.4.1';
-        final tagParts = tagName.split('.').map((s) => int.tryParse(s) ?? 0).toList();
+        final latestVersion = (data['latest_version'] ?? '').toString();
+        const currentVersion = '2.5.0';
+        final latestParts = latestVersion.split('.').map((s) => int.tryParse(s) ?? 0).toList();
         final curParts = currentVersion.split('.').map((s) => int.tryParse(s) ?? 0).toList();
         bool isNewer = false;
         for (int i = 0; i < curParts.length; i++) {
-          final t = i < tagParts.length ? tagParts[i] : 0;
+          final t = i < latestParts.length ? latestParts[i] : 0;
           if (t > curParts[i]) { isNewer = true; break; }
           if (t < curParts[i]) break;
         }
-        if (isNewer) {
-          final body = data['body'] ?? '';
-          final htmlUrl = data['html_url'] ?? '';
-          if (mounted) {
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: const Color(0xFF152238),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: Text('🆕 Yeni Sürüm: v$tagName', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                content: SingleChildScrollView(
-                  child: Text(body, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+        final releaseNotes = data['release_notes'] ?? '';
+        final downloadUrl = data['download_url'] ?? '';
+        final forceUpdate = data['force_update'] == true;
+        if (isNewer && mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: !forceUpdate,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: const Color(0xFF152238),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('🆕 Yeni Sürüm: v$latestVersion', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              content: SingleChildScrollView(
+                child: Text(releaseNotes, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+              ),
+              actions: [
+                if (!forceUpdate)
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Sonra', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    if (downloadUrl.isNotEmpty && await canLaunchUrl(Uri.parse(downloadUrl))) {
+                      await launchUrl(Uri.parse(downloadUrl), mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2979FF)),
+                  child: const Text('Güncelle'),
                 ),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Kapat', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      if (await canLaunchUrl(Uri.parse(htmlUrl))) {
-                        await launchUrl(Uri.parse(htmlUrl), mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2979FF)),
-                    child: const Text('İndir'),
-                  ),
-                ],
-              ),
-            );
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('✅ Güncel sürümdesiniz', style: TextStyle(color: Colors.white)),
-                backgroundColor: const Color(0xFF00BFA5),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            );
-          }
+              ],
+            ),
+          );
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('✅ Güncel sürümdesiniz', style: TextStyle(color: Colors.white)),
+              backgroundColor: const Color(0xFF00BFA5),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
         }
       }
     } catch (e) {
