@@ -4,24 +4,40 @@
         "indirimli": 12.00
     },
     "tramvay": {
-        "tam": 25.00,
-        "indirimli": 18.00
+        "tam": 26.50,
+        "indirimli": 16.50
     },
     "teleferik": {
         "tam": 25.00,
         "indirimli": 15.00
     },
     "ekspres": {
-        "tam": 22.00,
-        "indirimli": 16.00
+        "tam": 23.50,
+        "indirimli": 15.00
+    },
+    "ring": {
+        "tam": 17.00,
+        "indirimli": 12.00
     },
     "SAMSUNUM-1": {
         "tam": 200.00,
-        "indirimli": 200.00
+        "indirimli": 150.00
     },
     "ALTINKAYA": {
         "tam": 15.00,
-        "indirimli": 15.00,
+        "indirimli": 7.00,
         "arac": 75.00
+    },
+    "havalimani": {
+        "tam": 120.00,
+        "indirimli": 60.00
+    },
+    "odak": {
+        "tam": 250.00,
+        "indirimli": 200.00
+    },
+    "ilce": {
+        "tam": 60.00,
+        "indirimli": 30.00
     }
 }

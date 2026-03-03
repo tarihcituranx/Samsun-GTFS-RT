@@ -2605,8 +2605,8 @@ async function shO(){
     try{
         const d=await(await fetch('/api/odak')).json();
         if(!d||!d.length){document.getElementById('ct').innerHTML='<div class="no-data"><div class="icon">🎯</div>Veri yok</div>';return}
-        let x=`<div class="header-logos"><img src="/static/images/odak.png" class="brand-logo" style="height:50px"></div>
-        <div class="sec">🎯 Odak Samsun Gezileri</div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>
+        let x=`<div style="text-align:center;padding:16px 0"><img src="/static/images/odak.png" class="brand-logo" style="height:80px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.15)"></div>
+        <div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>
         <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:#856404">
             ⚠️ <b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir. Tam/İndirimli tarifeleri için lütfen teyit ediniz.
         </div>
@@ -2826,9 +2826,18 @@ def create_app(db, col):
             resp = await asyncio.to_thread(
                 http_client.session.get,
                 f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&submethod=HatlarAllList&token={token}",
-                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"}
+                headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"},
+                timeout=10
             )
-            data = resp.json()
+            content_type = resp.headers.get('content-type', '')
+            if 'text/html' in content_type or resp.status_code != 200:
+                log.warning(f"Odak Proxy: HTML/WAF yanıtı (status={resp.status_code})")
+                return JSONResponse([])
+            try:
+                data = resp.json()
+            except (ValueError, TypeError):
+                log.warning("Odak Proxy: JSON parse hatası (muhtemelen WAF)")
+                return JSONResponse([])
             raw = []
             if data.get('status') == 'SUCCESS' and data.get('data'):
                 raw = data['data']
@@ -2845,7 +2854,7 @@ def create_app(db, col):
                 })
             return JSONResponse(normalized)
         except Exception as e:
-            log.error(f"YBS Proxy Odak Hatası (WAF/Timeout): {e}")
+            log.error(f"YBS Proxy Odak Hatası: {e}")
             return JSONResponse([])
 
     @app.get("/api/proxy_samair_saatler")
@@ -2859,9 +2868,18 @@ def create_app(db, col):
             resp = await asyncio.to_thread(
                 http_client.session.get,
                 f"https://ybs.samsun.bel.tr/service/?method=samair_ucaksefersaatleri_public&submethod=HatlarList&hatid={hatid}&token={token}",
-                headers={"User-Agent": "Mozilla/5.0"}
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10
             )
-            data = resp.json()
+            content_type = resp.headers.get('content-type', '')
+            if 'text/html' in content_type or resp.status_code != 200:
+                log.warning(f"SamAir Saatler: HTML/WAF yanıtı (status={resp.status_code})")
+                return JSONResponse([])
+            try:
+                data = resp.json()
+            except (ValueError, TypeError):
+                log.warning("SamAir Saatler: JSON parse hatası (muhtemelen WAF)")
+                return JSONResponse([])
             raw = data.get('data', data.get('root', []))
             if not isinstance(raw, list):
                 raw = []
@@ -2878,7 +2896,7 @@ def create_app(db, col):
                 })
             return JSONResponse(normalized)
         except Exception as e:
-            log.error(f"YBS Proxy SamAir Saatler Hatası (WAF/Timeout): {e}")
+            log.error(f"YBS Proxy SamAir Saatler Hatası: {e}")
             return JSONResponse([])
 
     @app.get("/api/proxy_samair_araclar")
@@ -2892,9 +2910,19 @@ def create_app(db, col):
             resp = await asyncio.to_thread(
                 http_client.session.get,
                 f"https://ybs.samsun.bel.tr/service/?method=samair_duraklar_public&submethod=araclar&token={token}",
-                headers={"User-Agent": "Mozilla/5.0"}
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10
             )
-            data = resp.json()
+            # WAF/Cloudflare HTML yanıtı kontrolü
+            content_type = resp.headers.get('content-type', '')
+            if 'text/html' in content_type or resp.status_code != 200:
+                log.warning(f"SamAir Araclar: HTML/WAF yanıtı (status={resp.status_code})")
+                return JSONResponse([])
+            try:
+                data = resp.json()
+            except (ValueError, TypeError):
+                log.warning("SamAir Araclar: JSON parse hatası (muhtemelen WAF)")
+                return JSONResponse([])
             raw = data.get('data', [])
             if not isinstance(raw, list):
                 raw = []
@@ -2917,16 +2945,12 @@ def create_app(db, col):
                 })
             return JSONResponse(normalized)
         except Exception as e:
-            log.error(f"YBS Proxy SamAir Araclar Hatası (WAF/Timeout): {e}")
+            log.error(f"YBS Proxy SamAir Araclar Hatası: {e}")
             return JSONResponse([])
 
     @app.get("/api/proxy_odak_araclar")
     async def proxy_odak_araclar(hatid: int):
-        """Odak turistik hat canlı araç konumları — 20 Mayıs 2026'dan itibaren aktif"""
-        # Tarih kapısı: 20 Mayıs 2026 öncesi devre dışı
-        if datetime.utcnow() < datetime(2026, 5, 20):
-            return JSONResponse({"active": False, "message": "Odak canlı araç takibi 20 Mayıs 2026'dan itibaren aktif olacaktır.", "vehicles": []})
-        
+        """Odak turistik hat canlı araç konumları"""
         http_client = col.http
         token = await get_ybs_token(http_client.session)
         if not token:
