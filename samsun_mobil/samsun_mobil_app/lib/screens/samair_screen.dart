@@ -394,10 +394,10 @@ class _SamAirScheduleTabState extends State<_SamAirScheduleTab> {
       itemCount: _schedules.length,
       itemBuilder: (context, i) {
         final s = _schedules[i];
-        final cityTime = s['SehirKalkis']?.toString() ?? '-';
-        final flightTime = s['UcusSaati']?.toString() ?? '-';
-        final flightNo = s['UcusKodu']?.toString() ?? '';
-        final note = s['Aciklama']?.toString() ?? '';
+        final cityTime = s['saat']?.toString() ?? s['SehirKalkis']?.toString() ?? '-';
+        final flightTime = s['varis']?.toString() ?? s['varis_saati']?.toString() ?? s['UcusSaati']?.toString() ?? '-';
+        final flightNo = s['firma']?.toString() ?? s['ucak_firmasi']?.toString() ?? s['UcusKodu']?.toString() ?? '';
+        final note = s['ucak_saat']?.toString() ?? s['ucak_saatleri']?.toString() ?? s['Aciklama']?.toString() ?? '';
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),

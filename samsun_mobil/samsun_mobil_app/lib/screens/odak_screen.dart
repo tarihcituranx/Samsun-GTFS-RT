@@ -125,7 +125,7 @@ class _OdakScreenState extends State<OdakScreen> {
                         ),
                         child: const Center(child: Text("🎯", style: TextStyle(fontSize: 18))),
                       ),
-                      title: Text("${o['kod'] ?? ''} ${o['ad'] ?? ''}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
+                      title: Text("${o['kod'] ?? o['kodu'] ?? ''} ${o['ad'] ?? o['adi'] ?? ''}", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
                       subtitle: Text(o['gunler']?.toString() ?? '', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.35))),
                       trailing: Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.2)),
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OdakDetailScreen(odak: o))),
@@ -159,13 +159,13 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
   void initState() { super.initState(); _loadDuraklar(); }
 
   Future<void> _loadDuraklar() async {
-    final id = widget.odak['id']?.toString() ?? '';
+    final id = (widget.odak['id'] ?? widget.odak['kodu'] ?? '').toString();
     final duraklar = await DBService().getOdakDuraklari(id);
     if (mounted) setState(() { _duraklar = duraklar; _isLoading = false; });
   }
 
   Future<void> _loadVehicles() async {
-    final hatId = int.tryParse(widget.odak['id']?.toString() ?? '') ?? 0;
+    final hatId = int.tryParse((widget.odak['id'] ?? widget.odak['kodu'] ?? '').toString()) ?? 0;
     if (hatId == 0) return;
     
     setState(() => _vehiclesLoading = true);
@@ -184,7 +184,7 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("🎯 ${widget.odak['kod'] ?? ''} ${widget.odak['ad'] ?? ''}", style: const TextStyle(fontSize: 14)),
+        title: Text("🎯 ${widget.odak['kod'] ?? widget.odak['kodu'] ?? ''} ${widget.odak['ad'] ?? widget.odak['adi'] ?? ''}", style: const TextStyle(fontSize: 14)),
         backgroundColor: const Color(0xFF004D40),
       ),
       body: _isLoading

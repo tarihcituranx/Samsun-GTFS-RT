@@ -2829,11 +2829,21 @@ def create_app(db, col):
                 headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"}
             )
             data = resp.json()
+            raw = []
             if data.get('status') == 'SUCCESS' and data.get('data'):
-                return JSONResponse(data['data'])
-            if data.get('root'):
-                return JSONResponse(data['root'])
-            return JSONResponse([])
+                raw = data['data']
+            elif data.get('root'):
+                raw = data['root']
+            # Mobil uyumlu alan adlarına normalize et (kodu→kod, adi→ad)
+            normalized = []
+            for item in (raw if isinstance(raw, list) else []):
+                normalized.append({
+                    'id': item.get('id', item.get('kodu', '')),
+                    'kod': item.get('kod', item.get('kodu', '')),
+                    'ad': item.get('ad', item.get('adi', '')),
+                    'gunler': item.get('gunler', ''),
+                })
+            return JSONResponse(normalized)
         except Exception as e:
             log.error(f"YBS Proxy Odak Hatası (WAF/Timeout): {e}")
             return JSONResponse([])
@@ -2852,9 +2862,21 @@ def create_app(db, col):
                 headers={"User-Agent": "Mozilla/5.0"}
             )
             data = resp.json()
-            if data.get('data'): return JSONResponse(data['data'])
-            if data.get('root'): return JSONResponse(data['root'])
-            return JSONResponse([])
+            raw = data.get('data', data.get('root', []))
+            if not isinstance(raw, list):
+                raw = []
+            # Mobil uyumlu alan adlarına normalize et
+            normalized = []
+            for item in raw:
+                normalized.append({
+                    'saat': item.get('saat', ''),
+                    'varis': item.get('varis_saati', item.get('varis', '')),
+                    'firma': item.get('ucak_firmasi', item.get('firma', '')),
+                    'ucak_saat': item.get('ucak_saatleri', item.get('ucak_saat', '')),
+                    'tarih': item.get('tarih', ''),
+                    'gun_format': item.get('formatted_date', item.get('gun_format', '')),
+                })
+            return JSONResponse(normalized)
         except Exception as e:
             log.error(f"YBS Proxy SamAir Saatler Hatası (WAF/Timeout): {e}")
             return JSONResponse([])
@@ -2873,8 +2895,27 @@ def create_app(db, col):
                 headers={"User-Agent": "Mozilla/5.0"}
             )
             data = resp.json()
-            if data.get('data'): return JSONResponse(data['data'])
-            return JSONResponse([])
+            raw = data.get('data', [])
+            if not isinstance(raw, list):
+                raw = []
+            # Mobil uyumlu alan adlarına normalize et (Enlem→lat, Boylam→lon vb.)
+            normalized = []
+            for item in raw:
+                lat_val = item.get('Enlem', item.get('enlem', item.get('lat', 0)))
+                lon_val = item.get('Boylam', item.get('boylam', item.get('lon', 0)))
+                try:
+                    lat_f = float(str(lat_val).replace(',', '.'))
+                    lon_f = float(str(lon_val).replace(',', '.'))
+                except (ValueError, TypeError):
+                    lat_f, lon_f = 0.0, 0.0
+                normalized.append({
+                    'lat': lat_f,
+                    'lon': lon_f,
+                    'plate': str(item.get('Plaka', item.get('plaka', item.get('plate', '')))),
+                    'speed': str(item.get('Hizi', item.get('hiz', item.get('speed', '0')))),
+                    'lineCode': str(item.get('HatKodu', item.get('hatKodu', item.get('lineCode', 'SAMAIR')))),
+                })
+            return JSONResponse(normalized)
         except Exception as e:
             log.error(f"YBS Proxy SamAir Araclar Hatası (WAF/Timeout): {e}")
             return JSONResponse([])
