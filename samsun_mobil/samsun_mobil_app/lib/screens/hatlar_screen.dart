@@ -326,13 +326,20 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
                           ));
                       }),
                       ..._liveVehicles.map((v) => Marker(
-                        point: LatLng(v['lat'] as double, v['lon'] as double), width: 32, height: 32,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFD50000)]),
-                            shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2),
+                        point: LatLng(v['lat'] as double, v['lon'] as double), width: 48, height: 48,
+                        child: GestureDetector(
+                          onTap: () => _showVehicleDetail(context, v),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(colors: [Color(0xFFFF5252), Color(0xFFD50000)]),
+                              shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [BoxShadow(blurRadius: 8, color: const Color(0xFFFF5252).withOpacity(0.5))],
+                            ),
+                            child: Center(child: Text(
+                              (v['plate']?.toString() ?? '').length > 3 ? (v['plate'].toString()).substring(v['plate'].toString().length - 3) : '🚌',
+                              style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                            )),
                           ),
-                          child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 16)),
                         ),
                       )),
                     ]),
@@ -503,5 +510,90 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
         Text(body, style: TextStyle(color: accent.withOpacity(0.7), fontSize: 12)),
       ]),
     );
+  }
+
+  // Premium araç detay bottom sheet — KVKK uyumlu (şoför bilgisi hariç)
+  void _showVehicleDetail(BuildContext context, Map<String, dynamic> v) {
+    final plate = v['plate']?.toString() ?? 'Bilinmiyor';
+    final speed = v['speed']?.toString() ?? '0';
+    final gunlukYolcu = v['gunlukYolcu']?.toString() ?? '0';
+    final seferYolcu = v['seferYolcu']?.toString() ?? '0';
+    final hasilat = v['toplamHasilat']?.toString() ?? '0';
+    final maxHiz = v['maxHiz']?.toString() ?? '0';
+    final mesafe = v['mesafe']?.toString() ?? '0';
+    final yon = v['yon']?.toString() ?? '0';
+    final lastUpdate = v['lastUpdate']?.toString() ?? '';
+    // Son güncelleme zamanını kısa formatla
+    String updateStr = '';
+    if (lastUpdate.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(lastUpdate);
+        updateStr = '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+      } catch (_) { updateStr = lastUpdate; }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF152238),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          // Handle bar
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          // Plaka + Hız
+          Row(children: [
+            Container(width: 48, height: 48,
+              decoration: BoxDecoration(gradient: LinearGradient(colors: [_katColor, _katColor.withOpacity(0.6)]), borderRadius: BorderRadius.circular(12)),
+              child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 24))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(plate, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+              Text(widget.name, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: _katColor.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              child: Text('$speed km/s', style: TextStyle(fontWeight: FontWeight.bold, color: _katColor, fontSize: 16)),
+            ),
+          ]),
+          const Divider(color: Colors.white12, height: 28),
+          // İstatistik grid
+          Row(children: [
+            _detailStat(Icons.people, seferYolcu, 'Sefer Yolcu'),
+            _detailStat(Icons.groups, gunlukYolcu, 'Günlük Yolcu'),
+            _detailStat(Icons.payments, '₺$hasilat', 'Hasılat'),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            _detailStat(Icons.speed, '$maxHiz km/s', 'Max Hız'),
+            _detailStat(Icons.straighten, '${(int.tryParse(mesafe) ?? 0) ~/ 1000} km', 'Mesafe'),
+            _detailStat(Icons.navigation, '$yon°', 'Yön'),
+          ]),
+          if (updateStr.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Son güncelleme: $updateStr', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.3))),
+          ]
+        ]),
+      ),
+    );
+  }
+
+  Widget _detailStat(IconData icon, String value, String label) {
+    return Expanded(child: Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(color: const Color(0xFF1A2940), borderRadius: BorderRadius.circular(10)),
+      child: Column(children: [
+        Icon(icon, size: 18, color: _katColor.withOpacity(0.7)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+        Text(label, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
+      ]),
+    ));
   }
 }

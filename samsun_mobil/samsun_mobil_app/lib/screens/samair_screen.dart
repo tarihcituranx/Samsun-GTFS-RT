@@ -152,17 +152,20 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                   return Marker(
                     point: LatLng(lat, lon),
                     width: 45, height: 45,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [BoxShadow(blurRadius: 8, color: const Color(0xFF2979FF).withOpacity(0.5))],
-                      ),
-                      child: Center(
-                        child: Text(
-                          plaka.length > 3 ? plaka.substring(plaka.length - 4) : plaka,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white),
+                    child: GestureDetector(
+                      onTap: () => _showSamairDetail(context, b, plaka, hizi, hatKodu),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [BoxShadow(blurRadius: 8, color: const Color(0xFF2979FF).withOpacity(0.5))],
+                        ),
+                        child: Center(
+                          child: Text(
+                            plaka.length > 3 ? plaka.substring(plaka.length - 4) : plaka,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white),
+                          ),
                         ),
                       ),
                     ),
@@ -226,19 +229,23 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                         itemCount: _liveBuses.length,
                         itemBuilder: (context, i) {
                           final b = _liveBuses[i];
-                          final plaka = b['Plaka']?.toString() ?? '?';
-                          final hizi = b['Hizi']?.toString() ?? '0';
+                          final plaka = (b['plate'] ?? b['plaka'] ?? b['Plaka'] ?? '?').toString();
+                          final hizi = (b['speed'] ?? b['hiz'] ?? b['Hizi'] ?? '0').toString();
+                          final hatKodu = (b['lineCode'] ?? b['HatKodu'] ?? '').toString();
                           return Padding(
                             padding: const EdgeInsets.only(right: 8.0),
-                            child: Chip(
-                              avatar: CircleAvatar(
-                                backgroundColor: Colors.white.withOpacity(0.05),
-                                radius: 20,
-                                child: const Icon(Icons.flight_takeoff, color: Colors.white70),
+                            child: GestureDetector(
+                              onTap: () => _showSamairDetail(context, b, plaka, hizi, hatKodu),
+                              child: Chip(
+                                avatar: CircleAvatar(
+                                  backgroundColor: Colors.white.withOpacity(0.05),
+                                  radius: 20,
+                                  child: const Icon(Icons.flight_takeoff, color: Colors.white70),
+                                ),
+                                label: Text("$plaka - $hizi km/s", style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                backgroundColor: const Color(0xFF2979FF),
+                                side: BorderSide.none,
                               ),
-                              label: Text("$plaka - $hizi km/s", style: const TextStyle(color: Colors.white, fontSize: 11)),
-                              backgroundColor: const Color(0xFF2979FF),
-                              side: BorderSide.none,
                             ),
                           );
                         },
@@ -251,6 +258,84 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
         )
       ],
     );
+  }
+
+  void _showSamairDetail(BuildContext ctx, Map<String, dynamic> b, String plaka, String hizi, String hatKodu) {
+    final gunlukYolcu = (b['gunlukYolcu'] ?? b['GunlukYolcu'] ?? '0').toString();
+    final seferYolcu = (b['seferYolcu'] ?? b['SeferYolcu'] ?? '0').toString();
+    final hasilat = (b['toplamHasilat'] ?? b['ToplamHasilat'] ?? '0').toString();
+    final maxHiz = (b['maxHiz'] ?? b['MaxHiz'] ?? '0').toString();
+    final mesafe = (b['mesafe'] ?? b['Mesafe'] ?? '0').toString();
+    final yon = (b['yon'] ?? b['Yon'] ?? '0').toString();
+    final lastUpdate = (b['lastUpdate'] ?? b['editDate'] ?? b['tarih'] ?? '').toString();
+    String updateStr = '';
+    if (lastUpdate.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(lastUpdate);
+        updateStr = '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+      } catch (_) { updateStr = lastUpdate; }
+    }
+
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF152238),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Row(children: [
+            Container(width: 48, height: 48,
+              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]), borderRadius: BorderRadius.circular(12)),
+              child: const Center(child: Icon(Icons.flight_takeoff, color: Colors.white, size: 24))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(plaka, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+              if (hatKodu.isNotEmpty) Text(hatKodu, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: const Color(0xFF2979FF).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              child: Text('$hizi km/s', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2979FF), fontSize: 16)),
+            ),
+          ]),
+          const Divider(color: Colors.white12, height: 28),
+          Row(children: [
+            _samairStat(Icons.people, seferYolcu, 'Sefer Yolcu'),
+            _samairStat(Icons.groups, gunlukYolcu, 'Günlük Yolcu'),
+            _samairStat(Icons.payments, '₺$hasilat', 'Hasılat'),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            _samairStat(Icons.speed, '$maxHiz km/s', 'Max Hız'),
+            _samairStat(Icons.straighten, '${(int.tryParse(mesafe) ?? 0) ~/ 1000} km', 'Mesafe'),
+            _samairStat(Icons.navigation, '$yon°', 'Yön'),
+          ]),
+          if (updateStr.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Son güncelleme: $updateStr', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.3))),
+          ]
+        ]),
+      ),
+    );
+  }
+
+  Widget _samairStat(IconData icon, String value, String label) {
+    return Expanded(child: Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(color: const Color(0xFF1A2940), borderRadius: BorderRadius.circular(10)),
+      child: Column(children: [
+        Icon(icon, size: 18, color: const Color(0xFF2979FF).withOpacity(0.7)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+        Text(label, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
+      ]),
+    ));
   }
 }
 
