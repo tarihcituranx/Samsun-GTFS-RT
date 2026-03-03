@@ -30,6 +30,17 @@ class ApiService {
     'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ'
   ];
 
+  /// ASIS API yanıtından veri listesini güvenli şekilde çıkarır.
+  /// ASIS bazen düz liste, bazen {"data": [...]} döner.
+  static List<dynamic> _extractDataList(dynamic decoded) {
+    if (decoded is List) return decoded;
+    if (decoded is Map<String, dynamic> && decoded.containsKey('data')) {
+      final inner = decoded['data'];
+      return inner is List ? inner : [inner];
+    }
+    return [decoded];
+  }
+
   static String _fixAndCleanText(String text) {
     String fixedText = text;
     _turkishCharacterFixes.forEach((key, value) {
@@ -66,7 +77,7 @@ class ApiService {
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final decoded = json.decode(response.body);
-        final data = decoded is List ? decoded : [decoded];
+        final data = _extractDataList(decoded);
         return _cleanSmartStationData(data);
       }
     } catch (e) {
@@ -118,7 +129,7 @@ class ApiService {
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final decoded = json.decode(response.body);
-        final data = decoded is List ? decoded : [decoded];
+        final data = _extractDataList(decoded);
         return _parseRealTimeData(data, lineCode);
       }
     } catch (e) {
@@ -126,6 +137,12 @@ class ApiService {
     }
     return [];
   }
+
+  // ─── Test Erişim Metodları (unit test desteği) ───
+  static List<dynamic> extractDataListForTest(dynamic decoded) => _extractDataList(decoded);
+  static List<Map<String, dynamic>> parseRealTimeDataForTest(List<dynamic> data, String lineCode) => _parseRealTimeData(data, lineCode);
+  static List<dynamic> cleanSmartStationDataForTest(List<dynamic> data) => _cleanSmartStationData(data);
+  static String fixAndCleanTextForTest(String text) => _fixAndCleanText(text);
 
   /// RealTimeData verisini parse et — Gerçek ASIS alan adları: plaka, enlem, boylam, hiz, HatKodu, editDate vb.
   static List<Map<String, dynamic>> _parseRealTimeData(List<dynamic> data, String lineCode) {
