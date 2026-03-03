@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,6 +12,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
+  bool _showNearbyOnly = false;
   String _selectedLanguage = 'Türkçe';
   String _defaultTransport = 'Otobüs';
   List<String> _favoriHatlar = [];
@@ -25,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      _showNearbyOnly = prefs.getBool('show_nearby_only') ?? false;
       _selectedLanguage = prefs.getString('language') ?? 'Türkçe';
       _defaultTransport = prefs.getString('default_transport') ?? 'Otobüs';
       _favoriHatlar = prefs.getStringList('favori_hatlar') ?? [];
@@ -63,6 +67,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _savePreference('notifications_enabled', v);
             }),
             _divider(),
+            _switchItem(Icons.near_me, Colors.green, 'Sadece Yakın Durakları Göster', _showNearbyOnly, (v) {
+              setState(() => _showNearbyOnly = v);
+              _savePreference('show_nearby_only', v);
+            }),
+            _divider(),
             _infoItem(Icons.dark_mode, Colors.purple, 'Tema', 'Karanlık Mod'),
             _divider(),
             _chevronItem(Icons.language, Colors.orange, 'Dil Seçimi', subtitle: _selectedLanguage, onTap: () => _showLanguageDialog(context)),
@@ -87,6 +96,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Veri Yönetimi
           _sectionHeader('Veri Yönetimi'),
           _card([
+            _chevronItem(Icons.system_update, Colors.blue, 'Güncelleme Kontrolü', onTap: _checkForUpdate),
+            _divider(),
             _chevronItem(Icons.refresh, Colors.teal, 'Verileri Yenile', onTap: () => _showDataRefreshDialog(context)),
             _divider(),
             _chevronItem(Icons.delete_outline, Colors.red.shade300, 'Önbelleği Temizle', onTap: () => _showClearCacheDialog(context)),
@@ -130,6 +141,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  // ─── GÜNCELLEME KONTROLÜ ───
+  Future<void> _checkForUpdate() async {
+    try {
+      final response = await http.get(Uri.parse('https://api.github.com/repos/tarihcituranx/Samsun-GTFS-RT/releases/latest'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final tagName = (data['tag_name'] as String).replaceAll(RegExp(r'^v'), '');
+        const currentVersion = '2.4.1';
+        if (tagName != currentVersion && tagName.compareTo(currentVersion) > 0) {
+          final body = data['body'] ?? '';
+          final htmlUrl = data['html_url'] ?? '';
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: const Color(0xFF152238),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text('🆕 Yeni Sürüm: v$tagName', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                content: SingleChildScrollView(
+                  child: Text(body, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Kapat', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      if (await canLaunchUrl(Uri.parse(htmlUrl))) {
+                        await launchUrl(Uri.parse(htmlUrl), mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2979FF)),
+                    child: const Text('İndir'),
+                  ),
+                ],
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('✅ Güncel sürümdesiniz', style: TextStyle(color: Colors.white)),
+                backgroundColor: const Color(0xFF00BFA5),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Güncelleme kontrolü başarısız: $e', style: const TextStyle(color: Colors.white)),
+            backgroundColor: const Color(0xFFFF5252),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
   }
 
   // ─── DİL SEÇİMİ ───

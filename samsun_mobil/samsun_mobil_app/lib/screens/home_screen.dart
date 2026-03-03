@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/db_service.dart';
 import '../services/api_service.dart';
 import '../services/price_service.dart';
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingNearby = false;
   bool _isRouting = false;
   bool _isOffline = false;
+  bool _showNearbyOnly = false;
 
   String? _activeLineCode;
   Timer? _liveTimer;
@@ -79,6 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _toastSuccess("🌐 İnternet bağlantısı sağlandı");
         }
       }
+    });
+
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) setState(() => _showNearbyOnly = prefs.getBool('show_nearby_only') ?? false);
     });
   }
 
@@ -488,7 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // Duraklar (en yakın 300)
+            // Duraklar (en yakın 300 veya sadece yakın)
             ...() {
               var sorted = List<Map<String, dynamic>>.from(_duraklar);
               sorted.sort((a, b) {
@@ -496,9 +502,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 double db = _hav(_myLocation.latitude, _myLocation.longitude, (b['lat'] as num).toDouble(), (b['lon'] as num).toDouble());
                 return da.compareTo(db);
               });
-              return sorted.take(300).map((d) {
+              final filtered = _showNearbyOnly
+                  ? sorted.where((d) => _hav(_myLocation.latitude, _myLocation.longitude, (d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()) < 1.0)
+                  : sorted.take(300);
+              return filtered.map((d) {
                 double lat = (d['lat'] as num).toDouble();
                 double lon = (d['lon'] as num).toDouble();
+                if (_showNearbyOnly) {
+                  return Marker(
+                    point: LatLng(lat, lon),
+                    width: 100, height: 45,
+                    child: GestureDetector(
+                      onTap: () => _showDurakSheet(d),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2979FF),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 4, spreadRadius: 1)],
+                            ),
+                            child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 14)),
+                          ),
+                          Text(d['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 return Marker(
                   point: LatLng(lat, lon), 
                   width: 28, height: 28,
