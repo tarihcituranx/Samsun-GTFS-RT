@@ -396,8 +396,20 @@ class _HomeScreenState extends State<HomeScreen> {
             subdomains: const ['a', 'b', 'c', 'd'],
             userAgentPackageName: 'com.samsun.transit',
           ),
-          if (_routePolyline.isNotEmpty)
-            PolylineLayer(polylines: [Polyline(points: _routePolyline, strokeWidth: 5.0, color: const Color(0xFF2979FF))]),
+          // Teleferik Hattı Polyline (Batıpark ↔ Amisos Tepesi)
+          PolylineLayer(polylines: [
+            if (_routePolyline.isNotEmpty)
+              Polyline(points: _routePolyline, strokeWidth: 5.0, color: const Color(0xFF2979FF)),
+            Polyline(
+              points: const [
+                LatLng(41.321695, 36.323563), // Batıpark (alt istasyon)
+                LatLng(41.318939, 36.322455), // Amisos Tepesi (üst istasyon)
+              ],
+              strokeWidth: 3.5,
+              color: const Color(0xFFFF4081),
+              isDotted: true,
+            ),
+          ]),
           MarkerLayer(markers: [
             // Benim konumum
             Marker(point: _myLocation, width: 40, height: 40, child: Container(
@@ -445,6 +457,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             )).toList(),
+            // Teleferik İstasyonları
+            Marker(
+              point: const LatLng(41.321695, 36.323563), width: 40, height: 40,
+              child: Tooltip(
+                message: 'Batıpark (Teleferik Alt İstasyon)',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4081),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.5),
+                    boxShadow: [BoxShadow(color: const Color(0xFFFF4081).withOpacity(0.4), blurRadius: 8, spreadRadius: 2)],
+                  ),
+                  child: const Center(child: Icon(Icons.airline_seat_recline_extra, color: Colors.white, size: 18)),
+                ),
+              ),
+            ),
+            Marker(
+              point: const LatLng(41.318939, 36.322455), width: 40, height: 40,
+              child: Tooltip(
+                message: 'Amisos Tepesi (Teleferik Üst İstasyon)',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4081),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.5),
+                    boxShadow: [BoxShadow(color: const Color(0xFFFF4081).withOpacity(0.4), blurRadius: 8, spreadRadius: 2)],
+                  ),
+                  child: const Center(child: Icon(Icons.terrain, color: Colors.white, size: 18)),
+                ),
+              ),
+            ),
             // Duraklar (en yakın 300)
             ...() {
               var sorted = List<Map<String, dynamic>>.from(_duraklar);
@@ -458,22 +501,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 double lon = (d['lon'] as num).toDouble();
                 return Marker(
                   point: LatLng(lat, lon), 
-                  width: 32, height: 32,
+                  width: 28, height: 28,
                   child: GestureDetector(
                     onTap: () => _showDurakSheet(d), 
-                    child: Transform.translate(
-                      offset: const Offset(0, -10), // Pin shape translation
-                      child: Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 2, offset: const Offset(0, 2))],
-                        ),
-                        child: Image.asset(
-                          'assets/bus_stop.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => 
-                            const Icon(Icons.location_on, size: 24, color: Color(0xFF2979FF)),
-                        ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2979FF),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 4, spreadRadius: 1)],
                       ),
+                      child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 14)),
                     ),
                   )
                 );
