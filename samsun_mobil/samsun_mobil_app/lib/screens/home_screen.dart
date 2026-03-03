@@ -527,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 14)),
                           ),
-                          Text(d['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
+                          Text(d['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
                         ],
                       ),
                     ),

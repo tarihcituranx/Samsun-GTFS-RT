@@ -151,7 +151,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final data = jsonDecode(response.body);
         final tagName = (data['tag_name'] as String).replaceAll(RegExp(r'^v'), '');
         const currentVersion = '2.4.1';
-        if (tagName != currentVersion && tagName.compareTo(currentVersion) > 0) {
+        final tagParts = tagName.split('.').map((s) => int.tryParse(s) ?? 0).toList();
+        final curParts = currentVersion.split('.').map((s) => int.tryParse(s) ?? 0).toList();
+        bool isNewer = false;
+        for (int i = 0; i < curParts.length; i++) {
+          final t = i < tagParts.length ? tagParts[i] : 0;
+          if (t > curParts[i]) { isNewer = true; break; }
+          if (t < curParts[i]) break;
+        }
+        if (isNewer) {
           final body = data['body'] ?? '';
           final htmlUrl = data['html_url'] ?? '';
           if (mounted) {
