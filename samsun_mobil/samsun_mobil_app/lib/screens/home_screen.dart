@@ -850,7 +850,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final screens = [
       _buildMapScreen(),
-      const HatlarScreen(),
+      HatlarScreen(onLineSelected: _startLiveTracking),
       _buildYakinScreen(),
       _buildRotaScreen(),
       const OdakScreen(),
