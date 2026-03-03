@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/ybs_api_service.dart';
+import '../services/samair_service.dart';
 
 class SamAirScreen extends StatefulWidget {
   const SamAirScreen({Key? key}) : super(key: key);
@@ -44,7 +45,12 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   }
 
   Future<void> _fetchLiveBuses() async {
-    final buses = await YbsApiService().getSamairAraclar();
+    // 1. Önce YBS proxy dene
+    var buses = await YbsApiService().getSamairAraclar();
+    // 2. YBS boşsa, ASIS RealTimeData üzerinden H1-H4 çek
+    if (buses.isEmpty) {
+      buses = await SamAirService.getLiveSamAirBuses();
+    }
     if (mounted) {
       setState(() {
         _liveBuses = buses;
@@ -128,14 +134,18 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                     child: const Icon(Icons.local_airport, color: Color(0xFF2979FF), size: 30),
                   ),
                 ),
-                // Canlı Araçlar
-                ..._liveBuses.where((b) => b['Enlem'] != null && b['Boylam'] != null).map((b) {
-                  final latStr = b['Enlem']?.toString() ?? '0';
-                  final lonStr = b['Boylam']?.toString() ?? '0';
-                  final lat = double.tryParse(latStr.replaceAll(',', '.')) ?? 0;
-                  final lon = double.tryParse(lonStr.replaceAll(',', '.')) ?? 0;
-                  final hizi = b['Hizi']?.toString() ?? '0';
-                  final plaka = b['Plaka']?.toString() ?? 'SAMAIR';
+                // Canlı Araçlar — ASIS: lat/lon/plate/speed, YBS: Enlem/Boylam/Plaka/Hizi
+                ..._liveBuses.where((b) {
+                  final hasAsis = b['lat'] != null && b['lon'] != null;
+                  final hasYbs = b['Enlem'] != null && b['Boylam'] != null;
+                  return hasAsis || hasYbs;
+                }).map((b) {
+                  // ASIS format (samair_service.dart) veya YBS format
+                  final lat = (b['lat'] as double?) ?? (double.tryParse((b['Enlem'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
+                  final lon = (b['lon'] as double?) ?? (double.tryParse((b['Boylam'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
+                  final hizi = (b['speed'] ?? b['hiz'] ?? b['Hizi'] ?? '0').toString();
+                  final plaka = (b['plate'] ?? b['plaka'] ?? b['Plaka'] ?? 'SAMAIR').toString();
+                  final hatKodu = (b['lineCode'] ?? b['HatKodu'] ?? '').toString();
                   
                   return Marker(
                     point: LatLng(lat, lon),
