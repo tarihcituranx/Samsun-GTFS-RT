@@ -381,58 +381,132 @@ class SynchronizationService {
   }
 
   Future<void> _injectFixedPrices() async {
-    print('💰 Sabit Fiyatlar Ekleniyor...');
+    print('💰 Sabit Fiyatlar Ekleniyor (son güncelleme fallback)...');
     final db = await dbHelper.database;
     final now = DateTime.now().toIso8601String();
     
-    final batch = db.batch();
-
-    void addPrice(String name, String code, double tam, double indirimli) {
-      batch.insert(DatabaseHelper.tableFiyat, {
-        'kaynak': 'fixed',
-        'hat_adi': name,
-        'hat_code': code,
-        'tam_fiyat': tam,
-        'ogrenci_fiyat': indirimli,
-        'guncelleme': now
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
+    // Önce proxy'den tüm fiyatları çekmeyi dene (samsun.py'nin samulas.com.tr'den çektiği güncel veriler)
+    bool proxySuccess = false;
+    try {
+      final response = await http.get(
+        Uri.parse('https://samsun-gtfs-rt.onrender.com/api/hat'),
+        headers: {'User-Agent': 'SamsunMobilApp/2.0'},
+      ).timeout(const Duration(seconds: 12));
+      
+      if (response.statusCode == 200) {
+        final hatlar = json.decode(response.body);
+        if (hatlar is List && hatlar.isNotEmpty) {
+          final batch = db.batch();
+          int count = 0;
+          for (var hat in hatlar) {
+            final code = (hat['code'] ?? '').toString();
+            if (code.isEmpty) continue;
+            try {
+              final fiyatResp = await http.get(
+                Uri.parse('https://samsun-gtfs-rt.onrender.com/api/hat/fiyat/${Uri.encodeComponent(code)}'),
+                headers: {'User-Agent': 'SamsunMobilApp/2.0'},
+              ).timeout(const Duration(seconds: 5));
+              
+              if (fiyatResp.statusCode == 200) {
+                final fiyat = json.decode(fiyatResp.body);
+                final tam = (fiyat['tam_fiyat'] as num?)?.toDouble() ?? 0;
+                final ind = (fiyat['indirimli_fiyat'] as num?)?.toDouble() ?? 0;
+                if (tam > 0) {
+                  batch.insert(DatabaseHelper.tableFiyat, {
+                    'kaynak': 'proxy',
+                    'hat_adi': hat['name'] ?? code,
+                    'hat_code': code,
+                    'tam_fiyat': tam,
+                    'ogrenci_fiyat': ind,
+                    'guncelleme': now,
+                  }, conflictAlgorithm: ConflictAlgorithm.replace);
+                  count++;
+                }
+              }
+            } catch (_) {}
+            // Rate limiting: çok hızlı istek atmayalım
+            if (count % 10 == 0) await Future.delayed(const Duration(milliseconds: 200));
+          }
+          if (count > 0) {
+            await batch.commit(noResult: true);
+            proxySuccess = true;
+            print('✅ Proxy fiyatlar: $count hat güncellendi');
+          }
+        }
+      }
+    } catch (e) {
+      print('⚠️ Proxy fiyat çekme hatası: $e');
     }
 
-    addPrice('Tramvay', 'SAMULAŞ - TRAMVAY', 26.50, 16.50);
-    addPrice('Teleferik', 'TELEFERİK', 25.00, 15.00);
+    // Proxy başarısız olduysa fallback: Kategori bazlı varsayılan fiyatlar
+    if (!proxySuccess) {
+      print('⚠️ Proxy fiyatlar alınamadı, kategori bazlı fallback kullanılıyor...');
+      final batch = db.batch();
 
-    final ringler = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'R%' OR name LIKE 'RING%'");
-    for (var r in ringler) {
-      addPrice(r['name'] as String, r['code'] as String, 17.00, 12.00);
+      void addPrice(String name, String code, double tam, double indirimli) {
+        batch.insert(DatabaseHelper.tableFiyat, {
+          'kaynak': 'fixed',
+          'hat_adi': name,
+          'hat_code': code,
+          'tam_fiyat': tam,
+          'ogrenci_fiyat': indirimli,
+          'guncelleme': now
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+
+      // Kategori fiyatları — GitHub prices.json fallback ile senkronize
+      final prices = await PriceService.fetchPrices();
+      final defTam = ((prices['default']?['tam']) ?? 20.0).toDouble();
+      final defInd = ((prices['default']?['indirimli']) ?? 14.0).toDouble();
+      final tramTam = ((prices['tramvay']?['tam']) ?? 30.0).toDouble();
+      final tramInd = ((prices['tramvay']?['indirimli']) ?? 19.0).toDouble();
+      final telTam = ((prices['teleferik']?['tam']) ?? 30.0).toDouble();
+      final telInd = ((prices['teleferik']?['indirimli']) ?? 18.0).toDouble();
+      final expTam = ((prices['ekspres']?['tam']) ?? 27.0).toDouble();
+      final expInd = ((prices['ekspres']?['indirimli']) ?? 17.0).toDouble();
+      final hvlTam = ((prices['havalimani']?['tam']) ?? 140.0).toDouble();
+      final hvlInd = ((prices['havalimani']?['indirimli']) ?? 70.0).toDouble();
+      final odakTam = ((prices['odak']?['tam']) ?? 280.0).toDouble();
+      final odakInd = ((prices['odak']?['indirimli']) ?? 225.0).toDouble();
+      final ilcTam = ((prices['ilce']?['tam']) ?? 70.0).toDouble();
+      final ilcInd = ((prices['ilce']?['indirimli']) ?? 35.0).toDouble();
+
+      addPrice('Tramvay', 'SAMULAŞ - TRAMVAY', tramTam, tramInd);
+      addPrice('Teleferik', 'TELEFERİK', telTam, telInd);
+
+      final ringler = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'R%' OR name LIKE 'RING%'");
+      for (var r in ringler) {
+        addPrice(r['name'] as String, r['code'] as String, defTam, defInd);
+      }
+
+      final ekspres = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'E%' OR name LIKE 'E%'");
+      for (var e in ekspres) {
+        addPrice(e['name'] as String, e['code'] as String, expTam, expInd);
+      }
+
+      final tekneler = await db.rawQuery("SELECT code, name FROM hat WHERE name LIKE '%SAMSUNUM%' OR name LIKE '%GEMİ%'");
+      for (var t in tekneler) {
+        addPrice(t['name'] as String, t['code'] as String, ((prices['SAMSUNUM-1']?['tam']) ?? 225.0).toDouble(), ((prices['SAMSUNUM-1']?['indirimli']) ?? 170.0).toDouble());
+      }
+
+      final samair = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'H_%'");
+      for (var s in samair) {
+        addPrice(s['name'] as String, s['code'] as String, hvlTam, hvlInd);
+      }
+
+      final odak = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'G_%'");
+      for (var o in odak) {
+        addPrice(o['name'] as String, o['code'] as String, odakTam, odakInd);
+      }
+
+      final ilce = await db.rawQuery("SELECT code, name FROM hat WHERE tip='ilce'");
+      for (var i in ilce) {
+        addPrice(i['name'] as String, i['code'] as String, ilcTam, ilcInd);
+      }
+
+      await batch.commit(noResult: true);
+      print('✅ Fallback fiyatlar eklendi.');
     }
-
-    final ekspres = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'E%' OR name LIKE 'E%'");
-    for (var e in ekspres) {
-      addPrice(e['name'] as String, e['code'] as String, 23.50, 15.00);
-    }
-
-    final tekneler = await db.rawQuery("SELECT code, name FROM hat WHERE name LIKE '%SAMSUNUM%' OR name LIKE '%GEMİ%'");
-    for (var t in tekneler) {
-      addPrice(t['name'] as String, t['code'] as String, 200.00, 150.00);
-    }
-
-    final samair = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'H_%'");
-    for (var s in samair) {
-      addPrice(s['name'] as String, s['code'] as String, 120.00, 60.00);
-    }
-
-    final odak = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'G_%'");
-    for (var o in odak) {
-      addPrice(o['name'] as String, o['code'] as String, 250.00, 200.00);
-    }
-
-    final ilce = await db.rawQuery("SELECT code, name FROM hat WHERE tip='ilce'");
-    for (var i in ilce) {
-      addPrice(i['name'] as String, i['code'] as String, 60.00, 30.00);
-    }
-
-    await batch.commit(noResult: true);
-    print('✅ Sabit Fiyatlar eklendi.');
   }
 
   // --- Ana Senkronizasyon Fonksiyonu ---

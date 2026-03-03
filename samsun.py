@@ -3410,7 +3410,12 @@ loadStats(); setInterval(loadStats, 10000);
         if not res:
             res = db.one("SELECT * FROM fiyat WHERE hat_adi LIKE ?", (f'%{c}%',))
         
-        return JSONResponse(res or {"tam_fiyat": 17.0, "indirimli_fiyat": 12.0, "aktarma1": "Ücretsiz"})
+        # Fallback: DB'deki en yaygın fiyatı kullan (sıfır değilse)
+        if not res:
+            avg = db.one("SELECT ROUND(AVG(tam_fiyat),2) as t, ROUND(AVG(indirimli_fiyat),2) as i FROM fiyat WHERE tam_fiyat>0 AND kaynak='samulas'")
+            if avg and avg.get('t'):
+                res = {"tam_fiyat": avg['t'], "indirimli_fiyat": avg['i'] or round(avg['t']*0.7, 2), "aktarma1": "Ücretsiz"}
+        return JSONResponse(res or {"tam_fiyat": 20.0, "indirimli_fiyat": 14.0, "aktarma1": "Ücretsiz"})
     
     @app.get("/api/hat/arac/{code:path}")
     async def api_arac(code: str):

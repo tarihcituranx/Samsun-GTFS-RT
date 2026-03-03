@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PriceService {
   static const String _pricesUrl = "https://raw.githubusercontent.com/tarihcituranx/Samsun-GTFS-RT/main/prices.json";
+  static const String _renderBase = "https://samsun-gtfs-rt.onrender.com/api";
   
   static Map<String, dynamic>? _cachedPrices;
   static DateTime? _cacheTime;
@@ -10,7 +11,6 @@ class PriceService {
   /// GitHub üzerindeki dinamik prices.json dosyasını çeker.
   /// 1 saat (3600s) boyunca önbellekte tutar.
   static Future<Map<String, dynamic>> fetchPrices() async {
-    // Cache validasyon (1 saat)
     if (_cachedPrices != null && _cacheTime != null) {
       if (DateTime.now().difference(_cacheTime!).inHours < 1) {
         return _cachedPrices!;
@@ -30,7 +30,7 @@ class PriceService {
       print("Dinamik fiyat çekme hatası: $e");
     }
 
-    // Fallback Fiyatlar (Sunucuya ulaşılamazsa) — 2025 Zam Güncellemesi
+    // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
     return _cachedPrices ?? {
       "default": {"tam": 20.0, "indirimli": 14.0},
       "tramvay": {"tam": 30.0, "indirimli": 19.0},
@@ -45,8 +45,31 @@ class PriceService {
     };
   }
 
-  /// Belirli bir hat veya kategori (kat) için dinamik fiyatı hesaplar
+  /// Hat fiyatını proxy üzerinden çek (samsun.py'nin samulas.com.tr'den çektiği güncel fiyatlar)
+  /// Önce Render proxy → sonra GitHub prices.json → son fallback hardcoded
   static Future<Map<String, double>> getPriceForLine(String name, String kat) async {
+    // 1. Render proxy: samsun.py'nin DB'sinden hat bazlı güncel fiyat
+    try {
+      final code = name.split(' ').first.split('/').first;
+      final uri = Uri.parse("$_renderBase/hat/fiyat/${Uri.encodeComponent(code)}");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data['tam_fiyat'] != null) {
+          final tam = (data['tam_fiyat'] as num?)?.toDouble() ?? 0.0;
+          final ind = (data['indirimli_fiyat'] as num?)?.toDouble() ?? (tam * 0.7);
+          if (tam > 0) return {"tam": tam, "indirimli": ind};
+        }
+      }
+    } catch (e) {
+      print("Proxy fiyat çekme hatası: $e");
+    }
+
+    // 2. GitHub prices.json (kategori bazlı fallback)
     final prices = await fetchPrices();
     
     // Özel isme göre arama
@@ -70,8 +93,8 @@ class PriceService {
     // Default fallback
     final defaultPrices = prices["default"];
     return {
-      "tam": (defaultPrices?["tam"] ?? 17.0).toDouble(),
-      "indirimli": (defaultPrices?["indirimli"] ?? 12.0).toDouble()
+      "tam": (defaultPrices?["tam"] ?? 20.0).toDouble(),
+      "indirimli": (defaultPrices?["indirimli"] ?? 14.0).toDouble()
     };
   }
 }
