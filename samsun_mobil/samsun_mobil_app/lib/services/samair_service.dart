@@ -2,22 +2,21 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class SamAirService {
-  static const String ASIS_BASE = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
+  // Tüm çağrılar Render proxy üzerinden (proje şeması gereği)
+  static const String _renderBase = 'https://samsun-gtfs-rt.onrender.com/api';
 
-  // H1, H2, H3, H4 hatlarını takip edeceğiz
+  // H1, H2, H3, H4, H5 hatlarını takip edeceğiz
   static final List<String> SAMAIR_LINES = ['H1', 'H2', 'H3', 'H4', 'H5'];
 
   static Future<List<Map<String, dynamic>>> getLiveSamAirBuses() async {
     List<Map<String, dynamic>> allVehicles = [];
 
-    final headers = {
-      'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36',
-      'Accept': 'application/json',
-    };
-
     try {
       final futures = SAMAIR_LINES.map((lineCode) =>
-        http.get(Uri.parse('$ASIS_BASE/RealTimeData?lineCode=${Uri.encodeComponent(lineCode)}'), headers: headers)
+        http.get(
+          Uri.parse('$_renderBase/proxy/realtime?lineCode=${Uri.encodeComponent(lineCode)}'),
+          headers: {'User-Agent': 'SamsunMobilApp/2.0', 'Accept': 'application/json'},
+        ).timeout(const Duration(seconds: 10)).catchError((_) => http.Response('[]', 200))
       );
       final responses = await Future.wait(futures);
 
@@ -28,15 +27,13 @@ class SamAirService {
             List<dynamic> data = decodedData is List ? decodedData : (decodedData is Map && decodedData.containsKey('data') ? decodedData['data'] : [decodedData]);
 
             for (var item in data) {
-              if (item is Map<String, dynamic> && (item.containsKey('enlem') || item.containsKey('Latitude'))) {
-                // Gerçek ASIS: enlem/boylam/plaka/hiz/HatKodu (Türkçe)
-                // Fallback: Latitude/Longitude/PlateNumber/Speed/LineCode (PascalCase — eski)
+              if (item is Map<String, dynamic> && (item.containsKey('enlem') || item.containsKey('Latitude') || item.containsKey('lat'))) {
                 allVehicles.add({
-                  'lineCode': (item['HatKodu'] ?? item['LineCode'] ?? 'SAMAIR').toString(),
-                  'lat': double.tryParse((item['enlem'] ?? item['Latitude'] ?? '0').toString()) ?? 0.0,
-                  'lon': double.tryParse((item['boylam'] ?? item['Longitude'] ?? '0').toString()) ?? 0.0,
-                  'plate': (item['plaka'] ?? item['PlateNumber'] ?? 'Bilinmiyor').toString(),
-                  'speed': (item['hiz'] ?? item['Speed'] ?? '0').toString(),
+                  'lineCode': (item['HatKodu'] ?? item['LineCode'] ?? item['lineCode'] ?? 'SAMAIR').toString(),
+                  'lat': double.tryParse((item['enlem'] ?? item['Latitude'] ?? item['lat'] ?? '0').toString()) ?? 0.0,
+                  'lon': double.tryParse((item['boylam'] ?? item['Longitude'] ?? item['lon'] ?? '0').toString()) ?? 0.0,
+                  'plate': (item['plaka'] ?? item['PlateNumber'] ?? item['plate'] ?? 'Bilinmiyor').toString(),
+                  'speed': (item['hiz'] ?? item['Speed'] ?? item['speed'] ?? '0').toString(),
                 });
               }
             }

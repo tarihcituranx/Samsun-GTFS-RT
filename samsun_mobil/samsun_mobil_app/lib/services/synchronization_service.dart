@@ -2,14 +2,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:samsun_mobil_app/helpers/database_helper.dart';
-import 'package:sqflite/sqflite.dart'; // Hata düzeltmesi için eklendi
+import 'package:samsun_mobil_app/services/price_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 // samsun.py'nin Collector sınıfının mantığını Flutter/Dart'a taşıyan servis.
 // API'lerden veri toplar, temizler, işler ve yerel SQLite veritabanını doldurur.
+// Tüm çağrılar Render proxy üzerinden geçer (proje şeması gereği).
 class SynchronizationService {
   final dbHelper = DatabaseHelper.instance;
-  static const ASIS_BASE = 'https://api.samsun.bel.tr/OHSSoapToJson/api/Asis';
-  static const YBS_BASE = 'https://ybs.samsun.bel.tr/service';
+  static const _renderBase = 'https://samsun-gtfs-rt.onrender.com/api';
 
   // --- samsun.py'den Port Edilen Veri Temizleme Mantığı ---
   static final Map<String, String> _turkishCharacterFixes = {
@@ -40,45 +41,101 @@ class SynchronizationService {
     return fixedText.trim();
   }
 
-  // --- API Çağrıları (samsun.py'nin Http sınıfı gibi) ---
+  // --- API Çağrıları (Render Proxy üzerinden — proje şeması gereği) ---
   Future<List<dynamic>> _asisApiCall(String endpoint, {Map<String, String>? params}) async {
     try {
-      final uri = Uri.parse('$ASIS_BASE/$endpoint').replace(queryParameters: params);
+      // ASIS çağrıları proxy üzerinden: /api/proxy/realtime, /api/proxy/smart_stations vb.
+      // Genel endpoint'ler için: /api/hat, /api/hat/durak/{code} vb.
+      String proxyEndpoint;
+      if (endpoint == 'Lines' || endpoint == 'OrjLines') {
+        proxyEndpoint = '$_renderBase/hat';
+      } else if (endpoint == 'StopsStations') {
+        final lineCode = params?['lineCode'];
+        proxyEndpoint = lineCode != null && lineCode.isNotEmpty
+            ? '$_renderBase/hat/durak/${Uri.encodeComponent(lineCode)}'
+            : '$_renderBase/proxy/smart_stations';
+        params = lineCode != null ? null : params; // proxy/hat/durak yolunda param gerekmez
+      } else if (endpoint == 'Schedules') {
+        final lineCode = params?['lineCode'] ?? '';
+        proxyEndpoint = '$_renderBase/hat/sefer/${Uri.encodeComponent(lineCode)}';
+        params = null;
+      } else if (endpoint == 'RealTimeData') {
+        proxyEndpoint = '$_renderBase/proxy/realtime';
+      } else if (endpoint == 'SmartStations') {
+        proxyEndpoint = '$_renderBase/proxy/smart_stations';
+      } else {
+        proxyEndpoint = '$_renderBase/proxy/${endpoint.toLowerCase()}';
+      }
+
+      final uri = params != null && params.isNotEmpty
+          ? Uri.parse(proxyEndpoint).replace(queryParameters: params)
+          : Uri.parse(proxyEndpoint);
       final response = await http.get(uri, headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-      });
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         var decoded = json.decode(response.body);
-        // ASIS API bazen doğrudan liste, bazen { 'data': [...] } döner
-        return (decoded is Map && decoded.containsKey('data')) ? decoded['data'] : decoded;
+        if (decoded is Map && decoded.containsKey('data')) return decoded['data'] is List ? decoded['data'] : [];
+        if (decoded is List) return decoded;
+        return [decoded];
       }
     } catch (e) {
-      print('ASIS API Hatası ($endpoint): $e');
+      print('Proxy API Hatası ($endpoint): $e');
     }
     return [];
   }
 
   Future<List<dynamic>> _ybsApiCall(String module, String method, {Map<String, String>? params}) async {
     try {
-      // YBS API query param formatı: ?method=<module>&submethod=<method>&token=...
-      final queryParams = <String, String>{
-        'method': module,
-        'submethod': method,
-        ...?params,
-      };
-      final uri = Uri.parse(YBS_BASE).replace(queryParameters: queryParams);
+      // YBS çağrıları da proxy üzerinden: odak, samair vb.
+      String proxyEndpoint;
+      if (module.contains('odak')) {
+        if (method == 'HatlarList' || method == 'HatlarAllList') {
+          proxyEndpoint = '$_renderBase/proxy_odak';
+        } else if (method.contains('Durak')) {
+          final kodu = params?['kodu'] ?? '';
+          proxyEndpoint = '$_renderBase/odak/$kodu/durak';
+          params = null;
+        } else {
+          proxyEndpoint = '$_renderBase/odak';
+        }
+      } else if (module.contains('samair')) {
+        if (method == 'LokasyonlarList') {
+          proxyEndpoint = '$_renderBase/samair';
+        } else if (method == 'HatlarList') {
+          final hatid = params?['hatid'] ?? '';
+          proxyEndpoint = '$_renderBase/proxy_samair_saatler?hatid=$hatid';
+          params = null;
+        } else if (method == 'araclar') {
+          proxyEndpoint = '$_renderBase/proxy_samair_araclar';
+        } else if (method.contains('Durak')) {
+          final hatid = params?['hatid'] ?? params?['hat'] ?? '';
+          proxyEndpoint = '$_renderBase/samair/$hatid/durak';
+          params = null;
+        } else {
+          proxyEndpoint = '$_renderBase/samair';
+        }
+      } else {
+        proxyEndpoint = '$_renderBase/proxy_odak';
+      }
+
+      final uri = params != null && params.isNotEmpty
+          ? Uri.parse(proxyEndpoint).replace(queryParameters: params)
+          : Uri.parse(proxyEndpoint);
       final response = await http.get(uri, headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        'Referer': 'https://odak.samsun.bel.tr/',
-      });
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         var decoded = json.decode(response.body);
         if (decoded is Map && decoded.containsKey('data')) return decoded['data'] is List ? decoded['data'] : [];
         if (decoded is Map && decoded.containsKey('root')) return decoded['root'] is List ? decoded['root'] : [];
         if (decoded is List) return decoded;
+        return [decoded];
       }
     } catch (e) {
-      print('YBS API Hatası ($module/$method): $e');
+      print('YBS Proxy Hatası ($module/$method): $e');
     }
     return [];
   }
@@ -89,31 +146,16 @@ class SynchronizationService {
     print('📥 Hatlar çekiliyor...');
     final db = await dbHelper.database;
     
+    // Proxy /api/hat hem Lines hem OrjLines'ı birleşik döner
     List<dynamic> lines = await _asisApiCall('Lines');
-    List<dynamic> orjLines = await _asisApiCall('OrjLines');
 
     Set<String> seenCodes = {};
     List<Map<String, dynamic>> hatsToInsert = [];
 
-    // 1. Ana hatları 'Lines' endpoint'inden al
     for (var l in lines) {
-      String code = _fixText(l['lineCode']?.toString() ?? '');
-      if (code.isNotEmpty && !seenCodes.contains(code)) {
-        hatsToInsert.add({
-          'code': code,
-          'name': _fixText(l['lineName']?.toString() ?? code),
-          'tip': l['tip']?.toString() ?? 'gidis',
-          'kat': _categorizeHat(code, l['lineName']?.toString() ?? ''),
-        });
-        seenCodes.add(code);
-      }
-    }
-
-    // 2. Eksik hatları ve alias'ları 'OrjLines'dan ekle
-    for (var l in orjLines) {
-      String code = _fixText(l['lineCode']?.toString() ?? '');
-      String name = _fixText(l['lineName']?.toString() ?? code);
-
+      // Proxy format: {code, name, tip, kat} | ASIS format: {lineCode, lineName, tip}
+      String code = _fixText((l['code'] ?? l['lineCode'] ?? '').toString());
+      String name = _fixText((l['name'] ?? l['lineName'] ?? code).toString());
       if (code.isNotEmpty && !seenCodes.contains(code)) {
         bool shouldSkip = _skipKeywords.any((kw) => code.toUpperCase().contains(kw) || name.toUpperCase().contains(kw));
         if (shouldSkip) continue;
@@ -121,14 +163,13 @@ class SynchronizationService {
         hatsToInsert.add({
           'code': code,
           'name': name,
-          'tip': l['tip']?.toString() ?? 'gidis',
+          'tip': (l['tip'] ?? 'gidis').toString(),
           'kat': _categorizeHat(code, name),
         });
         seenCodes.add(code);
       }
     }
 
-    // 3. Veritabanına toplu ekleme
     if (hatsToInsert.isNotEmpty) {
       final batch = db.batch();
       for (var hat in hatsToInsert) {
@@ -142,39 +183,33 @@ class SynchronizationService {
   Future<void> _fetchAndSaveDuraklar() async {
     print('📥 Duraklar çekiliyor...');
     final db = await dbHelper.database;
+    // Proxy /api/hat/durak veya fallback ASIS StopsStations
     List<dynamic> stops = await _asisApiCall('StopsStations');
 
     List<Map<String, dynamic>> duraklarToInsert = [];
     Set<String> seenIds = {};
 
     for (var s in stops) {
-      String stopId = s['stopId']?.toString() ?? '';
+      // Proxy format: {id, hat, durak_id, ad, sira, lat, lon} | ASIS format: {stopId, stopName, latitude, longitude}
+      String stopId = (s['id'] ?? s['durak_id'] ?? s['stopId'] ?? '').toString();
       if (stopId.isNotEmpty && !seenIds.contains(stopId)) {
-        double lat = double.tryParse(s['latitude']?.toString().replaceAll(',', '.') ?? '0.0') ?? 0.0;
-        double lon = double.tryParse(s['longitude']?.toString().replaceAll(',', '.') ?? '0.0') ?? 0.0;
+        double lat = double.tryParse((s['lat'] ?? s['latitude'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
+        double lon = double.tryParse((s['lon'] ?? s['longitude'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
 
-        // Geçersiz koordinatları atla
         if (lat < 40 || lat > 43 || lon < 34 || lon > 38) continue;
 
-        String ad = _fixText(s['stopName']?.toString() ?? '');
-        String kod = '';
-        final match = RegExp(r'^(\d+)').firstMatch(ad);
-        if (match != null) {
-          kod = match.group(1)!;
+        String ad = _fixText((s['ad'] ?? s['stopName'] ?? '').toString());
+        String kod = (s['kod'] ?? '').toString();
+        if (kod.isEmpty) {
+          final match = RegExp(r'^(\d+)').firstMatch(ad);
+          if (match != null) kod = match.group(1)!;
         }
 
-        duraklarToInsert.add({
-          'id': stopId,
-          'kod': kod,
-          'ad': ad,
-          'lat': lat,
-          'lon': lon,
-        });
+        duraklarToInsert.add({'id': stopId, 'kod': kod, 'ad': ad, 'lat': lat, 'lon': lon});
         seenIds.add(stopId);
       }
     }
 
-    // --- TELEFERİK DURAKLARI (ASIS'te eksik/hatalı olduğu için manuel ekleniyor) ---
     duraklarToInsert.add({'id': 'T1', 'kod': 'T1', 'ad': 'Teleferik Alt İstasyon', 'lat': 41.3204, 'lon': 36.3231});
     duraklarToInsert.add({'id': 'T2', 'kod': 'T2', 'ad': 'Teleferik Üst İstasyon', 'lat': 41.3246, 'lon': 36.3228});
 
@@ -193,7 +228,7 @@ class SynchronizationService {
     final db = await dbHelper.database;
     final hats = await db.query(DatabaseHelper.tableHat, columns: ['code']);
 
-    await db.delete(DatabaseHelper.tableHatDurak); // Önce eski güzergahları temizle
+    await db.delete(DatabaseHelper.tableHatDurak);
 
     int i = 0;
     for (var hat in hats) {
@@ -203,15 +238,16 @@ class SynchronizationService {
       if (stopsOnRoute.isNotEmpty) {
         final batch = db.batch();
         for (var s in stopsOnRoute) {
-            double lat = double.tryParse(s['latitude']?.toString().replaceAll(',', '.') ?? '0.0') ?? 0.0;
-            double lon = double.tryParse(s['longitude']?.toString().replaceAll(',', '.') ?? '0.0') ?? 0.0;
+            // Proxy format: {hat, ad, kod, sira, lat, lon} | ASIS format: {stopId, stopName, latitude, longitude, orderId}
+            double lat = double.tryParse((s['lat'] ?? s['latitude'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
+            double lon = double.tryParse((s['lon'] ?? s['longitude'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
             if (lat < 40 || lat > 43 || lon < 34 || lon > 38) continue;
 
             batch.insert(DatabaseHelper.tableHatDurak, {
               'hat': code,
-              'durak_id': s['stopId']?.toString() ?? '',
-              'ad': _fixText(s['stopName']?.toString() ?? ''),
-              'sira': int.tryParse(s['orderId']?.toString() ?? '0') ?? 0,
+              'durak_id': (s['durak_id'] ?? s['kod'] ?? s['stopId'] ?? '').toString(),
+              'ad': _fixText((s['ad'] ?? s['stopName'] ?? '').toString()),
+              'sira': int.tryParse((s['sira'] ?? s['orderId'] ?? '0').toString()) ?? 0,
               'lat': lat,
               'lon': lon,
             });
@@ -242,26 +278,24 @@ class SynchronizationService {
     print('📥 Seferler çekiliyor...');
     final db = await dbHelper.database;
     final hats = await db.query(DatabaseHelper.tableHat, columns: ['code']);
-    
-    final now = DateTime.now();
-    final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
     int count = 0;
     for (var hat in hats) {
       String code = hat['code'] as String;
-      List<dynamic> schedules = await _asisApiCall('Schedules', params: {'lineCode': code, 'scheduleDate': todayStr});
+      List<dynamic> schedules = await _asisApiCall('Schedules', params: {'lineCode': code});
       
       if (schedules.isNotEmpty) {
         final batch = db.batch();
         for (var d in schedules) {
-          String saat = d['saat']?.toString() ?? d['time']?.toString() ?? '';
-          String yon = d['yon']?.toString() ?? '';
+          // Proxy format: {hat, saat, yon, gun} | ASIS format: {saat, time, yon}
+          String saat = (d['saat'] ?? d['time'] ?? '').toString();
+          String yon = (d['yon'] ?? '').toString();
           if (saat.isNotEmpty) {
             batch.insert(DatabaseHelper.tableSefer, {
               'hat': code,
               'saat': saat,
               'yon': yon,
-              'gun': 'hergun'
+              'gun': (d['gun'] ?? 'hergun').toString(),
             });
             count++;
           }
@@ -281,18 +315,18 @@ class SynchronizationService {
     if (odakHatlar.isNotEmpty) {
       final hatBatch = db.batch();
       for (var h in odakHatlar) {
-        String code = h['kodu']?.toString() ?? '';
-        String name = h['adi']?.toString() ?? '';
-        String gCode = "G_$code";
+        // Proxy format: {id, kod, ad, gunler} | YBS format: {kodu, adi, gunler}
+        String code = (h['id'] ?? h['kod'] ?? h['kodu'] ?? '').toString();
+        String name = (h['ad'] ?? h['adi'] ?? '').toString();
+        String gCode = code.startsWith('G_') ? code : "G_$code";
         
         hatBatch.insert(DatabaseHelper.tableOdak, {
           'id': code,
           'ad': name,
           'kod': gCode,
-          'gunler': h['gunler']?.toString() ?? ''
+          'gunler': (h['gunler'] ?? '').toString(),
         });
 
-        // Also add to main Hat table for generic searching
         hatBatch.insert(DatabaseHelper.tableHat, {
           'code': gCode,
           'name': name,
@@ -300,23 +334,24 @@ class SynchronizationService {
           'kat': 'odak',
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
 
-        // Fetch Duraklar for this Odak
+        // Durakları proxy'den çek (fiyat dahil)
         List<dynamic> duraklar = await _ybsApiCall('odak_otobussefer_public', 'DuraklarByKodu', params: {'kodu': code});
         if (duraklar.isNotEmpty) {
            final dBatch = db.batch();
            for (var i = 0; i < duraklar.length; i++) {
               var d = duraklar[i];
-              double lat = double.tryParse(d['lat']?.toString() ?? '0') ?? 0;
-              double lon = double.tryParse(d['lon']?.toString() ?? '0') ?? 0;
+              // Proxy format: {ad, kod, sira, lat, lon, fiyat, fiyat_ogr} | YBS format: {durak_adi, durak_kodu, lat, lon, fiyat, fiyat_ogr}
+              double lat = double.tryParse((d['lat'] ?? '0').toString()) ?? 0;
+              double lon = double.tryParse((d['lon'] ?? '0').toString()) ?? 0;
               dBatch.insert(DatabaseHelper.tableOdakDurak, {
                   'hat': gCode,
-                  'ad': d['durak_adi']?.toString() ?? '',
-                  'kod': d['durak_kodu']?.toString() ?? '',
-                  'sira': i+1,
+                  'ad': (d['ad'] ?? d['durak_adi'] ?? '').toString(),
+                  'kod': (d['kod'] ?? d['durak_kodu'] ?? '').toString(),
+                  'sira': int.tryParse((d['sira'] ?? '${i+1}').toString()) ?? (i+1),
                   'lat': lat,
                   'lon': lon,
-                  'fiyat': d['fiyat']?.toString() ?? '',
-                  'fiyat_ogr': d['fiyat_ogr']?.toString() ?? ''
+                  'fiyat': (d['fiyat'] ?? d['durak_fiyat'] ?? '').toString(),
+                  'fiyat_ogr': (d['fiyat_ogr'] ?? d['durak_fiyat_ogr'] ?? '').toString(),
               });
               dCount++;
            }
@@ -339,17 +374,19 @@ class SynchronizationService {
     if (hatlar.isNotEmpty) {
       final batch = db.batch();
       for (var h in hatlar) {
-         String name = h['adi']?.toString() ?? '';
-         String id = h['id']?.toString() ?? '';
+         // Proxy format: {id, kod, ad} | YBS format: {id, adi}
+         String name = (h['ad'] ?? h['adi'] ?? '').toString();
+         String id = (h['id'] ?? '').toString();
+         String kod = (h['kod'] ?? 'H_$id').toString();
          
          batch.insert(DatabaseHelper.tableSamair, {
            'id': int.tryParse(id) ?? 0,
            'ad': name,
-           'kod': "H_$id"
+           'kod': kod,
          });
 
          batch.insert(DatabaseHelper.tableHat, {
-           'code': "H_$id",
+           'code': kod,
            'name': name,
            'tip': 'havalimani',
            'kat': 'havalimani',
@@ -361,14 +398,16 @@ class SynchronizationService {
          if (seferler.isNotEmpty) {
              final sfBatch = db.batch();
              for (var sf in seferler) {
+                 // Proxy format: {saat, varis, firma, ucak_saat, tarih, gun_format}
+                 // YBS format: {saat, varis_saati, ucak_firmasi, ucak_saatleri, tarih, formatted_date}
                  sfBatch.insert(DatabaseHelper.tableSamairSefer, {
                      'hat': int.tryParse(id) ?? 0,
-                     'saat': sf['saat']?.toString() ?? '',
-                     'varis': sf['varis_saati']?.toString() ?? '',
-                     'firma': sf['ucak_firmasi']?.toString() ?? '',
-                     'ucak_saat': sf['ucak_saatleri']?.toString() ?? '',
-                     'tarih': sf['tarih']?.toString() ?? '',
-                     'gun_format': sf['formatted_date']?.toString() ?? ''
+                     'saat': (sf['saat'] ?? '').toString(),
+                     'varis': (sf['varis'] ?? sf['varis_saati'] ?? '').toString(),
+                     'firma': (sf['firma'] ?? sf['ucak_firmasi'] ?? '').toString(),
+                     'ucak_saat': (sf['ucak_saat'] ?? sf['ucak_saatleri'] ?? '').toString(),
+                     'tarih': (sf['tarih'] ?? '').toString(),
+                     'gun_format': (sf['gun_format'] ?? sf['formatted_date'] ?? '').toString(),
                  });
                  seferCount++;
              }
