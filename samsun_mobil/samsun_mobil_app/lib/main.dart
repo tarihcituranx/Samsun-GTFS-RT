@@ -91,7 +91,9 @@ class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderS
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
-    SynchronizationService().runFullSynchronization();
+    SynchronizationService().runFullSynchronization().catchError((e) {
+      debugPrint('Sync error: $e');
+    });
   }
 
   @override

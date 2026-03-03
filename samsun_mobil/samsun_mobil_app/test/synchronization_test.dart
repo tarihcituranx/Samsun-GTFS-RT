@@ -2,8 +2,8 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:samsun_transit/helpers/database_helper.dart';
-import 'package:samsun_transit/services/synchronization_service.dart';
+import 'package:samsun_mobil_app/helpers/database_helper.dart';
+import 'package:samsun_mobil_app/services/synchronization_service.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // This test validates the core data synchronization logic of the application.

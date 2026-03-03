@@ -20,6 +20,7 @@ class OfflineService {
 
   void stopMonitoring() {
     _timer?.cancel();
+    _offlineController.close();
   }
 
   Future<void> _checkConnection() async {

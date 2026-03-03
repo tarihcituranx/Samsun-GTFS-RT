@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
@@ -14,6 +15,7 @@ class OfflineWakeUpScreen extends StatefulWidget {
 class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
   double currentDistance = 0.0;
   bool trackingActive = false;
+  StreamSubscription<Position>? _positionSubscription;
 
   // Haversine Formülü ile iki koordinat arası metre hesabı
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -42,13 +44,13 @@ class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
     });
 
     // İnternetsiz Konum Takibi (Offline Tracking)
-    Geolocator.getPositionStream(
+    _positionSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)
     ).listen((Position position) {
       if (!mounted) return;
       
-      final dbLat = widget.durak['lat'] as double;
-      final dbLon = widget.durak['lon'] as double;
+      final dbLat = (widget.durak['lat'] as num?)?.toDouble() ?? 0.0;
+      final dbLon = (widget.durak['lon'] as num?)?.toDouble() ?? 0.0;
       
       final dist = _calculateDistance(position.latitude, position.longitude, dbLat, dbLon);
       
@@ -71,6 +73,12 @@ class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
   }
 
   @override
