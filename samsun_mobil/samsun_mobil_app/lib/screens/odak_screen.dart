@@ -186,7 +186,7 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
       if (mounted) {
         setState(() {
           _odakActive = false;
-          _odakMessage = 'Araç takip hatası';
+          _odakMessage = 'Araç bilgileri alınamadı. İnternet bağlantınızı kontrol edin.';
           _vehicles = [];
           _vehiclesLoading = false;
         });

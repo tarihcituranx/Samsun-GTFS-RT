@@ -52,7 +52,10 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
     try {
       final results = await Future.wait(
         ['H1', 'H2', 'H3', 'H4', 'H5'].map((line) =>
-          ApiService.getHattakiAraclar(line).catchError((_) => <Map<String, dynamic>>[])
+          ApiService.getHattakiAraclar(line).catchError((e) {
+            debugPrint('SamAir $line araç çekme hatası: $e');
+            return <Map<String, dynamic>>[];
+          })
         ),
       );
       for (var vehicles in results) {

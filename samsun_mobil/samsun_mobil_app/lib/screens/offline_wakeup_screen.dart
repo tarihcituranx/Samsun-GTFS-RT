@@ -52,6 +52,9 @@ class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
       final dbLat = (widget.durak['lat'] as num?)?.toDouble() ?? 0.0;
       final dbLon = (widget.durak['lon'] as num?)?.toDouble() ?? 0.0;
       
+      // Geçersiz koordinat kontrolü (Samsun bölgesi dışı)
+      if (dbLat < 40 || dbLat > 43 || dbLon < 34 || dbLon > 38) return;
+      
       final dist = _calculateDistance(position.latitude, position.longitude, dbLat, dbLon);
       
       setState(() {
