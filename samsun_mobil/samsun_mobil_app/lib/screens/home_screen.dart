@@ -508,17 +508,46 @@ class _HomeScreenState extends State<HomeScreen> {
           ]),
         ),
       ),
-      // İpucu
-      Positioned(top: 8, left: 8, right: 8,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [const Color(0xFF0A1628).withOpacity(0.92), const Color(0xFF152238).withOpacity(0.92)]),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+      // Akıllı Durak (SmartStation) / QR Durak Arama
+      Positioned(top: 8, left: 12, right: 12, // Safe area genelde AppBar veya framework halleder ama SafeArea sarmalayınca daha iyi
+        child: SafeArea(
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF152238).withOpacity(0.95),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: TextField(
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: "Akıllı Durak No girin (Örn: 10101)",
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
+                prefixIcon: const Icon(Icons.qr_code_scanner, color: Color(0xFF69F0AE), size: 20),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onSubmitted: (val) {
+                final query = val.trim();
+                if (query.isNotEmpty) {
+                   final find = _duraklar.where((d) {
+                     final kod = d['kod']?.toString() ?? '';
+                     final ad = d['ad']?.toString() ?? '';
+                     return kod == query || ad.startsWith(query);
+                   }).toList();
+                   if (find.isNotEmpty) {
+                      final f = find.first;
+                      _mapController.move(LatLng((f['lat'] as num).toDouble(), (f['lon'] as num).toDouble()), 16.0);
+                      _showDurakSheet(f);
+                   } else {
+                      _toastError("❌ Durak bulunamadı: $query");
+                   }
+                }
+              },
+            ),
           ),
-          child: const Text("💡 Haritaya uzun basarak hedef seçin • Durak noktasına dokunarak detay görün",
-            style: TextStyle(color: Colors.white70, fontSize: 10), textAlign: TextAlign.center),
         ),
       ),
       // TOAST OVERLAY

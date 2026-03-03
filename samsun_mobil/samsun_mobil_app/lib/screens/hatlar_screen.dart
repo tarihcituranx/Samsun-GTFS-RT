@@ -26,6 +26,7 @@ class _HatlarScreenState extends State<HatlarScreen> {
     'tramvay': {'icon': '🚋', 'name': 'Tramvay', 'color': Color(0xFFFF9100)},
     'ring': {'icon': '🔄', 'name': 'Ring', 'color': Color(0xFFFFC400)},
     'tekne': {'icon': '🛥️', 'name': 'Tekne', 'color': Color(0xFF00B0FF)},
+    'odak': {'icon': '🏕️', 'name': 'Odak', 'color': Color(0xFF4CAF50)},
     'teleferik': {'icon': '🚠', 'name': 'Teleferik', 'color': Color(0xFFFF4081)},
     'havalimani': {'icon': '✈️', 'name': 'H.limanı', 'color': Color(0xFFFF5252)},
     'ilce': {'icon': '🏘️', 'name': 'İlçe', 'color': Color(0xFF00BFA5)},

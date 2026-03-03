@@ -175,6 +175,10 @@ class SynchronizationService {
       }
     }
 
+    // --- TELEFERİK DURAKLARI (ASIS'te eksik/hatalı olduğu için manuel ekleniyor) ---
+    duraklarToInsert.add({'id': 'T1', 'kod': 'T1', 'ad': 'Teleferik Alt İstasyon', 'lat': 41.3204, 'lon': 36.3231});
+    duraklarToInsert.add({'id': 'T2', 'kod': 'T2', 'ad': 'Teleferik Üst İstasyon', 'lat': 41.3246, 'lon': 36.3228});
+
     if (duraklarToInsert.isNotEmpty) {
       final batch = db.batch();
       for (var durak in duraklarToInsert) {
@@ -220,6 +224,18 @@ class SynchronizationService {
         print('   ... ${i} / ${hats.length} güzergah işlendi.');
       }
     }
+    
+    // --- TELEFERİK GÜZERGAHI (Manuel Ekleme) ---
+    final teleferikHat = hats.where((h) => h['code'].toString().contains('TELEFERİK')).toList();
+    if (teleferikHat.isNotEmpty) {
+      String tCode = teleferikHat.first['code'] as String;
+      final tBatch = db.batch();
+      tBatch.insert(DatabaseHelper.tableHatDurak, {'hat': tCode, 'durak_id': 'T1', 'ad': 'Teleferik Alt İstasyon', 'sira': 1, 'lat': 41.3204, 'lon': 36.3231});
+      tBatch.insert(DatabaseHelper.tableHatDurak, {'hat': tCode, 'durak_id': 'T2', 'ad': 'Teleferik Üst İstasyon', 'sira': 2, 'lat': 41.3246, 'lon': 36.3228});
+      await tBatch.commit(noResult: true);
+      print('🚠 Teleferik güzergahı eklendi.');
+    }
+
     print('✅ Güzergahlar tamamlandı.');
   }
 
@@ -461,6 +477,11 @@ class SynchronizationService {
     final c = code.toUpperCase();
     final n = name.toUpperCase();
 
+    // Odak turistik hatlar
+    if (n.contains('SAMSUNUM') || n.contains('ALTINKAYA') || n.contains('ODAK') || c.contains('SAMSUNUM')) return 'odak';
+    // Tekne/deniz
+    if (n.contains('BANDIRMA') || n.contains('VAPUR') || (n.contains('FERİBOT') && !n.contains('TELEFERİK'))) return 'tekne';
+    // Ring
     if (c.startsWith('R') && c.length > 1 && int.tryParse(c.substring(1, 2)) != null) return 'ring';
     if (n.contains('TRAMVAY')) return 'tramvay';
     if (n.contains('TELEFERİK')) return 'teleferik';
