@@ -835,12 +835,11 @@ class Collector:
                                     tam_fiyat = clean_price(cols[idx+1].get_text(strip=True))
                                     break
                         
-                        # İndirimli fiyat hesapla
+                        # İndirimli fiyat hesapla (dinamik oran: ~%70 tam fiyat)
                         indirimli, aktarma1, aktarma2 = 0, "Ücretsiz", 0
-                        if tam_fiyat == 23.50:
-                            indirimli, aktarma2 = 15.00, 6.50
-                        elif tam_fiyat == 17.00:
-                            indirimli, aktarma2 = 12.00, 6.50
+                        if tam_fiyat > 0:
+                            indirimli = round(tam_fiyat * 0.70, 2)
+                            aktarma2 = round(tam_fiyat * 0.375, 2) if tam_fiyat <= 30 else 0
                         
                         # Hat kodu eşleştir
                         hat_code = ''

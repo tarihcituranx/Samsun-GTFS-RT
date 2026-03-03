@@ -30,18 +30,18 @@ class PriceService {
       print("Dinamik fiyat çekme hatası: $e");
     }
 
-    // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
+    // Fallback Fiyatlar (Sunucuya ulaşılamazsa) — 2025 Zam Güncellemesi
     return _cachedPrices ?? {
-      "default": {"tam": 17.0, "indirimli": 12.0},
-      "tramvay": {"tam": 26.50, "indirimli": 16.50},
-      "teleferik": {"tam": 25.0, "indirimli": 15.0},
-      "ekspres": {"tam": 23.50, "indirimli": 15.0},
-      "ring": {"tam": 17.0, "indirimli": 12.0},
-      "SAMSUNUM-1": {"tam": 200.0, "indirimli": 150.0},
-      "ALTINKAYA": {"tam": 15.0, "indirimli": 7.0, "arac": 75.0},
-      "havalimani": {"tam": 120.0, "indirimli": 60.0},
-      "odak": {"tam": 250.0, "indirimli": 200.0},
-      "ilce": {"tam": 60.0, "indirimli": 30.0}
+      "default": {"tam": 20.0, "indirimli": 14.0},
+      "tramvay": {"tam": 30.0, "indirimli": 19.0},
+      "teleferik": {"tam": 30.0, "indirimli": 18.0},
+      "ekspres": {"tam": 27.0, "indirimli": 17.0},
+      "ring": {"tam": 20.0, "indirimli": 14.0},
+      "SAMSUNUM-1": {"tam": 225.0, "indirimli": 170.0},
+      "ALTINKAYA": {"tam": 18.0, "indirimli": 8.0, "arac": 85.0},
+      "havalimani": {"tam": 140.0, "indirimli": 70.0},
+      "odak": {"tam": 280.0, "indirimli": 225.0},
+      "ilce": {"tam": 70.0, "indirimli": 35.0}
     };
   }
 

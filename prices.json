@@ -1,43 +1,43 @@
 {
     "default": {
-        "tam": 17.00,
-        "indirimli": 12.00
+        "tam": 20.00,
+        "indirimli": 14.00
     },
     "tramvay": {
-        "tam": 26.50,
-        "indirimli": 16.50
+        "tam": 30.00,
+        "indirimli": 19.00
     },
     "teleferik": {
-        "tam": 25.00,
-        "indirimli": 15.00
+        "tam": 30.00,
+        "indirimli": 18.00
     },
     "ekspres": {
-        "tam": 23.50,
-        "indirimli": 15.00
+        "tam": 27.00,
+        "indirimli": 17.00
     },
     "ring": {
-        "tam": 17.00,
-        "indirimli": 12.00
+        "tam": 20.00,
+        "indirimli": 14.00
     },
     "SAMSUNUM-1": {
-        "tam": 200.00,
-        "indirimli": 150.00
+        "tam": 225.00,
+        "indirimli": 170.00
     },
     "ALTINKAYA": {
-        "tam": 15.00,
-        "indirimli": 7.00,
-        "arac": 75.00
+        "tam": 18.00,
+        "indirimli": 8.00,
+        "arac": 85.00
     },
     "havalimani": {
-        "tam": 120.00,
-        "indirimli": 60.00
+        "tam": 140.00,
+        "indirimli": 70.00
     },
     "odak": {
-        "tam": 250.00,
-        "indirimli": 200.00
+        "tam": 280.00,
+        "indirimli": 225.00
     },
     "ilce": {
-        "tam": 60.00,
-        "indirimli": 30.00
+        "tam": 70.00,
+        "indirimli": 35.00
     }
 }
