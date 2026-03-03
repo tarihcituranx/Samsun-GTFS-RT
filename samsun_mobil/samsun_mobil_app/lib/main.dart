@@ -127,17 +127,28 @@ class _SplashLoaderState extends State<_SplashLoader> with SingleTickerProviderS
               ),
             ]),
             const SizedBox(height: 32),
-            // Uygulama İkonu (büyütülmüş)
+            // Uygulama İkonu (splash_logo)
             ScaleTransition(
               scale: _scaleAnim,
               child: Container(
                 width: 170, height: 170,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
                   borderRadius: BorderRadius.circular(40),
                   boxShadow: [BoxShadow(color: const Color(0xFF2979FF).withOpacity(0.3), blurRadius: 50, spreadRadius: 10)],
                 ),
-                child: const Center(child: Text('🚌', style: TextStyle(fontSize: 80))),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Image.asset('assets/splash_logo.png', width: 170, height: 170, fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 170, height: 170,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: const Center(child: Icon(Icons.directions_bus, size: 80, color: Colors.white)),
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 28),
