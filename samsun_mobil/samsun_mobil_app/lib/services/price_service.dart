@@ -60,7 +60,7 @@ class PriceService {
         final data = json.decode(response.body);
         if (data is Map<String, dynamic> && data['tam_fiyat'] != null) {
           final tam = (data['tam_fiyat'] as num?)?.toDouble() ?? 0.0;
-          final ind = (data['indirimli_fiyat'] as num?)?.toDouble() ?? (tam * 0.7);
+          final ind = (data['indirimli_fiyat'] as num?)?.toDouble() ?? (tam * 0.70); // INDIRIMLI_ORAN ile senkron
           if (tam > 0) return {"tam": tam, "indirimli": ind};
         }
       }

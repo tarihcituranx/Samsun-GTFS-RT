@@ -70,6 +70,10 @@ YBS = "https://ybs.samsun.bel.tr/service"
 SAMULAS_URL = "https://samulas.com.tr"
 GUNCELLEME_GUN = 7
 
+# Fiyat hesaplama sabitleri (Samulaş web scraping'den gelen tam fiyattan indirimli ve aktarma hesaplama)
+INDIRIMLI_ORAN = 0.70      # İndirimli = Tam × %70
+AKTARMA_ORAN = 0.375       # Aktarma = Tam × %37.5 (maks 30 TL altı hatlar)
+
 # OrjLines -> Lines hat alias mapping (fiyat eşleştirmesi için)
 HAT_ALIAS = {
     # Ekspres hatları (OrjLines'daki isim -> kısa kod)
@@ -838,8 +842,8 @@ class Collector:
                         # İndirimli fiyat hesapla (dinamik oran: ~%70 tam fiyat)
                         indirimli, aktarma1, aktarma2 = 0, "Ücretsiz", 0
                         if tam_fiyat > 0:
-                            indirimli = round(tam_fiyat * 0.70, 2)
-                            aktarma2 = round(tam_fiyat * 0.375, 2) if tam_fiyat <= 30 else 0
+                            indirimli = round(tam_fiyat * INDIRIMLI_ORAN, 2)
+                            aktarma2 = round(tam_fiyat * AKTARMA_ORAN, 2) if tam_fiyat <= 30 else 0
                         
                         # Hat kodu eşleştir
                         hat_code = ''
