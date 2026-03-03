@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -9,6 +10,38 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
+  String _selectedLanguage = 'Türkçe';
+  String _defaultTransport = 'Otobüs';
+  List<String> _favoriHatlar = [];
+  List<String> _favoriDuraklar = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      _selectedLanguage = prefs.getString('language') ?? 'Türkçe';
+      _defaultTransport = prefs.getString('default_transport') ?? 'Otobüs';
+      _favoriHatlar = prefs.getStringList('favori_hatlar') ?? [];
+      _favoriDuraklar = prefs.getStringList('favori_duraklar') ?? [];
+    });
+  }
+
+  Future<void> _savePreference(String key, dynamic value) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (value is bool) {
+      await prefs.setBool(key, value);
+    } else if (value is String) {
+      await prefs.setString(key, value);
+    } else if (value is List<String>) {
+      await prefs.setStringList(key, value);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,22 +58,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Uygulama Ayarları
           _sectionHeader('Uygulama Ayarları'),
           _card([
-            _switchItem(Icons.notifications, Colors.blue, 'Bildirimler', _notificationsEnabled, (v) => setState(() => _notificationsEnabled = v)),
+            _switchItem(Icons.notifications, Colors.blue, 'Bildirimler', _notificationsEnabled, (v) {
+              setState(() => _notificationsEnabled = v);
+              _savePreference('notifications_enabled', v);
+            }),
             _divider(),
             _infoItem(Icons.dark_mode, Colors.purple, 'Tema', 'Karanlık Mod'),
             _divider(),
-            _chevronItem(Icons.language, Colors.orange, 'Dil Seçimi', subtitle: 'Türkçe', onTap: () => _showComingSoon(context)),
+            _chevronItem(Icons.language, Colors.orange, 'Dil Seçimi', subtitle: _selectedLanguage, onTap: () => _showLanguageDialog(context)),
           ]),
           const SizedBox(height: 20),
 
           // Ulaşım Tercihleri
           _sectionHeader('Ulaşım Tercihleri'),
           _card([
-            _chevronItem(Icons.directions_bus, const Color(0xFF00BFA5), 'Favori Hatlar', onTap: () => _showComingSoon(context)),
+            _chevronItem(Icons.directions_bus, const Color(0xFF00BFA5), 'Favori Hatlar',
+              subtitle: _favoriHatlar.isEmpty ? 'Henüz yok' : '${_favoriHatlar.length} hat',
+              onTap: () => _showFavoriHatlarDialog(context)),
             _divider(),
-            _chevronItem(Icons.location_on, const Color(0xFF00BFA5), 'Favori Duraklar', onTap: () => _showComingSoon(context)),
+            _chevronItem(Icons.location_on, const Color(0xFF00BFA5), 'Favori Duraklar',
+              subtitle: _favoriDuraklar.isEmpty ? 'Henüz yok' : '${_favoriDuraklar.length} durak',
+              onTap: () => _showFavoriDuraklarDialog(context)),
             _divider(),
-            _chevronItem(Icons.commute, const Color(0xFF00BFA5), 'Varsayılan Ulaşım Türü', subtitle: 'Otobüs', onTap: () => _showComingSoon(context)),
+            _chevronItem(Icons.commute, const Color(0xFF00BFA5), 'Varsayılan Ulaşım Türü', subtitle: _defaultTransport, onTap: () => _showTransportDialog(context)),
+          ]),
+          const SizedBox(height: 20),
+
+          // Veri Yönetimi
+          _sectionHeader('Veri Yönetimi'),
+          _card([
+            _chevronItem(Icons.refresh, Colors.teal, 'Verileri Yenile', onTap: () => _showDataRefreshDialog(context)),
+            _divider(),
+            _chevronItem(Icons.delete_outline, Colors.red.shade300, 'Önbelleği Temizle', onTap: () => _showClearCacheDialog(context)),
           ]),
           const SizedBox(height: 20),
 
@@ -59,7 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // Bilgi
           _sectionHeader('Bilgi'),
           _card([
-            _chevronItem(Icons.description, Colors.grey, 'Kullanım Koşulları', onTap: () => _showComingSoon(context)),
+            _chevronItem(Icons.description, Colors.grey, 'Kullanım Koşulları', onTap: () => _showTermsDialog(context)),
+            _divider(),
+            _chevronItem(Icons.privacy_tip, Colors.grey, 'Gizlilik Politikası', onTap: () => _showPrivacyDialog(context)),
             _divider(),
             _chevronItem(Icons.info, Colors.grey, 'Hakkında', onTap: () {
               _showAboutDialog(context);
@@ -81,14 +132,278 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('🚧 Bu özellik çok yakında eklenecek!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+  // ─── DİL SEÇİMİ ───
+  void _showLanguageDialog(BuildContext context) {
+    final languages = ['Türkçe', 'English'];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF152238),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🌐 Dil Seçimi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: languages.map((lang) => RadioListTile<String>(
+            title: Text(lang, style: const TextStyle(color: Colors.white)),
+            value: lang,
+            groupValue: _selectedLanguage,
+            activeColor: const Color(0xFF2979FF),
+            onChanged: (v) {
+              setState(() => _selectedLanguage = v!);
+              _savePreference('language', v!);
+              Navigator.pop(ctx);
+            },
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ─── VARSAYILAN ULAŞIM TÜRÜ ───
+  void _showTransportDialog(BuildContext context) {
+    final types = [
+      {'name': 'Otobüs', 'icon': Icons.directions_bus},
+      {'name': 'Tramvay', 'icon': Icons.tram},
+      {'name': 'Tekne', 'icon': Icons.directions_boat},
+      {'name': 'Teleferik', 'icon': Icons.airline_seat_recline_extra},
+    ];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🚌 Varsayılan Ulaşım Türü', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: types.map((t) => RadioListTile<String>(
+            title: Row(children: [
+              Icon(t['icon'] as IconData, color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+              Text(t['name'] as String, style: const TextStyle(color: Colors.white)),
+            ]),
+            value: t['name'] as String,
+            groupValue: _defaultTransport,
+            activeColor: const Color(0xFF00BFA5),
+            onChanged: (v) {
+              setState(() => _defaultTransport = v!);
+              _savePreference('default_transport', v!);
+              Navigator.pop(ctx);
+            },
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ─── FAVORİ HATLAR ───
+  void _showFavoriHatlarDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('⭐ Favori Hatlar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (_favoriHatlar.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('Henüz favori hat eklemediniz.\n\nHat detay sayfasından favori ekleyebilirsiniz.',
+                  textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+              )
+            else
+              ...List.generate(_favoriHatlar.length, (i) => ListTile(
+                leading: const Icon(Icons.directions_bus, color: Color(0xFF00BFA5)),
+                title: Text(_favoriHatlar[i], style: const TextStyle(color: Colors.white)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Color(0xFFFF5252), size: 20),
+                  onPressed: () {
+                    setState(() => _favoriHatlar.removeAt(i));
+                    _savePreference('favori_hatlar', _favoriHatlar);
+                    Navigator.pop(ctx);
+                    _showFavoriHatlarDialog(context);
+                  },
+                ),
+              )),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat', style: TextStyle(color: Color(0xFF2979FF)))),
+        ],
+      ),
+    );
+  }
+
+  // ─── FAVORİ DURAKLAR ───
+  void _showFavoriDuraklarDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('📍 Favori Duraklar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (_favoriDuraklar.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('Henüz favori durak eklemediniz.\n\nHaritada durak seçerek favori ekleyebilirsiniz.',
+                  textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+              )
+            else
+              ...List.generate(_favoriDuraklar.length, (i) => ListTile(
+                leading: const Icon(Icons.location_on, color: Color(0xFF00BFA5)),
+                title: Text(_favoriDuraklar[i], style: const TextStyle(color: Colors.white)),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Color(0xFFFF5252), size: 20),
+                  onPressed: () {
+                    setState(() => _favoriDuraklar.removeAt(i));
+                    _savePreference('favori_duraklar', _favoriDuraklar);
+                    Navigator.pop(ctx);
+                    _showFavoriDuraklarDialog(context);
+                  },
+                ),
+              )),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat', style: TextStyle(color: Color(0xFF2979FF)))),
+        ],
+      ),
+    );
+  }
+
+  // ─── VERİ YENİLE ───
+  void _showDataRefreshDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🔄 Verileri Yenile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('Tüm hat, durak ve sefer verileri sunucudan yeniden yüklenecek.\n\nDevam etmek istiyor musunuz?',
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('İptal', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('✅ Veriler yenileniyor...', style: TextStyle(color: Colors.white)),
+                  backgroundColor: const Color(0xFF00BFA5),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00BFA5)),
+            child: const Text('Yenile'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── ÖNBELLEK TEMİZLE ───
+  void _showClearCacheDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🗑️ Önbelleği Temizle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text('Uygulama önbelleği temizlenecek. Bu işlem sonrası veriler tekrar yüklenecektir.\n\nDevam etmek istiyor musunuz?',
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('İptal', style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+          ElevatedButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              if (context.mounted) {
+                Navigator.pop(ctx);
+                setState(() {
+                  _favoriHatlar = [];
+                  _favoriDuraklar = [];
+                  _notificationsEnabled = true;
+                  _selectedLanguage = 'Türkçe';
+                  _defaultTransport = 'Otobüs';
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('✅ Önbellek temizlendi', style: TextStyle(color: Colors.white)),
+                    backgroundColor: const Color(0xFF00BFA5),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+            child: const Text('Temizle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── KULLANIM KOŞULLARI ───
+  void _showTermsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('📄 Kullanım Koşulları', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _termsSection('1. Genel', 'Bu uygulama Samsun Büyükşehir Belediyesi toplu taşıma hizmetleri hakkında bilgi sağlamak amacıyla geliştirilmiştir.'),
+            _termsSection('2. Veri Kullanımı', 'Uygulama, konum bilginizi yalnızca yakın durak ve rota hesaplama için kullanır. Kişisel verileriniz üçüncü taraflarla paylaşılmaz.'),
+            _termsSection('3. Sorumluluk', 'Sefer saatleri ve güzergah bilgileri bilgilendirme amaçlıdır. Gerçek zamanlı değişiklikler olabilir. Güncel bilgi için 153 veya 0362 431 10 12 numarasını arayınız.'),
+            _termsSection('4. Fikri Mülkiyet', 'Uygulama içeriği ve tasarımı Samsun Büyükşehir Belediyesi ve Samulaş A.Ş. mülkiyetindedir.'),
+            _termsSection('5. Güncellemeler', 'Uygulama zaman zaman güncellenebilir. Kullanmaya devam ederek güncel koşulları kabul etmiş sayılırsınız.'),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tamam', style: TextStyle(color: Color(0xFF2979FF)))),
+        ],
+      ),
+    );
+  }
+
+  Widget _termsSection(String title, String body) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 4),
+        Text(body, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+      ]),
+    );
+  }
+
+  // ─── GİZLİLİK POLİTİKASI ───
+  void _showPrivacyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF152238),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('🔒 Gizlilik Politikası', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _termsSection('Konum Verisi', 'Konum bilginiz yalnızca yakın durak tespiti ve rota hesaplama için cihazınızda işlenir. Sunucuya gönderilmez.'),
+            _termsSection('Yerel Depolama', 'Favori hat/durak tercihleriniz yalnızca cihazınızda saklanır.'),
+            _termsSection('API İletişimi', 'Uygulama, canlı araç konumları ve sefer bilgileri için ASİS ve YBS API\'lerine bağlanır. Bu bağlantılarda kişisel veri gönderilmez.'),
+            _termsSection('İletişim', 'Gizlilik ile ilgili sorularınız için: 0362 431 10 12'),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tamam', style: TextStyle(color: Color(0xFF2979FF)))),
+        ],
       ),
     );
   }

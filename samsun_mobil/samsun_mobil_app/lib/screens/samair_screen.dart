@@ -354,7 +354,9 @@ class _SamAirScheduleTab extends StatefulWidget {
 
 class _SamAirScheduleTabState extends State<_SamAirScheduleTab> {
   List<dynamic> _schedules = [];
+  List<dynamic> _filteredSchedules = [];
   bool _isLoading = true;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -368,79 +370,205 @@ class _SamAirScheduleTabState extends State<_SamAirScheduleTab> {
       setState(() {
         _schedules = s;
         _isLoading = false;
+        _filterByDate();
       });
     }
+  }
+
+  void _filterByDate() {
+    final now = DateTime.now();
+    final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final selectedStr = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    setState(() {
+      _filteredSchedules = _schedules.where((s) {
+        final tarih = s['tarih']?.toString() ?? s['Tarih']?.toString() ?? s['date']?.toString() ?? '';
+        // If schedule has a date field, filter by selected date
+        if (tarih.isNotEmpty) {
+          final scheduleDateStr = tarih.length >= 10 ? tarih.substring(0, 10) : tarih;
+          return scheduleDateStr == selectedStr;
+        }
+        // If no date field, show all (static schedules)
+        return true;
+      }).toList();
+    });
+  }
+
+  void _changeDate(int days) {
+    final newDate = _selectedDate.add(Duration(days: days));
+    // Don't allow past dates
+    if (newDate.isBefore(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day))) return;
+    setState(() {
+      _selectedDate = newDate;
+      _filterByDate();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return Center(child: CircularProgressIndicator(color: widget.color));
 
-    if (_schedules.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.airplanemode_inactive, size: 48, color: Colors.white.withOpacity(0.2)),
-            const SizedBox(height: 16),
-            Text("Bu hatta ait sefer bulunamadı.", style: TextStyle(color: Colors.white.withOpacity(0.5))),
-          ],
+    final isToday = _selectedDate.year == DateTime.now().year &&
+        _selectedDate.month == DateTime.now().month &&
+        _selectedDate.day == DateTime.now().day;
+    final dateStr = '${_selectedDate.day.toString().padLeft(2, '0')}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.year}';
+    final displaySchedules = _filteredSchedules.isNotEmpty ? _filteredSchedules : _schedules;
+
+    return Column(
+      children: [
+        // Tarih Seçici
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: const Color(0xFF0F1E36),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left, color: Colors.white70),
+                onPressed: () => _changeDate(-1),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 30)),
+                    builder: (context, child) {
+                      return Theme(
+                        data: ThemeData.dark().copyWith(
+                          colorScheme: ColorScheme.dark(primary: widget.color, surface: const Color(0xFF152238)),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedDate = picked;
+                      _filterByDate();
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: widget.color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: widget.color.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today, size: 16, color: widget.color),
+                      const SizedBox(width: 8),
+                      Text(
+                        isToday ? "Bugün ($dateStr)" : dateStr,
+                        style: TextStyle(color: widget.color, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right, color: Colors.white70),
+                onPressed: () => _changeDate(1),
+              ),
+            ],
+          ),
         ),
-      );
-    }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: _schedules.length,
-      itemBuilder: (context, i) {
-        final s = _schedules[i];
-        final cityTime = s['saat']?.toString() ?? s['SehirKalkis']?.toString() ?? '-';
-        final flightTime = s['varis']?.toString() ?? s['varis_saati']?.toString() ?? s['UcusSaati']?.toString() ?? '-';
-        final flightNo = s['firma']?.toString() ?? s['ucak_firmasi']?.toString() ?? s['UcusKodu']?.toString() ?? '';
-        final note = s['ucak_saat']?.toString() ?? s['ucak_saatleri']?.toString() ?? s['Aciklama']?.toString() ?? '';
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF152238),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: widget.color.withOpacity(0.3)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Şehirden Kalkış
-                Expanded(
+        // Sefer Listesi
+        Expanded(
+          child: displaySchedules.isEmpty
+              ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Şehir Kalkış", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-                      Text(cityTime, style: TextStyle(color: widget.color, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Icon(Icons.airplanemode_inactive, size: 48, color: Colors.white.withOpacity(0.2)),
+                      const SizedBox(height: 16),
+                      Text("Bu tarihte sefer bulunamadı.", style: TextStyle(color: Colors.white.withOpacity(0.5))),
+                      const SizedBox(height: 8),
+                      Text(dateStr, style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12)),
                     ],
                   ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: displaySchedules.length,
+                  itemBuilder: (context, i) {
+                    final s = displaySchedules[i];
+                    final cityTime = s['saat']?.toString() ?? s['SehirKalkis']?.toString() ?? '-';
+                    final flightTime = s['varis']?.toString() ?? s['varis_saati']?.toString() ?? s['UcusSaati']?.toString() ?? '-';
+                    final flightNo = s['firma']?.toString() ?? s['ucak_firmasi']?.toString() ?? s['UcusKodu']?.toString() ?? '';
+                    final note = s['ucak_saat']?.toString() ?? s['ucak_saatleri']?.toString() ?? s['Aciklama']?.toString() ?? '';
+                    final tarih = s['tarih']?.toString() ?? s['Tarih']?.toString() ?? s['date']?.toString() ?? '';
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF152238),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: widget.color.withOpacity(0.3)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            if (tarih.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.calendar_today, size: 12, color: Colors.white.withOpacity(0.4)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      tarih.length >= 10 ? tarih.substring(0, 10) : tarih,
+                                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+                                    ),
+                                    if (note.isNotEmpty) ...[
+                                      const Spacer(),
+                                      Text(note, style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10)),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            Row(
+                              children: [
+                                // Şehirden Kalkış
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text("Şehir Kalkış", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                                      Text(cityTime, style: TextStyle(color: widget.color, fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                                // Flight Icon
+                                Icon(Icons.flight_takeoff, color: Colors.white.withOpacity(0.2), size: 32),
+                                // Uçuş Saati
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text("Uçuş Saati", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+                                      Text(flightTime, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                                      if (flightNo.isNotEmpty)
+                                        Text(flightNo, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                
-                // Flight Icon
-                Icon(Icons.flight_takeoff, color: Colors.white.withOpacity(0.2), size: 32),
-                
-                // Uçuş Saati
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text("Uçuş Saati", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
-                      Text(flightTime, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      if (flightNo.isNotEmpty)
-                        Text(flightNo, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

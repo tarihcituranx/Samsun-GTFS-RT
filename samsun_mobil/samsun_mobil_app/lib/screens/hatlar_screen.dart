@@ -493,7 +493,11 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
   Widget _buildSpecialBanner() {
     final name = widget.name.toUpperCase();
     if (name.contains('TRAMVAY')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'Tramvay Hattı', '0362 431 10 12');
-    if (name.contains('TELEFERİK')) return _banner(const Color(0xFF2A0020), const Color(0xFFFF4081), '🚠', 'Batıpark - Amisos', '10:30 - 22:00 | 323m hat');
+    if (name.contains('TELEFERİK')) return _banner(const Color(0xFF2A0020), const Color(0xFFFF4081), '🚠', 'Batıpark - Amisos Tepesi', '10:30 - 22:00 | 323m hat');
+    if (name.contains('ECZANELER') && name.contains('TEKKEKÖY') && name.contains('GİDİŞ')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'ECZANELER-TEKKEKÖY Gidiş', 'Tramvay hattı • Sefer saatleri eklenecek');
+    if (name.contains('YURTLAR') && name.contains('BELEDİYE')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'YURTLAR-BELEDİYE EVLERİ', 'Tramvay hattı • Sefer saatleri eklenecek');
+    if (name.contains('BELEDİYE') && name.contains('YURTLAR') && name.contains('DÖNÜŞ')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'BELEDİYE EVLERİ-YURTLAR Dönüş', 'Tramvay hattı • Sefer saatleri eklenecek');
+    if (name.contains('TEKKEKÖY') && name.contains('ECZANELER') && name.contains('DÖNÜŞ')) return _banner(const Color(0xFF2A1800), const Color(0xFFFF9100), '🚋', 'TEKKEKÖY-ECZANELER Dönüş', 'Tramvay hattı • Sefer saatleri eklenecek');
     if (name.contains('SAMSUNUM-1')) return _banner(const Color(0xFF1A2200), const Color(0xFFFFC400), '⛴️', 'Samsunum-1', 'Odak turları bölümünden bilgi alınız');
     if (name.contains('SAMSUNUM-2')) return _banner(const Color(0xFF2A0000), const Color(0xFFFF5252), '🛑', 'Çalışmıyor', 'DSİ çalışması nedeniyle askıda');
     if (name.contains('SAMSUNUM-3')) return _banner(const Color(0xFF001A2A), const Color(0xFF00B0FF), 'ℹ️', 'Samsunum-3', 'Odak turları bölümünden bilgi alınız');

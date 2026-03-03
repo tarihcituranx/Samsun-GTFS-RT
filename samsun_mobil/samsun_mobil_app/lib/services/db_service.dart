@@ -55,6 +55,24 @@ class DBService {
       m['kat'] = _classifyCategory(m['code']?.toString() ?? '', m['name']?.toString() ?? '');
       return m;
     }).toList();
+
+    // Ek tramvay hatlarını kontrol et ve yoksa ekle
+    final extraTramRoutes = [
+      {'code': 'TRAMVAY-ECZ-TEK-G', 'name': 'ECZANELER-TEKKEKÖY - Gidiş', 'kat': 'tramvay'},
+      {'code': 'TRAMVAY-YRT-BEL', 'name': 'YURTLAR-BELEDİYE EVLERİ TRAMVAY', 'kat': 'tramvay'},
+      {'code': 'TRAMVAY-BEL-YRT-D', 'name': 'BELEDİYE EVLERİ - YURTLAR - Dönüş', 'kat': 'tramvay'},
+      {'code': 'TRAMVAY-TEK-ECZ-D', 'name': 'TEKKEKÖY-ECZANELER - Dönüş', 'kat': 'tramvay'},
+    ];
+
+    for (final extra in extraTramRoutes) {
+      final exists = _hatlarCache!.any((h) =>
+        h['code']?.toString() == extra['code'] ||
+        (h['name']?.toString() ?? '').toUpperCase().contains(extra['name']!.toUpperCase().split(' - ')[0]));
+      if (!exists) {
+        _hatlarCache!.add(extra);
+      }
+    }
+
     return _hatlarCache!;
   }
 
@@ -73,6 +91,9 @@ class DBService {
     if (['GEMİ', 'VAPUR', 'FERİBOT', 'TEKNE', 'SAMSUNUM'].any((x) => c.contains(x) || n.contains(x))) return 'tekne';
     // Havalimanı
     if (c.startsWith('H') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2))) return 'havalimani';
+    // Odak: G ile başlayanlar ve Kültür Yolu hatları
+    if (c.startsWith('G') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2))) return 'odak';
+    if (n.contains('KÜLTÜR YOLU') || n.contains('KULTUR YOLU')) return 'odak';
     // Ekspres
     if (c.contains('EKSPRES') || (c.startsWith('E') && c.length > 1 && RegExp(r'\d').hasMatch(c.substring(1, 2)))) return 'ekspres';
     // İlçe
