@@ -223,6 +223,71 @@ components:
           description: Yön bilgisi
           example: "gidis"
 
+    SmartStationItem:
+      type: object
+      description: Akıllı durak ekranında gösterilen durağa yaklaşan araç bilgisi
+      properties:
+        BusLineCode:
+          type: string
+          description: Hat kodu ve adı
+          example: "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU (137)"
+        BusLineNo:
+          type: string
+          description: Hat numarası
+          example: "85"
+        BusLineShortName:
+          type: string
+          description: Kısa hat adı (GTFS route_short_name)
+          example: "365"
+        panelId:
+          type: string
+          description: Akıllı durak panel numarası
+          example: "5328"
+        RemainingTimeCurr:
+          type: string
+          description: En yakın aracın tahmini varış süresi (dakika)
+          example: "1"
+        RemainingTimeNext:
+          type: string
+          description: İkinci en yakın aracın tahmini varış süresi (dakika)
+          example: "61"
+        IsAccordingToTimeSchedule:
+          type: string
+          description: Zaman çizelgesine uygunluk (A=Uygun)
+          example: "A"
+        BusStatusCurr:
+          type: string
+          description: Mevcut aracın durumu (0=normal)
+          example: "0"
+        BusStatusNext:
+          type: string
+          description: Sonraki aracın durumu
+          example: "0"
+        distance:
+          type: string
+          description: Araç ile durak arasındaki mesafe
+          example: "549480906"
+        RemainingNumberOfBusStops:
+          type: string
+          description: Aracın bu durağa kaç durak kaldığı
+          example: "15"
+        latitude:
+          type: string
+          description: Aracın enlemi
+          example: "41.37006833"
+        longitude:
+          type: string
+          description: Aracın boylamı
+          example: "36.22803333"
+        speed:
+          type: string
+          description: Aracın anlık hızı (km/s)
+          example: "51"
+        direction:
+          type: string
+          description: Aracın yön derecesi
+          example: "157"
+
 paths:
 
   /api/Asis/Lines:
@@ -291,11 +356,18 @@ paths:
     get:
       operationId: getStopsStations
       tags: [ASİS - Durak]
-      summary: Durak Bilgilerini Sorgula
+      summary: Durak Bilgilerini Sorgula (Statik)
       description: >
-        Belirli bir hatta ait tüm durakların listesini veya
-        belirli bir durağa ait detayları getirir.
-        Koordinat ve durak sırası bilgilerini içerir.
+        **STATİK VERİ:** Belirli bir hatta ait tüm durakların veya
+        belirli bir durağa ait statik bilgileri (ad, koordinat, sıra) getirir.
+
+        **Önemli:** Bu endpoint canlı araç takibi YAPMAZ.
+        Canlı araç bilgisi için `SmartStations` endpoint'ini kullanın.
+
+        **stopId == stationId:** Her iki endpoint de aynı durak ID'sini
+        kullanır. Örneğin `stopId=5328` ile durağın adını/konumunu alın,
+        sonra `stationId=5328` ile o durağa yaklaşan otobüsleri çekin.
+        (Kaynak: mobil.samsun.bel.tr/QRDurak.php)
       parameters:
         - name: lineCode
           in: query
@@ -339,25 +411,58 @@ paths:
     get:
       operationId: getSmartStations
       tags: [ASİS - Durak]
-      summary: Akıllı Durak Ekran Görünümü
-      description: Fiziksel akıllı durak ekranlarındaki canlı bilgilendirme verilerini simüle eder.
+      summary: Durağa Yaklaşan Otobüsler (Canlı)
+      description: >
+        **CANLI VERİ:** Belirtilen durak paneline yaklaşan otobüslerin
+        gerçek zamanlı bilgilerini döndürür: hat adı, tahmini varış süresi,
+        kalan durak sayısı, otobüsün anlık konumu ve hızı.
+
+        Fiziksel akıllı durak ekranlarındaki bilgilendirme verilerini
+        dijital ortamda simüle eder.
+
+        **stationId == stopId:** `StopsStations` endpoint'indeki
+        `stopId` ile aynı numarayı kullanır.
+        (Kaynak: mobil.samsun.bel.tr/QRDurak.php)
       parameters:
         - name: stationId
           in: query
           schema:
             type: integer
-          description: Akıllı Panel Kimlik Numarası
+          description: Durak/Panel Kimlik Numarası (stopId ile aynı)
+          example: 5328
       responses:
         '200':
           description: Akıllı durak verisi
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SmartStationItem'
               example:
                 statusCode: 200
                 message: ""
-                data: []
+                data:
+                  - BusLineCode: "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU (137)"
+                    BusLineNo: "85"
+                    BusLineShortName: "365"
+                    panelId: "5328"
+                    RemainingTimeCurr: "1"
+                    RemainingTimeNext: "61"
+                    IsAccordingToTimeSchedule: "A"
+                    BusStatusCurr: "0"
+                    BusStatusNext: "0"
+                    distance: "549480906"
+                    RemainingNumberOfBusStops: "15"
+                    latitude: "41.37006833"
+                    longitude: "36.22803333"
+                    speed: "51"
+                    direction: "157"
         '400':
           description: Geçersiz istek
 
