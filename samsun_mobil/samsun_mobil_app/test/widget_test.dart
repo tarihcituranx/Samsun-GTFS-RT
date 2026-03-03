@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:samsun_mobil_app/main.dart';
 
 void main() {
-  testWidgets('App launches and shows splash screen', (WidgetTester tester) async {
+  testWidgets('App launches and shows app title', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const SamsunRouteApp());
 

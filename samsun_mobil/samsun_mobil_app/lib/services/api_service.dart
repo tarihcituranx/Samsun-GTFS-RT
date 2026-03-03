@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -139,9 +140,13 @@ class ApiService {
   }
 
   // ─── Test Erişim Metodları (unit test desteği) ───
+  @visibleForTesting
   static List<dynamic> extractDataListForTest(dynamic decoded) => _extractDataList(decoded);
+  @visibleForTesting
   static List<Map<String, dynamic>> parseRealTimeDataForTest(List<dynamic> data, String lineCode) => _parseRealTimeData(data, lineCode);
+  @visibleForTesting
   static List<dynamic> cleanSmartStationDataForTest(List<dynamic> data) => _cleanSmartStationData(data);
+  @visibleForTesting
   static String fixAndCleanTextForTest(String text) => _fixAndCleanText(text);
 
   /// RealTimeData verisini parse et — Gerçek ASIS alan adları: plaka, enlem, boylam, hiz, HatKodu, editDate vb.
