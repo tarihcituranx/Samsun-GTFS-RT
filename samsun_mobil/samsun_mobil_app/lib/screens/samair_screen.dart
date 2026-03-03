@@ -22,10 +22,10 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   final LatLng _airportLocation = const LatLng(41.2589, 36.5564);
 
   final List<Map<String, dynamic>> _lines = [
-    {'id': 3, 'code': 'H1', 'name': 'OMÜ - İlkadım', 'color': Color(0xFF2979FF)},
-    {'id': 4, 'code': 'H2', 'name': 'TTTM - Canik', 'color': Color(0xFF00BFA5)},
-    {'id': 5, 'code': 'H3', 'name': 'Bafra - 19 Mayıs', 'color': Color(0xFFFF5252)},
-    {'id': 9, 'code': 'H4', 'name': 'Çarşamba - Salıpazarı', 'color': Color(0xFFFFAB00)},
+    {'id': 3, 'code': 'H1', 'name': 'OMÜ - İlkadım', 'color': const Color(0xFF2979FF)},
+    {'id': 4, 'code': 'H2', 'name': 'TTTM - Canik', 'color': const Color(0xFF00BFA5)},
+    {'id': 5, 'code': 'H3', 'name': 'Bafra - 19 Mayıs', 'color': const Color(0xFFFF5252)},
+    {'id': 9, 'code': 'H4', 'name': 'Çarşamba - Salıpazarı', 'color': const Color(0xFFFFAB00)},
   ];
 
   @override
@@ -83,10 +83,10 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
             physics: const NeverScrollableScrollPhysics(), // Harita kaydırması ile çakışmasın
             children: [
               _buildMapTab(),
-              _SamAirScheduleTab(lineId: 3, lineName: 'H1', color: const Color(0xFF2979FF)),
-              _SamAirScheduleTab(lineId: 4, lineName: 'H2', color: const Color(0xFF00BFA5)),
-              _SamAirScheduleTab(lineId: 5, lineName: 'H3', color: const Color(0xFFFF5252)),
-              _SamAirScheduleTab(lineId: 9, lineName: 'H4', color: const Color(0xFFFFAB00)),
+              const _SamAirScheduleTab(lineId: 3, lineName: 'H1', color: Color(0xFF2979FF)),
+              const _SamAirScheduleTab(lineId: 4, lineName: 'H2', color: Color(0xFF00BFA5)),
+              const _SamAirScheduleTab(lineId: 5, lineName: 'H3', color: Color(0xFFFF5252)),
+              const _SamAirScheduleTab(lineId: 9, lineName: 'H4', color: Color(0xFFFFAB00)),
             ],
           ),
         ),
@@ -99,8 +99,8 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
       children: [
         FlutterMap(
           mapController: _mapController,
-          options: MapOptions(
-            initialCenter: const LatLng(41.2867, 36.3300),
+          options: const MapOptions(
+            initialCenter: LatLng(41.2867, 36.3300),
             initialZoom: 11.0,
           ),
           children: [

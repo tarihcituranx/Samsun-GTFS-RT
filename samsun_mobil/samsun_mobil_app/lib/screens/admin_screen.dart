@@ -189,7 +189,7 @@ class _AdminScreenState extends State<AdminScreen> {
           title: const Text('GTFS-RT Aktif'),
           subtitle: Text(_gtfsRtEnabled ? 'Çalışıyor' : 'Kapalı'),
           value: _gtfsRtEnabled,
-          activeColor: const Color(0xFF00BFA5),
+          activeThumbColor: const Color(0xFF00BFA5),
           onChanged: (v) => setState(() => _gtfsRtEnabled = v),
         ),
         ListTile(
@@ -277,9 +277,9 @@ class _AdminScreenState extends State<AdminScreen> {
           _chip('⏱', '${uptime ~/ 60}dk'),
           _chip('🚌', '$vehicles araç'),
           _chip('📡', '$activeCount hat'),
-          _chip('📊', '${asisPerMin}/dk ASIS'),
+          _chip('📊', '$asisPerMin/dk ASIS'),
           _chip('🌐', proxyActive ? '✅ Proxy' : '❌ Proxy'),
-          _chip('🕐', '${trHour}:xx TR'),
+          _chip('🕐', '$trHour:xx TR'),
         ]),
       ),
       if (activeLines.isNotEmpty)

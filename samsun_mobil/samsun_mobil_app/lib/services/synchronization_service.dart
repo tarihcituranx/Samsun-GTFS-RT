@@ -33,7 +33,6 @@ class SynchronizationService {
   ];
 
   static String _fixText(String text) {
-    if (text == null) return '';
     String fixedText = text;
     _turkishCharacterFixes.forEach((key, value) {
       fixedText = fixedText.replaceAll(key, value);
@@ -208,7 +207,7 @@ class SynchronizationService {
       }
       i++;
       if (i % 20 == 0) {
-        print('   ... ${i} / ${hats.length} güzergah işlendi.');
+        print('   ... $i / ${hats.length} güzergah işlendi.');
       }
     }
     print('✅ Güzergahlar tamamlandı.');
@@ -259,18 +258,18 @@ class SynchronizationService {
       for (var h in odakHatlar) {
         String code = h['kodu']?.toString() ?? '';
         String name = h['adi']?.toString() ?? '';
-        String g_code = "G_$code";
+        String gCode = "G_$code";
         
         hatBatch.insert(DatabaseHelper.tableOdak, {
           'id': code,
           'ad': name,
-          'kod': g_code,
+          'kod': gCode,
           'gunler': h['gunler']?.toString() ?? ''
         });
 
         // Also add to main Hat table for generic searching
         hatBatch.insert(DatabaseHelper.tableHat, {
-          'code': g_code,
+          'code': gCode,
           'name': name,
           'tip': 'odak',
           'kat': 'odak',
@@ -285,7 +284,7 @@ class SynchronizationService {
               double lat = double.tryParse(d['lat']?.toString() ?? '0') ?? 0;
               double lon = double.tryParse(d['lon']?.toString() ?? '0') ?? 0;
               dBatch.insert(DatabaseHelper.tableOdakDurak, {
-                  'hat': g_code,
+                  'hat': gCode,
                   'ad': d['durak_adi']?.toString() ?? '',
                   'kod': d['durak_kodu']?.toString() ?? '',
                   'sira': i+1,
@@ -378,22 +377,34 @@ class SynchronizationService {
     addPrice('Teleferik', 'TELEFERİK', 25.00, 15.00);
 
     final ringler = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'R%' OR name LIKE 'RING%'");
-    for (var r in ringler) addPrice(r['name'] as String, r['code'] as String, 17.00, 12.00);
+    for (var r in ringler) {
+      addPrice(r['name'] as String, r['code'] as String, 17.00, 12.00);
+    }
 
     final ekspres = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'E%' OR name LIKE 'E%'");
-    for (var e in ekspres) addPrice(e['name'] as String, e['code'] as String, 23.50, 15.00);
+    for (var e in ekspres) {
+      addPrice(e['name'] as String, e['code'] as String, 23.50, 15.00);
+    }
 
     final tekneler = await db.rawQuery("SELECT code, name FROM hat WHERE name LIKE '%SAMSUNUM%' OR name LIKE '%GEMİ%'");
-    for (var t in tekneler) addPrice(t['name'] as String, t['code'] as String, 200.00, 150.00);
+    for (var t in tekneler) {
+      addPrice(t['name'] as String, t['code'] as String, 200.00, 150.00);
+    }
 
     final samair = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'H_%'");
-    for (var s in samair) addPrice(s['name'] as String, s['code'] as String, 120.00, 60.00);
+    for (var s in samair) {
+      addPrice(s['name'] as String, s['code'] as String, 120.00, 60.00);
+    }
 
     final odak = await db.rawQuery("SELECT code, name FROM hat WHERE code LIKE 'G_%'");
-    for (var o in odak) addPrice(o['name'] as String, o['code'] as String, 250.00, 200.00);
+    for (var o in odak) {
+      addPrice(o['name'] as String, o['code'] as String, 250.00, 200.00);
+    }
 
     final ilce = await db.rawQuery("SELECT code, name FROM hat WHERE tip='ilce'");
-    for (var i in ilce) addPrice(i['name'] as String, i['code'] as String, 60.00, 30.00);
+    for (var i in ilce) {
+      addPrice(i['name'] as String, i['code'] as String, 60.00, 30.00);
+    }
 
     await batch.commit(noResult: true);
     print('✅ Sabit Fiyatlar eklendi.');

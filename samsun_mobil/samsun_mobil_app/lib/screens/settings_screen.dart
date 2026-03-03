@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _iconBox(icon, color),
         const SizedBox(width: 12),
         Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 14))),
-        Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFF00BFA5)),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFF00BFA5)),
       ]),
     );
   }

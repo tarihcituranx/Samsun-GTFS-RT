@@ -7,21 +7,21 @@ import 'package:path_provider/path_provider.dart';
 // samsun.py'nin veritabanı şemasını temel alan merkezi veritabanı yardımcısı.
 class DatabaseHelper {
 
-  static final _databaseName = "SamsunTransit.db";
-  static final _databaseVersion = 1;
+  static const _databaseName = "SamsunTransit.db";
+  static const _databaseVersion = 1;
 
   // Tablo ve Sütun Adları (samsun.py'den alınmıştır)
-  static final tableHat = 'hat';
-  static final tableDurak = 'durak';
-  static final tableHatDurak = 'hat_durak';
-  static final tableSefer = 'sefer';
-  static final tableFiyat = 'fiyat';
-  static final tableOdak = 'odak';
-  static final tableOdakDurak = 'odak_durak';
-  static final tableSamair = 'samair';
-  static final tableSamairDurak = 'samair_durak';
-  static final tableSamairSefer = 'samair_sefer';
-  static final tableMeta = 'meta';
+  static const tableHat = 'hat';
+  static const tableDurak = 'durak';
+  static const tableHatDurak = 'hat_durak';
+  static const tableSefer = 'sefer';
+  static const tableFiyat = 'fiyat';
+  static const tableOdak = 'odak';
+  static const tableOdakDurak = 'odak_durak';
+  static const tableSamair = 'samair';
+  static const tableSamairDurak = 'samair_durak';
+  static const tableSamairSefer = 'samair_sefer';
+  static const tableMeta = 'meta';
 
 
   // Singleton sınıf yapısı

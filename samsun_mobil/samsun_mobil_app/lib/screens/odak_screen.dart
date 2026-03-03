@@ -88,10 +88,10 @@ class _OdakScreenState extends State<OdakScreen> {
       Container(
         margin: const EdgeInsets.symmetric(horizontal: 8), padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(color: const Color(0xFF152238), borderRadius: BorderRadius.circular(10)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.phone, size: 16, color: Color(0xFF2979FF)),
-          const SizedBox(width: 6),
-          const Text("0362 431 10 12", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2979FF), fontSize: 13)),
+        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.phone, size: 16, color: Color(0xFF2979FF)),
+          SizedBox(width: 6),
+          Text("0362 431 10 12", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2979FF), fontSize: 13)),
         ]),
       ),
 

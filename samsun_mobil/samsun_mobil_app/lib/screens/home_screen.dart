@@ -12,7 +12,6 @@ import '../services/offline_service.dart';
 import 'hatlar_screen.dart';
 import 'samair_screen.dart';
 import 'odak_screen.dart';
-import 'admin_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
