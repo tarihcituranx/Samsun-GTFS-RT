@@ -449,30 +449,10 @@ class Http:
     def asis(self, ep, **p):
         """
         ASIS API çağrısı - Swagger spesifikasyonuna uyumlu
+        self.s session'ını kullanır (proxy, retry, header ayarları miras alınır)
         """
-        import requests.adapters
-        from urllib3.util.retry import Retry
+        import urllib.parse
         
-        # Sadece ASIS için özel, hata toleranslı geçici bir session oluştur
-        session = requests.Session()
-        retry = Retry(
-            total=3,
-            backoff_factor=0.5,
-            status_forcelist=[ 500, 502, 503, 504 ],
-            allowed_methods=["HEAD", "GET", "OPTIONS"]
-        )
-        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
-        
-        # Proxy ayarları varsa kullan
-        if PROXY_HOST and PROXY_PORT:
-            if PROXY_USER and PROXY_PASS:
-                proxy_url = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
-            else:
-                proxy_url = f"http://{PROXY_HOST}:{PROXY_PORT}"
-            session.proxies = {"http": proxy_url, "https": proxy_url}
-
         try:
             url = f"{ASIS}/{ep}"
             params = {}
@@ -486,23 +466,17 @@ class Http:
                     else:
                         continue
                 else:
-                    # String parametreler için url encoding
+                    # String parametreler için temizle
                     params[k] = str(v).strip()
             
             log.debug(f"→ ASIS {ep} | Params: {params}")
             
-            # Bazı lineCode değerleri özel karakter barındırabiliyor, url encoding zorla (requests bazen türkçe karakterleri bozar)
-            import urllib.parse
+            # Türkçe karakterleri doğru encode et
             query_string = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
             full_url = f"{url}?{query_string}" if params else url
             
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'Accept': 'application/json',
-                'Connection': 'keep-alive'
-            }
-            
-            r = session.get(full_url, headers=headers, timeout=12)
+            # self.s kullan — proxy config, retry config hepsi burada
+            r = self.s.get(full_url, timeout=12)
             
             if r.ok:
                 d = r.json()
@@ -514,13 +488,11 @@ class Http:
         except requests.exceptions.Timeout:
             log.error(f"⏱ ASIS {ep} | Timeout")
         except requests.exceptions.ConnectionError as e:
-            log.error(f"🔌 ASIS {ep} | Bağlantı hatası (RemoteDisconnected vs): {e}")
+            log.error(f"🔌 ASIS {ep} | Bağlantı hatası: {e}")
         except json.JSONDecodeError as e:
             log.error(f"📄 ASIS {ep} | JSON parse hatası: {e}")
         except Exception as e:
-            log.error(f"⌫ ASIS {ep} | {type(e).__name__}: {str(e)}")
-        finally:
-            session.close()
+            log.error(f"❌ ASIS {ep} | Genel hata: {e}")
         
         return []
 
@@ -751,11 +723,13 @@ class Collector:
         # 1. Ring hatları (En yüksek öncelik - R ile başlayanlar kesinlikle Ring'dir)
         if c.startswith('R') and len(c) > 1 and c[1].isdigit(): return 'ring'
         
+        # Odak turistik hatlar
+        if 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or 'ODAK' in n: return 'odak'
+        
         # 2. Yeni Kategoriler (Analiz Sonucu)
         if 'TRAMVAY' in c or 'TRAMVAY' in n: return 'tramvay'
         if 'TELEFERİK' in c or 'TELEFERİK' in n: return 'teleferik'
-        if any(x in c or x in n for x in ['GEMİ', 'VAPUR', 'FERİBOT', 'TEKNE']): return 'tekne'
-        
+        if any(x in n for x in ['BANDIRMA', 'VAPUR']) or ('FERİBOT' in n and 'TELEFERİK' not in n): return 'tekne'
         # Havalimanı hatları
         if c.startswith('H') and len(c) > 1 and c[1].isdigit(): return 'havalimani'
         
@@ -1108,6 +1082,17 @@ class Collector:
             code = hati[0]['code']
             self.db.ex("DELETE FROM sefer WHERE hat=?", (code,))
             self.db.ex("INSERT INTO sefer(hat,saat,yon,gun) VALUES(?,?,?,?)", (code, '10:30 - 22:00', 'Sürekli', 'Her Gün'))
+            
+            # Durakları manuel ekle (ASIS'te hatalı/eksik)
+            self.db.ex("DELETE FROM hat_durak WHERE hat=?", (code,))
+            
+            # Alt İstasyon (Batıpark)
+            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T1', 'T1', 'Teleferik Alt İstasyon', 41.3204, 36.3231))
+            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T1', 'Teleferik Alt İstasyon', 1, 41.3204, 36.3231))
+            
+            # Üst İstasyon (Amisos)
+            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T2', 'T2', 'Teleferik Üst İstasyon', 41.3246, 36.3228))
+            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T2', 'Teleferik Üst İstasyon', 2, 41.3246, 36.3228))
 
         log.info("   🚢 Tekne ve Teleferik seferleri eklendi.")
 
@@ -2222,11 +2207,11 @@ h2{color:#1a1a2e;margin-bottom:12px;font-size:1rem}
 <div style="text-align:center; padding:10px 0 5px 0; border-bottom:1px solid #eee; margin-bottom:10px;">
     <!-- SBB Logo (Authority - Top) -->
     <div style="margin-bottom:8px;">
-        <img src="/static/images/sbb_v2.png?v=2" style="height:50px; width:auto; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.1))" title="Samsun Büyükşehir Belediyesi">
+        <img src="/static/images/sbb_v2.png?v=2" style="height:45px; width:auto; filter:drop-shadow(0 2px 2px rgba(0,0,0,0.1))" title="Samsun Büyükşehir Belediyesi">
     </div>
     <!-- Samulaş Logo (Brand - Bottom) -->
     <div>
-        <img src="/static/images/samulas.png?v=2" style="height:40px; width:auto;" title="Samulaş A.Ş.">
+        <img src="/static/images/samulas.png?v=2" style="height:45px; width:auto;" title="Samulaş A.Ş.">
     </div>
 </div>
 <div class="tabs"><div class="tab on" data-t="hat">🚌 Hatlar</div><div class="tab" data-t="yakin">📍 Yakın</div><div class="tab" data-t="odak">🎯 Odak</div><div class="tab" data-t="samair">✈️ Samair</div><div class="tab" data-t="rota" onclick="shRotaUI()">📍 Git</div></div>
@@ -2256,7 +2241,7 @@ h2{color:#1a1a2e;margin-bottom:12px;font-size:1rem}
 const map=L.map('map').setView([41.29,36.33],12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 let M={}, V={}, H=[], cur='hat', sK=null, liveT=null, userLoc=null, targetLoc=null;
-const K={dil:{i:'🌐',n:'Tümü',c:'#333'},otobus:{i:'🚌',n:'Otobüs',c:'#1877f2'},ekspres:{i:'🚀',n:'Ekspres',c:'#9b59b6'},tramvay:{i:'🚋',n:'Tramvay',c:'#e67e22'},ring:{i:'🔄',n:'Ring',c:'#f39c12'},tekne:{i:'🛥️',n:'Tekne',c:'#3498db'},teleferik:{i:'🚠',n:'Teleferik',c:'#e91e63'},havalimani:{i:'✈️',n:'H.limanı',c:'#e74c3c'},ilce:{i:'🏘️',n:'İlçe',c:'#1abc9c'}};
+const K={dil:{i:'🌐',n:'Tümü',c:'#333'},otobus:{i:'🚌',n:'Otobüs',c:'#1877f2'},ekspres:{i:'🚀',n:'Ekspres',c:'#9b59b6'},tramvay:{i:'🚋',n:'Tramvay',c:'#e67e22'},ring:{i:'🔄',n:'Ring',c:'#f39c12'},tekne:{i:'🛥️',n:'Tekne',c:'#3498db'},odak:{i:'🏕️',n:'Odak',c:'#4CAF50'},teleferik:{i:'🚠',n:'Teleferik',c:'#e91e63'},havalimani:{i:'✈️',n:'H.limanı',c:'#e74c3c'},ilce:{i:'🏘️',n:'İlçe',c:'#1abc9c'}};
 
 const busIcon=(c,p)=>L.divIcon({className:'',html:`<div style="position:relative"><div style="width:30px;height:30px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:14px">🚌</div><div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:1px 5px;border-radius:3px;font-size:9px;white-space:nowrap;z-index:99">${p}</div></div>`,iconSize:[30,30],iconAnchor:[15,15]});
 const bI=busIcon;
@@ -2620,7 +2605,7 @@ async function shO(){
     try{
         const d=await(await fetch('/api/odak')).json();
         if(!d||!d.length){document.getElementById('ct').innerHTML='<div class="no-data"><div class="icon">🎯</div>Veri yok</div>';return}
-        let x=`<div class="header-logos"><img src="/static/images/odak.png" class="brand-logo" style="height:60px"></div>
+        let x=`<div class="header-logos"><img src="/static/images/odak.png" class="brand-logo" style="height:50px"></div>
         <div class="sec">🎯 Odak Samsun Gezileri</div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>
         <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:#856404">
             ⚠️ <b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir. Tam/İndirimli tarifeleri için lütfen teyit ediniz.
@@ -2815,10 +2800,10 @@ def create_app(db, col):
             return YBS_TOKEN_CACHE["token"]
             
         try:
+            # YBS API: GET ?method=getGuestToken (OpenAPI spec'e uygun)
             resp = await asyncio.to_thread(
-                http_client.post,
-                "https://ybs.samsun.bel.tr/service/",
-                json={"method": "getGuestToken"},
+                http_client.get,
+                "https://ybs.samsun.bel.tr/service/?method=getGuestToken",
                 headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
             )
             data = resp.json()
@@ -2840,12 +2825,14 @@ def create_app(db, col):
         try:
             resp = await asyncio.to_thread(
                 http_client.session.get,
-                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&token={token}",
+                f"https://ybs.samsun.bel.tr/service/?method=odakSamsun_Crud&submethod=HatlarAllList&token={token}",
                 headers={"User-Agent": "Mozilla/5.0", "Referer": "https://odak.samsun.bel.tr/"}
             )
             data = resp.json()
             if data.get('status') == 'SUCCESS' and data.get('data'):
                 return JSONResponse(data['data'])
+            if data.get('root'):
+                return JSONResponse(data['root'])
             return JSONResponse([])
         except Exception as e:
             log.error(f"YBS Proxy Odak Hatası (WAF/Timeout): {e}")

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/ybs_api_service.dart';
+import '../services/samair_service.dart';
 
 class SamAirScreen extends StatefulWidget {
   const SamAirScreen({Key? key}) : super(key: key);
@@ -31,7 +32,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _fetchLiveBuses();
     _timer = Timer.periodic(const Duration(seconds: 15), (_) => _fetchLiveBuses());
   }
@@ -44,7 +45,12 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
   }
 
   Future<void> _fetchLiveBuses() async {
-    final buses = await YbsApiService().getSamairAraclar();
+    // 1. Önce YBS proxy dene
+    var buses = await YbsApiService().getSamairAraclar();
+    // 2. YBS boşsa, ASIS RealTimeData üzerinden H1-H4 çek
+    if (buses.isEmpty) {
+      buses = await SamAirService.getLiveSamAirBuses();
+    }
     if (mounted) {
       setState(() {
         _liveBuses = buses;
@@ -72,6 +78,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
               Tab(text: "H2 TTTM"),
               Tab(text: "H3 Bafra"),
               Tab(text: "H4 Çarşamba"),
+              Tab(text: "H5"),
             ],
           ),
         ),
@@ -87,6 +94,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
               const _SamAirScheduleTab(lineId: 4, lineName: 'H2', color: Color(0xFF00BFA5)),
               const _SamAirScheduleTab(lineId: 5, lineName: 'H3', color: Color(0xFFFF5252)),
               const _SamAirScheduleTab(lineId: 9, lineName: 'H4', color: Color(0xFFFFAB00)),
+              const _SamAirScheduleTab(lineId: 10, lineName: 'H5', color: Color(0xFF7C4DFF)),
             ],
           ),
         ),
@@ -128,29 +136,36 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                     child: const Icon(Icons.local_airport, color: Color(0xFF2979FF), size: 30),
                   ),
                 ),
-                // Canlı Araçlar
-                ..._liveBuses.where((b) => b['Enlem'] != null && b['Boylam'] != null).map((b) {
-                  final latStr = b['Enlem']?.toString() ?? '0';
-                  final lonStr = b['Boylam']?.toString() ?? '0';
-                  final lat = double.tryParse(latStr.replaceAll(',', '.')) ?? 0;
-                  final lon = double.tryParse(lonStr.replaceAll(',', '.')) ?? 0;
-                  final hizi = b['Hizi']?.toString() ?? '0';
-                  final plaka = b['Plaka']?.toString() ?? 'SAMAIR';
+                // Canlı Araçlar — ASIS: lat/lon/plate/speed, YBS: Enlem/Boylam/Plaka/Hizi
+                ..._liveBuses.where((b) {
+                  final hasAsis = b['lat'] != null && b['lon'] != null;
+                  final hasYbs = b['Enlem'] != null && b['Boylam'] != null;
+                  return hasAsis || hasYbs;
+                }).map((b) {
+                  // ASIS format (samair_service.dart) veya YBS format
+                  final lat = (b['lat'] as double?) ?? (double.tryParse((b['Enlem'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
+                  final lon = (b['lon'] as double?) ?? (double.tryParse((b['Boylam'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
+                  final hizi = (b['speed'] ?? b['hiz'] ?? b['Hizi'] ?? '0').toString();
+                  final plaka = (b['plate'] ?? b['plaka'] ?? b['Plaka'] ?? 'SAMAIR').toString();
+                  final hatKodu = (b['lineCode'] ?? b['HatKodu'] ?? '').toString();
                   
                   return Marker(
                     point: LatLng(lat, lon),
                     width: 45, height: 45,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [BoxShadow(blurRadius: 8, color: const Color(0xFF2979FF).withOpacity(0.5))],
-                      ),
-                      child: Center(
-                        child: Text(
-                          plaka.length > 3 ? plaka.substring(plaka.length - 4) : plaka,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white),
+                    child: GestureDetector(
+                      onTap: () => _showSamairDetail(context, b, plaka, hizi, hatKodu),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: [BoxShadow(blurRadius: 8, color: const Color(0xFF2979FF).withOpacity(0.5))],
+                        ),
+                        child: Center(
+                          child: Text(
+                            plaka.length > 3 ? plaka.substring(plaka.length - 4) : plaka,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white),
+                          ),
                         ),
                       ),
                     ),
@@ -214,19 +229,23 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                         itemCount: _liveBuses.length,
                         itemBuilder: (context, i) {
                           final b = _liveBuses[i];
-                          final plaka = b['Plaka']?.toString() ?? '?';
-                          final hizi = b['Hizi']?.toString() ?? '0';
+                          final plaka = (b['plate'] ?? b['plaka'] ?? b['Plaka'] ?? '?').toString();
+                          final hizi = (b['speed'] ?? b['hiz'] ?? b['Hizi'] ?? '0').toString();
+                          final hatKodu = (b['lineCode'] ?? b['HatKodu'] ?? '').toString();
                           return Padding(
                             padding: const EdgeInsets.only(right: 8.0),
-                            child: Chip(
-                              avatar: CircleAvatar(
-                                backgroundColor: Colors.white.withOpacity(0.05),
-                                radius: 20,
-                                child: const Icon(Icons.flight_takeoff, color: Colors.white70),
+                            child: GestureDetector(
+                              onTap: () => _showSamairDetail(context, b, plaka, hizi, hatKodu),
+                              child: Chip(
+                                avatar: CircleAvatar(
+                                  backgroundColor: Colors.white.withOpacity(0.05),
+                                  radius: 20,
+                                  child: const Icon(Icons.flight_takeoff, color: Colors.white70),
+                                ),
+                                label: Text("$plaka - $hizi km/s", style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                backgroundColor: const Color(0xFF2979FF),
+                                side: BorderSide.none,
                               ),
-                              label: Text("$plaka - $hizi km/s", style: const TextStyle(color: Colors.white, fontSize: 11)),
-                              backgroundColor: const Color(0xFF2979FF),
-                              side: BorderSide.none,
                             ),
                           );
                         },
@@ -239,6 +258,84 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
         )
       ],
     );
+  }
+
+  void _showSamairDetail(BuildContext ctx, Map<String, dynamic> b, String plaka, String hizi, String hatKodu) {
+    final gunlukYolcu = (b['gunlukYolcu'] ?? b['GunlukYolcu'] ?? '0').toString();
+    final seferYolcu = (b['seferYolcu'] ?? b['SeferYolcu'] ?? '0').toString();
+    final hasilat = (b['toplamHasilat'] ?? b['ToplamHasilat'] ?? '0').toString();
+    final maxHiz = (b['maxHiz'] ?? b['MaxHiz'] ?? '0').toString();
+    final mesafe = (b['mesafe'] ?? b['Mesafe'] ?? '0').toString();
+    final yon = (b['yon'] ?? b['Yon'] ?? '0').toString();
+    final lastUpdate = (b['lastUpdate'] ?? b['editDate'] ?? b['tarih'] ?? '').toString();
+    String updateStr = '';
+    if (lastUpdate.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(lastUpdate);
+        updateStr = '${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}:${dt.second.toString().padLeft(2,'0')}';
+      } catch (_) { updateStr = lastUpdate; }
+    }
+
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF152238),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Row(children: [
+            Container(width: 48, height: 48,
+              decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00BFA5)]), borderRadius: BorderRadius.circular(12)),
+              child: const Center(child: Icon(Icons.flight_takeoff, color: Colors.white, size: 24))),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(plaka, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+              if (hatKodu.isNotEmpty) Text(hatKodu, style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+            ])),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(color: const Color(0xFF2979FF).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+              child: Text('$hizi km/s', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2979FF), fontSize: 16)),
+            ),
+          ]),
+          const Divider(color: Colors.white12, height: 28),
+          Row(children: [
+            _samairStat(Icons.people, seferYolcu, 'Sefer Yolcu'),
+            _samairStat(Icons.groups, gunlukYolcu, 'Günlük Yolcu'),
+            _samairStat(Icons.payments, '₺$hasilat', 'Hasılat'),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            _samairStat(Icons.speed, '$maxHiz km/s', 'Max Hız'),
+            _samairStat(Icons.straighten, '${(int.tryParse(mesafe) ?? 0) ~/ 1000} km', 'Mesafe'),
+            _samairStat(Icons.navigation, '$yon°', 'Yön'),
+          ]),
+          if (updateStr.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text('Son güncelleme: $updateStr', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.3))),
+          ]
+        ]),
+      ),
+    );
+  }
+
+  Widget _samairStat(IconData icon, String value, String label) {
+    return Expanded(child: Container(
+      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      decoration: BoxDecoration(color: const Color(0xFF1A2940), borderRadius: BorderRadius.circular(10)),
+      child: Column(children: [
+        Icon(icon, size: 18, color: const Color(0xFF2979FF).withOpacity(0.7)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+        Text(label, style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.4))),
+      ]),
+    ));
   }
 }
 

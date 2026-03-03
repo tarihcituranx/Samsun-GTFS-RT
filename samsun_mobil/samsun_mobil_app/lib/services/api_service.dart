@@ -127,20 +127,21 @@ class ApiService {
     return [];
   }
 
-  /// RealTimeData verisini parse et
+  /// RealTimeData verisini parse et — Gerçek ASIS alan adları: plaka, enlem, boylam, hiz, HatKodu, editDate vb.
   static List<Map<String, dynamic>> _parseRealTimeData(List<dynamic> data, String lineCode) {
     List<Map<String, dynamic>> vehicles = [];
     for (var item in data) {
       if (item is Map<String, dynamic>) {
-        final lat = double.tryParse((item['Latitude'] ?? item['enlem'] ?? '0').toString()) ?? 0.0;
-        final lon = double.tryParse((item['Longitude'] ?? item['boylam'] ?? '0').toString()) ?? 0.0;
+        // Gerçek ASIS: enlem/boylam (Türkçe), Fallback: Latitude/Longitude (eski PascalCase)
+        final lat = double.tryParse((item['enlem'] ?? item['Lat'] ?? item['Latitude'] ?? '0').toString()) ?? 0.0;
+        final lon = double.tryParse((item['boylam'] ?? item['Lng'] ?? item['Longitude'] ?? '0').toString()) ?? 0.0;
         if (lat > 40 && lat < 43 && lon > 34 && lon < 38) {
           vehicles.add({
             'lat': lat,
             'lon': lon,
-            'plate': (item['PlateNumber'] ?? item['plaka'] ?? '').toString(),
-            'speed': (item['Speed'] ?? item['hiz'] ?? '0').toString(),
-            'lineCode': _fixAndCleanText((item['LineCode'] ?? item['HatKodu'] ?? lineCode).toString()),
+            'plate': (item['plaka'] ?? item['PlateNumber'] ?? '').toString(),
+            'speed': (item['hiz'] ?? item['Speed'] ?? '0').toString(),
+            'lineCode': _fixAndCleanText((item['HatKodu'] ?? item['LineCode'] ?? lineCode).toString()),
             // KVKK-güvenli ek alanlar
             'gunlukYolcu': (item['gunlukYolcu'] ?? '0').toString(),
             'seferYolcu': (item['seferYolcu'] ?? '0').toString(),
@@ -148,7 +149,7 @@ class ApiService {
             'maxHiz': (item['maxHiz'] ?? '0').toString(),
             'yon': (item['yon'] ?? item['Direction'] ?? '0').toString(),
             'mesafe': (item['mesafe'] ?? '0').toString(),
-            'lastUpdate': (item['editDate'] ?? item['LastLocationTime'] ?? '').toString(),
+            'lastUpdate': (item['editDate'] ?? item['tarih'] ?? item['LastLocationTime'] ?? '').toString(),
           });
         }
       }
