@@ -449,30 +449,10 @@ class Http:
     def asis(self, ep, **p):
         """
         ASIS API çağrısı - Swagger spesifikasyonuna uyumlu
+        self.s session'ını kullanır (proxy, retry, header ayarları miras alınır)
         """
-        import requests.adapters
-        from urllib3.util.retry import Retry
+        import urllib.parse
         
-        # Sadece ASIS için özel, hata toleranslı geçici bir session oluştur
-        session = requests.Session()
-        retry = Retry(
-            total=3,
-            backoff_factor=0.5,
-            status_forcelist=[ 500, 502, 503, 504 ],
-            allowed_methods=["HEAD", "GET", "OPTIONS"]
-        )
-        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
-        
-        # Proxy ayarları varsa kullan
-        if PROXY_HOST and PROXY_PORT:
-            if PROXY_USER and PROXY_PASS:
-                proxy_url = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
-            else:
-                proxy_url = f"http://{PROXY_HOST}:{PROXY_PORT}"
-            session.proxies = {"http": proxy_url, "https": proxy_url}
-
         try:
             url = f"{ASIS}/{ep}"
             params = {}
@@ -486,23 +466,17 @@ class Http:
                     else:
                         continue
                 else:
-                    # String parametreler için url encoding
+                    # String parametreler için temizle
                     params[k] = str(v).strip()
             
             log.debug(f"→ ASIS {ep} | Params: {params}")
             
-            # Bazı lineCode değerleri özel karakter barındırabiliyor, url encoding zorla (requests bazen türkçe karakterleri bozar)
-            import urllib.parse
+            # Türkçe karakterleri doğru encode et
             query_string = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
             full_url = f"{url}?{query_string}" if params else url
             
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'Accept': 'application/json',
-                'Connection': 'keep-alive'
-            }
-            
-            r = session.get(full_url, headers=headers, timeout=12)
+            # self.s kullan — proxy config, retry config hepsi burada
+            r = self.s.get(full_url, timeout=12)
             
             if r.ok:
                 d = r.json()
@@ -514,13 +488,11 @@ class Http:
         except requests.exceptions.Timeout:
             log.error(f"⏱ ASIS {ep} | Timeout")
         except requests.exceptions.ConnectionError as e:
-            log.error(f"🔌 ASIS {ep} | Bağlantı hatası (RemoteDisconnected vs): {e}")
+            log.error(f"🔌 ASIS {ep} | Bağlantı hatası: {e}")
         except json.JSONDecodeError as e:
             log.error(f"📄 ASIS {ep} | JSON parse hatası: {e}")
         except Exception as e:
-            log.error(f"⌫ ASIS {ep} | {type(e).__name__}: {str(e)}")
-        finally:
-            session.close()
+            log.error(f"❌ ASIS {ep} | Genel hata: {e}")
         
         return []
 
