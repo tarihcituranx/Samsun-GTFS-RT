@@ -33,11 +33,15 @@ class PriceService {
     // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
     return _cachedPrices ?? {
       "default": {"tam": 17.0, "indirimli": 12.0},
-      "tramvay": {"tam": 25.0, "indirimli": 18.0},
+      "tramvay": {"tam": 26.50, "indirimli": 16.50},
       "teleferik": {"tam": 25.0, "indirimli": 15.0},
-      "ekspres": {"tam": 22.0, "indirimli": 16.0},
-      "SAMSUNUM-1": {"tam": 200.0, "indirimli": 200.0},
-      "ALTINKAYA": {"tam": 15.0, "indirimli": 15.0, "arac": 75.0}
+      "ekspres": {"tam": 23.50, "indirimli": 15.0},
+      "ring": {"tam": 17.0, "indirimli": 12.0},
+      "SAMSUNUM-1": {"tam": 200.0, "indirimli": 150.0},
+      "ALTINKAYA": {"tam": 15.0, "indirimli": 7.0, "arac": 75.0},
+      "havalimani": {"tam": 120.0, "indirimli": 60.0},
+      "odak": {"tam": 250.0, "indirimli": 200.0},
+      "ilce": {"tam": 60.0, "indirimli": 30.0}
     };
   }
 

@@ -136,15 +136,16 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                     child: const Icon(Icons.local_airport, color: Color(0xFF2979FF), size: 30),
                   ),
                 ),
-                // Canlı Araçlar — ASIS: lat/lon/plate/speed, YBS: Enlem/Boylam/Plaka/Hizi
+                // Canlı Araçlar — Proxy: lat/lon/plate/speed, ASIS: lat/lon/plate/speed, YBS: Enlem/Boylam/Plaka/Hizi
                 ..._liveBuses.where((b) {
-                  final hasAsis = b['lat'] != null && b['lon'] != null;
+                  final hasNormalized = b['lat'] != null && b['lon'] != null;
                   final hasYbs = b['Enlem'] != null && b['Boylam'] != null;
-                  return hasAsis || hasYbs;
+                  return hasNormalized || hasYbs;
                 }).map((b) {
-                  // ASIS format (samair_service.dart) veya YBS format
-                  final lat = (b['lat'] as double?) ?? (double.tryParse((b['Enlem'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
-                  final lon = (b['lon'] as double?) ?? (double.tryParse((b['Boylam'] ?? '0').toString().replaceAll(',', '.')) ?? 0);
+                  // Proxy/ASIS normalized format veya YBS raw format
+                  final lat = double.tryParse((b['lat'] ?? b['Enlem'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
+                  final lon = double.tryParse((b['lon'] ?? b['Boylam'] ?? '0').toString().replaceAll(',', '.')) ?? 0.0;
+                  if (lat == 0 || lon == 0) return null;
                   final hizi = (b['speed'] ?? b['hiz'] ?? b['Hizi'] ?? '0').toString();
                   final plaka = (b['plate'] ?? b['plaka'] ?? b['Plaka'] ?? 'SAMAIR').toString();
                   final hatKodu = (b['lineCode'] ?? b['HatKodu'] ?? '').toString();
@@ -170,7 +171,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                       ),
                     ),
                   );
-                }).toList(),
+                }).whereType<Marker>().toList(),
               ],
             ),
           ],
