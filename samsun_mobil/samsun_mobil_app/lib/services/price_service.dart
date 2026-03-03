@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 class PriceService {
   static const String _pricesUrl = "https://raw.githubusercontent.com/tarihcituranx/Samsun-GTFS-RT/main/prices.json";
+  static const String _renderBase = "https://samsun-gtfs-rt.onrender.com/api";
   
   static Map<String, dynamic>? _cachedPrices;
   static DateTime? _cacheTime;
@@ -10,7 +11,6 @@ class PriceService {
   /// GitHub üzerindeki dinamik prices.json dosyasını çeker.
   /// 1 saat (3600s) boyunca önbellekte tutar.
   static Future<Map<String, dynamic>> fetchPrices() async {
-    // Cache validasyon (1 saat)
     if (_cachedPrices != null && _cacheTime != null) {
       if (DateTime.now().difference(_cacheTime!).inHours < 1) {
         return _cachedPrices!;
@@ -32,21 +32,43 @@ class PriceService {
 
     // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
     return _cachedPrices ?? {
-      "default": {"tam": 17.0, "indirimli": 12.0},
-      "tramvay": {"tam": 26.50, "indirimli": 16.50},
-      "teleferik": {"tam": 25.0, "indirimli": 15.0},
-      "ekspres": {"tam": 23.50, "indirimli": 15.0},
-      "ring": {"tam": 17.0, "indirimli": 12.0},
-      "SAMSUNUM-1": {"tam": 200.0, "indirimli": 150.0},
-      "ALTINKAYA": {"tam": 15.0, "indirimli": 7.0, "arac": 75.0},
-      "havalimani": {"tam": 120.0, "indirimli": 60.0},
-      "odak": {"tam": 250.0, "indirimli": 200.0},
-      "ilce": {"tam": 60.0, "indirimli": 30.0}
+      "default": {"tam": 20.0, "indirimli": 14.0},
+      "tramvay": {"tam": 30.0, "indirimli": 19.0},
+      "teleferik": {"tam": 30.0, "indirimli": 18.0},
+      "ekspres": {"tam": 27.0, "indirimli": 17.0},
+      "ring": {"tam": 20.0, "indirimli": 14.0},
+      "SAMSUNUM-1": {"tam": 225.0, "indirimli": 170.0},
+      "ALTINKAYA": {"tam": 18.0, "indirimli": 8.0, "arac": 85.0},
+      "havalimani": {"tam": 140.0, "indirimli": 70.0},
+      "odak": {"tam": 280.0, "indirimli": 225.0},
+      "ilce": {"tam": 70.0, "indirimli": 35.0}
     };
   }
 
-  /// Belirli bir hat veya kategori (kat) için dinamik fiyatı hesaplar
+  /// Hat fiyatını proxy üzerinden çek (samsun.py'nin samulas.com.tr'den çektiği güncel fiyatlar)
+  /// Önce Render proxy → sonra GitHub prices.json → son fallback hardcoded
   static Future<Map<String, double>> getPriceForLine(String name, String kat) async {
+    // 1. Render proxy: samsun.py'nin DB'sinden hat bazlı güncel fiyat
+    try {
+      final uri = Uri.parse("$_renderBase/hat/fiyat/${Uri.encodeComponent(name)}");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data['tam_fiyat'] != null) {
+          final tam = (data['tam_fiyat'] as num?)?.toDouble() ?? 0.0;
+          final ind = (data['indirimli_fiyat'] as num?)?.toDouble() ?? (tam * 0.70); // INDIRIMLI_ORAN ile senkron
+          if (tam > 0) return {"tam": tam, "indirimli": ind};
+        }
+      }
+    } catch (e) {
+      print("Proxy fiyat çekme hatası: $e");
+    }
+
+    // 2. GitHub prices.json (kategori bazlı fallback)
     final prices = await fetchPrices();
     
     // Özel isme göre arama
@@ -70,8 +92,8 @@ class PriceService {
     // Default fallback
     final defaultPrices = prices["default"];
     return {
-      "tam": (defaultPrices?["tam"] ?? 17.0).toDouble(),
-      "indirimli": (defaultPrices?["indirimli"] ?? 12.0).toDouble()
+      "tam": (defaultPrices?["tam"] ?? 20.0).toDouble(),
+      "indirimli": (defaultPrices?["indirimli"] ?? 14.0).toDouble()
     };
   }
 }

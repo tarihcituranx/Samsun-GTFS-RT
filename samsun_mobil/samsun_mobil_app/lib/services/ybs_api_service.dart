@@ -159,4 +159,68 @@ class YbsApiService {
     }
     return {"active": false, "vehicles": []};
   }
+
+  /// Hat fiyatını Render proxy üzerinden çek (samsun.py'nin samulas.com.tr'den çektiği güncel fiyatlar)
+  Future<Map<String, dynamic>?> getFiyat(String lineCode) async {
+    try {
+      final uri = Uri.parse("$_renderBase/hat/fiyat/${Uri.encodeComponent(lineCode)}");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data.containsKey('tam_fiyat')) {
+          return data;
+        }
+      }
+    } catch (e) {
+      print("Fiyat Proxy Error ($lineCode): $e");
+    }
+    return null;
+  }
+
+  /// Odak Samsun turistik hatları — önce proxy, sonra DB endpoint
+  Future<List<dynamic>> getOdakSamsunWithFallback() async {
+    // 1. Önce canlı proxy (YBS API üzerinden)
+    var result = await getOdakSamsun();
+    if (result.isNotEmpty) return result;
+
+    // 2. Fallback: samsun.py DB'sindeki odak verisi
+    try {
+      final uri = Uri.parse("$_renderBase/odak");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is List && data.isNotEmpty) return data;
+      }
+    } catch (e) {
+      print("Odak DB Fallback Error: $e");
+    }
+    return [];
+  }
+
+  /// Odak hat durakları — proxy üzerinden (duraklara göre fiyat dahil)
+  Future<List<dynamic>> getOdakDuraklari(String hatId) async {
+    try {
+      final uri = Uri.parse("$_renderBase/odak/$hatId/durak");
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'SamsunMobilApp/2.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is List) return data;
+      }
+    } catch (e) {
+      print("Odak Durak Proxy Error ($hatId): $e");
+    }
+    return [];
+  }
 }

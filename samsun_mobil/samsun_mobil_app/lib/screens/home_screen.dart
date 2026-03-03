@@ -361,6 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showDurakSheet(Map<String, dynamic> durak) async {
     String durakKod = durak['kod']?.toString() ?? '';
     if (durakKod.isEmpty || durakKod == 'null') {
+      durakKod = durak['id']?.toString() ?? '';
+    }
+    if (durakKod.isEmpty || durakKod == 'null') {
       final ad = durak['ad']?.toString() ?? '';
       final match = RegExp(r'^(\d+)').firstMatch(ad);
       if (match != null) durakKod = match.group(1)!;
@@ -548,7 +551,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: const Center(child: Icon(Icons.directions_bus, color: Colors.white, size: 14)),
                           ),
-                          Text(d['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
+                          Text(d['ad'] ?? '', style: TextStyle(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 3, color: Colors.white, offset: const Offset(0, 0)), Shadow(blurRadius: 6, color: Colors.white, offset: const Offset(0, 0))]), overflow: TextOverflow.ellipsis, maxLines: 1),
                         ],
                       ),
                     ),
@@ -625,9 +628,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 final query = val.trim();
                 if (query.isNotEmpty) {
                    final find = _duraklar.where((d) {
+                     final durakId = d['id']?.toString() ?? '';
                      final kod = d['kod']?.toString() ?? '';
                      final ad = d['ad']?.toString() ?? '';
-                     return kod == query || ad.startsWith(query);
+                     // Adın başındaki sayısal kısmı da akıllı durak no olarak kabul et (ör: "50122 - SOĞUK SU")
+                     final adMatch = RegExp(r'^(\d+)').firstMatch(ad);
+                     final adKod = adMatch?.group(1) ?? '';
+                     return durakId == query || kod == query || adKod == query || ad.toUpperCase().contains(query.toUpperCase());
                    }).toList();
                    if (find.isNotEmpty) {
                       final f = find.first;
@@ -722,6 +729,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   final d = _yakinDuraklar[i];
                   final dist = (_hav(_myLocation.latitude, _myLocation.longitude, (d['lat'] as num).toDouble(), (d['lon'] as num).toDouble()) * 1000).round();
                   String durakKodu = d['kod']?.toString() ?? '';
+                  if (durakKodu.isEmpty || durakKodu == 'null') {
+                    durakKodu = d['id']?.toString() ?? '';
+                  }
                   if (durakKodu.isEmpty || durakKodu == 'null') {
                     final ad = d['ad']?.toString() ?? '';
                     final match = RegExp(r'^(\d+)').firstMatch(ad);

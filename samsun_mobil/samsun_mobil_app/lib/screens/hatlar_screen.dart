@@ -179,7 +179,8 @@ class _HatlarScreenState extends State<HatlarScreen> {
                         child: Text(kat.toUpperCase(), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
                       ),
                       onTap: () {
-                        widget.onLineSelected?.call(code.split(' ').first.split('/').first);
+                        // Tam hat kodunu gönder — samsun.py /api/hat/arac akıllı eşleştirme yapar
+                        widget.onLineSelected?.call(code);
                         Navigator.push(context, MaterialPageRoute(builder: (_) => HatDetailScreen(code: code, name: name, kat: kat)));
                       },
                     ),
@@ -251,9 +252,9 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
   }
 
   Future<void> _fetchVehicles() async {
-    String lineCode = widget.code.split(' ').first.split('/').first;
+    // Tam hat kodunu gönder — samsun.py /api/hat/arac akıllı eşleştirme yapar
     try {
-      final vehicles = await ApiService.getHattakiAraclar(lineCode);
+      final vehicles = await ApiService.getHattakiAraclar(widget.code);
       if (mounted) setState(() => _liveVehicles = vehicles);
     } catch (_) {}
   }

@@ -223,9 +223,9 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
                 children: [
                   Row(
                     children: [
-                      Image.asset('assets/samair.png', width: 24, height: 24, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Icon(Icons.flight_takeoff, color: Color(0xFF2979FF))),
+                      Image.asset('assets/samair.png', width: 44, height: 44, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Icon(Icons.flight_takeoff, color: Color(0xFF2979FF), size: 32)),
                       const SizedBox(width: 8),
-                      const Text("YBS Canlı Filo", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                      const Text("Canlı", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

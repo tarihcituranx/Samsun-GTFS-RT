@@ -20,10 +20,10 @@ class _OdakScreenState extends State<OdakScreen> {
   void initState() { super.initState(); _loadOdaklar(); }
 
   Future<void> _loadOdaklar() async {
-    // 1. Önce YBS API'den canlı veriyi çekmeyi dene
-    var dynOdaklar = await YbsApiService().getOdakSamsun();
+    // 1. Önce YBS proxy → 2. samsun.py DB → 3. yerel DB
+    var dynOdaklar = await YbsApiService().getOdakSamsunWithFallback();
     
-    // 2. Başarısız olursa yerel DB'den (çevrimdışı/yedek) yükle
+    // 3. Son çare: yerel DB
     if (dynOdaklar.isEmpty) {
       _isOfflineFallback = true;
       dynOdaklar = await DBService().getOdaklar();
@@ -55,17 +55,18 @@ class _OdakScreenState extends State<OdakScreen> {
         ),
         child: Row(
           children: [
+            Image.asset('assets/odak.png', width: 72, height: 72, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const SizedBox(width: 72)),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("📍 ODAK Samsun", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  const Text("Turistik Rotalar", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1)),
                   const SizedBox(height: 8),
                   Text("Şehrin turistik ve kültürel rotalarını keşfedin.", style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14)),
                 ],
               ),
             ),
-            Image.asset('assets/odak.png', width: 60, height: 60, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const SizedBox(width: 60)),
           ],
         ),
       ),
@@ -161,8 +162,12 @@ class _OdakDetailScreenState extends State<OdakDetailScreen> {
 
   Future<void> _loadDuraklar() async {
     final id = (widget.odak['id'] ?? widget.odak['kodu'] ?? '').toString();
-    final duraklar = await DBService().getOdakDuraklari(id);
-    if (mounted) setState(() { _duraklar = duraklar; _isLoading = false; });
+    // Önce proxy'den (fiyat dahil), sonra yerel DB
+    var duraklar = await YbsApiService().getOdakDuraklari(id);
+    if (duraklar.isEmpty) {
+      duraklar = await DBService().getOdakDuraklari(id);
+    }
+    if (mounted) setState(() { _duraklar = duraklar.map((d) => d is Map<String, dynamic> ? d : Map<String, dynamic>.from(d)).toList(); _isLoading = false; });
   }
 
   Future<void> _loadVehicles() async {
