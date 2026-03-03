@@ -1216,6 +1216,22 @@ class Collector:
         except Exception as e:
             log.error(f"      ❌ Tramvay düzeltme hatası: {e}")
 
+    def _get_route_price(self, code):
+        """Hat fiyatını DB'den çek, bulunamazsa ortalama döndür"""
+        try:
+            res = self.db.one("SELECT tam_fiyat FROM fiyat WHERE hat_code=?", (code,))
+            if res and res.get('tam_fiyat'): return f"{res['tam_fiyat']:.2f}"
+            # Hat adıyla dene
+            hat = self.db.one("SELECT name FROM hat WHERE code=?", (code,))
+            if hat:
+                res = self.db.one("SELECT tam_fiyat FROM fiyat WHERE hat_adi=?", (hat['name'],))
+                if res and res.get('tam_fiyat'): return f"{res['tam_fiyat']:.2f}"
+            # Ortalama fallback
+            avg = self.db.one("SELECT ROUND(AVG(tam_fiyat),2) as t FROM fiyat WHERE tam_fiyat>0 AND kaynak='samulas'")
+            if avg and avg.get('t'): return f"{avg['t']:.2f}"
+        except: pass
+        return "20.00"
+
     def _inject_fixed_prices(self):
         """Sabit fiyatları tabloya ekle (User input)"""
         log.info("   💰 Sabit Fiyatlar Ekleniyor...")
@@ -1713,7 +1729,7 @@ class Collector:
                             </div>
                         </div>
                         <div style="background:#f1f8ff;padding:5px 10px;font-size:0.8rem;text-align:center;border-bottom:1px solid #ddd">
-                            Tahmini Ücret: <b>17.00 TL</b> (Tam)
+                            Tahmini Ücret: <b>{self._get_route_price(r['code'])} TL</b> (Tam)
                         </div>
                         <div class="route-details timeline">
                             <div class="step">
@@ -2455,7 +2471,7 @@ window.selK=k=>{sK=sK===k?null:k;shH()};window.flt=q=>{q=q.toLowerCase();const b
 
 async function upV(e, col){try {const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m)); V={};let html = '';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa) && aa.length > 0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';html += `<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)"><div><div class="pl">${a.plaka}</div><div class="inf">${yak?'📍 '+yak:''}</div></div><div style="text-align:right"><div style="font-weight:700">${a.hiz} km/s</div><div class="inf">${a.yolcu} yolcu</div></div></div>`;if(yak){const rows = document.querySelectorAll('.drk');rows.forEach(r=>{if(r.innerText.includes(yak)) {if(!r.querySelector('.vtg')) r.innerHTML += `<span class="vtg">🚌 ${a.plaka}</span>`;}});}});document.getElementById('vlist').innerHTML = html;} else {document.getElementById('acnt').innerText='0';document.getElementById('vlist').innerHTML = '<div style="text-align:center;padding:10px;color:#999;font-size:0.7rem">Aktif araç yok</div>';}} catch(e){}}
 
-async function shL(e, backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||17).toFixed(2),indF=(fy.indirimli_fiyat||12).toFixed(2);let x= backToRoute ? `<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>` : `<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr"><div style="font-weight:700;font-size:.9rem">${ki.i} ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}', ${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
+async function shL(e, backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x= backToRoute ? `<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>` : `<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr"><div style="font-weight:700;font-size:.9rem">${ki.i} ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}', ${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
     
     // --- BİLGİLENDİRME KUTULARI (Kullanıcı İsteği) ---
     

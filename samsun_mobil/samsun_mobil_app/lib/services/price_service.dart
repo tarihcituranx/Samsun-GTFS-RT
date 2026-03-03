@@ -50,8 +50,7 @@ class PriceService {
   static Future<Map<String, double>> getPriceForLine(String name, String kat) async {
     // 1. Render proxy: samsun.py'nin DB'sinden hat bazlı güncel fiyat
     try {
-      final code = name.split(' ').first.split('/').first;
-      final uri = Uri.parse("$_renderBase/hat/fiyat/${Uri.encodeComponent(code)}");
+      final uri = Uri.parse("$_renderBase/hat/fiyat/${Uri.encodeComponent(name)}");
       final response = await http.get(uri, headers: {
         'User-Agent': 'SamsunMobilApp/2.0',
         'Accept': 'application/json',
