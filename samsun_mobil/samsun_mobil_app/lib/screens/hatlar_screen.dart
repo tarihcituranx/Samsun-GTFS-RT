@@ -256,7 +256,7 @@ class _HatDetailScreenState extends State<HatDetailScreen> {
     try {
       final vehicles = await ApiService.getHattakiAraclar(widget.code);
       if (mounted) setState(() => _liveVehicles = vehicles);
-    } catch (_) {}
+    } catch (e) { debugPrint('Araç takip hatası: $e'); }
   }
 
   @override

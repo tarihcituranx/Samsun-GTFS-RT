@@ -463,7 +463,7 @@ class SynchronizationService {
                   count++;
                 }
               }
-            } catch (_) {}
+            } catch (e) { debugPrint('Fiyat çekme hatası: $e'); }
             // Rate limiting: çok hızlı istek atmayalım
             if (count % 10 == 0) await Future.delayed(const Duration(milliseconds: 200));
           }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class OfflineService {
   static final OfflineService _instance = OfflineService._internal();
@@ -38,7 +39,8 @@ class OfflineService {
       } else {
         isOffline = true;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Bağlantı kontrolü hatası: $e');
       isOffline = true;
     }
 

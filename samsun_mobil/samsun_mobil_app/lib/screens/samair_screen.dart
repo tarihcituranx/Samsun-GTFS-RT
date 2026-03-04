@@ -61,8 +61,7 @@ class _SamAirScreenState extends State<SamAirScreen> with SingleTickerProviderSt
       for (var vehicles in results) {
         allBuses.addAll(vehicles);
       }
-    } catch (_) {}
-    // 2. Proxy başarısız olursa direkt ASIS dene (SamAirService)
+    } catch (e) { debugPrint('SamAir araç yükleme hatası: $e'); }
     if (allBuses.isEmpty) {
       allBuses = await SamAirService.getLiveSamAirBuses();
     }

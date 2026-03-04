@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() => _myLocation = LatLng(pos.latitude, pos.longitude));
         _toastSuccess("✅ Konum: ${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)}");
-        try { _mapController.move(_myLocation, 14.0); } catch (_) {}
+        try { _mapController.move(_myLocation, 14.0); } catch (e) { debugPrint('Harita taşıma hatası: $e'); }
       }
     } catch (e) {
       _toastError("❌ GPS hatası: $e");

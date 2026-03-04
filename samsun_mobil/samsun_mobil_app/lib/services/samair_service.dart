@@ -38,7 +38,7 @@ class SamAirService {
                 });
               }
             }
-          } catch (_) {}
+          } catch (e) { debugPrint('SamAir veri parse hatası: $e'); }
         }
       }
     } catch (e) {

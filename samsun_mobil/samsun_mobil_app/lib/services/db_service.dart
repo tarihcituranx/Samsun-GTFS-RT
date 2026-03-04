@@ -33,7 +33,7 @@ class DBService {
       // Önce klasörü oluştur
       try {
         await Directory(dirname(path)).create(recursive: true);
-      } catch (_) {}
+      } catch (e) { debugPrint('Klasör oluşturma hatası: $e'); }
 
       // Asset'ten byte olarak oku
       final data = await rootBundle.load('assets/samsun_mobil.db');
@@ -120,7 +120,7 @@ class DBService {
     try {
       final res = await db.query('fiyat', where: 'hat_code = ?', whereArgs: [hatCode]);
       if (res.isNotEmpty) return res.first;
-    } catch (_) {} // fiyat tablosu yoksa sessizce geç
+    } catch (e) { debugPrint('Fiyat tablosu sorgu hatası: $e'); }
     return null;
   }
 
@@ -129,7 +129,8 @@ class DBService {
     final db = await database;
     try {
       _odakCache = await db.query('odak');
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Odak tablosu sorgu hatası: $e');
       _odakCache = []; // odak tablosu yoksa boş dön
     }
     return _odakCache!;
@@ -139,7 +140,7 @@ class DBService {
     final db = await database;
     try {
       return await db.query('odak_durak', where: 'hat = ?', whereArgs: [hatId], orderBy: 'sira ASC');
-    } catch (_) { return []; }
+    } catch (e) { debugPrint('Odak durak sorgu hatası: $e'); return []; }
   }
 
   Future<List<Map<String, dynamic>>> getSeferler(String hatCode, {String? gun}) async {
@@ -149,7 +150,7 @@ class DBService {
         return await db.query('sefer', where: 'hat = ? AND gun = ?', whereArgs: [hatCode, gun], orderBy: 'saat ASC');
       }
       return await db.query('sefer', where: 'hat = ?', whereArgs: [hatCode], orderBy: 'saat ASC');
-    } catch (_) { return []; }
+    } catch (e) { debugPrint('Sefer sorgu hatası: $e'); return []; }
   }
 
   // --- FAZ 6: Tam Bağımsız Offline Rota Hesaplama Motoru --- 

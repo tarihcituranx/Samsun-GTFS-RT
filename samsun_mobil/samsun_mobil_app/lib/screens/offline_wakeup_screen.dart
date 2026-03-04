@@ -28,6 +28,7 @@ class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
 
   void _baslat() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return;
     if (!serviceEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lütfen GPS'i açın")));
       return;
@@ -36,6 +37,7 @@ class _OfflineWakeUpScreenState extends State<OfflineWakeUpScreen> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) return;
     }
 
