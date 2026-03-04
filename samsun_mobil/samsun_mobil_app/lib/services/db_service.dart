@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -236,7 +237,7 @@ class DBService {
         });
       }
     } catch (e) {
-      print("Direct Route Error: $e");
+      debugPrint("Direct Route Error: $e");
     }
 
     // 3. One-Transfer Routes (if no direct route found)
@@ -284,7 +285,7 @@ class DBService {
           });
         }
       } catch (e) {
-        print("Transfer Route Error: $e");
+        debugPrint("Transfer Route Error: $e");
       }
     }
 

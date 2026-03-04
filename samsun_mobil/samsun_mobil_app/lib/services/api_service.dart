@@ -1,6 +1,6 @@
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -97,7 +97,7 @@ class ApiService {
         if (data is List) return _parseRealTimeData(data, lineCode);
       }
     } catch (e) {
-      print("hat/arac proxy hatası: $e");
+      debugPrint("hat/arac proxy hatası: $e");
     }
 
     // 2. Fallback: doğrudan proxy/realtime (basit hat kodları için)

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class SamAirService {
@@ -41,7 +42,7 @@ class SamAirService {
         }
       }
     } catch (e) {
-      print("SamAir Canlı Takip Hatası: $e");
+      debugPrint("SamAir Canlı Takip Hatası: $e");
     }
 
     return allVehicles;

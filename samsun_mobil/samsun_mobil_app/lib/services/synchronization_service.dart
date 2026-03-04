@@ -1,5 +1,6 @@
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:samsun_mobil_app/helpers/database_helper.dart';
 import 'package:samsun_mobil_app/services/price_service.dart';
@@ -81,7 +82,7 @@ class SynchronizationService {
         return [decoded];
       }
     } catch (e) {
-      print('Proxy API Hatası ($endpoint): $e');
+      debugPrint('Proxy API Hatası ($endpoint): $e');
     }
     return [];
   }
@@ -135,7 +136,7 @@ class SynchronizationService {
         return [decoded];
       }
     } catch (e) {
-      print('YBS Proxy Hatası ($module/$method): $e');
+      debugPrint('YBS Proxy Hatası ($module/$method): $e');
     }
     return [];
   }
@@ -143,7 +144,7 @@ class SynchronizationService {
   // --- Veri Çekme ve İşleme Fonksiyonları (samsun.py'nin Collector metotları) ---
 
   Future<void> _fetchAndSaveHats() async {
-    print('📥 Hatlar çekiliyor...');
+    debugPrint('📥 Hatlar çekiliyor...');
     final db = await dbHelper.database;
     
     // Proxy /api/hat hem Lines hem OrjLines'ı birleşik döner
@@ -176,12 +177,12 @@ class SynchronizationService {
         batch.insert(DatabaseHelper.tableHat, hat, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await batch.commit(noResult: true);
-      print('✅ ${hatsToInsert.length} hat veritabanına kaydedildi.');
+      debugPrint('✅ ${hatsToInsert.length} hat veritabanına kaydedildi.');
     }
   }
 
   Future<void> _fetchAndSaveDuraklar() async {
-    print('📥 Duraklar çekiliyor...');
+    debugPrint('📥 Duraklar çekiliyor...');
     final db = await dbHelper.database;
     // Proxy /api/hat/durak veya fallback ASIS StopsStations
     List<dynamic> stops = await _asisApiCall('StopsStations');
@@ -219,12 +220,12 @@ class SynchronizationService {
         batch.insert(DatabaseHelper.tableDurak, durak, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await batch.commit(noResult: true);
-      print('✅ ${duraklarToInsert.length} durak veritabanına kaydedildi.');
+      debugPrint('✅ ${duraklarToInsert.length} durak veritabanına kaydedildi.');
     }
   }
 
   Future<void> _fetchAndSaveGuzergahlar() async {
-    print('📥 Güzergahlar çekiliyor...');
+    debugPrint('📥 Güzergahlar çekiliyor...');
     final db = await dbHelper.database;
     final hats = await db.query(DatabaseHelper.tableHat, columns: ['code']);
 
@@ -256,7 +257,7 @@ class SynchronizationService {
       }
       i++;
       if (i % 20 == 0) {
-        print('   ... $i / ${hats.length} güzergah işlendi.');
+        debugPrint('   ... $i / ${hats.length} güzergah işlendi.');
       }
     }
     
@@ -268,14 +269,14 @@ class SynchronizationService {
       tBatch.insert(DatabaseHelper.tableHatDurak, {'hat': tCode, 'durak_id': 'T1', 'ad': 'Teleferik Alt İstasyon', 'sira': 1, 'lat': 41.3204, 'lon': 36.3231});
       tBatch.insert(DatabaseHelper.tableHatDurak, {'hat': tCode, 'durak_id': 'T2', 'ad': 'Teleferik Üst İstasyon', 'sira': 2, 'lat': 41.3246, 'lon': 36.3228});
       await tBatch.commit(noResult: true);
-      print('🚠 Teleferik güzergahı eklendi.');
+      debugPrint('🚠 Teleferik güzergahı eklendi.');
     }
 
-    print('✅ Güzergahlar tamamlandı.');
+    debugPrint('✅ Güzergahlar tamamlandı.');
   }
 
   Future<void> _fetchAndSaveSeferler() async {
-    print('📥 Seferler çekiliyor...');
+    debugPrint('📥 Seferler çekiliyor...');
     final db = await dbHelper.database;
     final hats = await db.query(DatabaseHelper.tableHat, columns: ['code']);
 
@@ -303,11 +304,11 @@ class SynchronizationService {
         await batch.commit(noResult: true);
       }
     }
-    print('✅ $count sefer kaydedildi.');
+    debugPrint('✅ $count sefer kaydedildi.');
   }
 
   Future<void> _fetchAndSaveOdak() async {
-    print('📥 Odak Turistik Hatlar çekiliyor...');
+    debugPrint('📥 Odak Turistik Hatlar çekiliyor...');
     final db = await dbHelper.database;
     List<dynamic> odakHatlar = await _ybsApiCall('odak_otobus_public', 'HatlarList');
     int dCount = 0;
@@ -359,12 +360,12 @@ class SynchronizationService {
         }
       }
       await hatBatch.commit(noResult: true);
-      print('✅ ${odakHatlar.length} Odak Hattı ve $dCount Odak Durağı eklendi.');
+      debugPrint('✅ ${odakHatlar.length} Odak Hattı ve $dCount Odak Durağı eklendi.');
     }
   }
 
   Future<void> _fetchAndSaveSamair() async {
-    print('📥 Samair Havalimanı Hatları çekiliyor...');
+    debugPrint('📥 Samair Havalimanı Hatları çekiliyor...');
     final db = await dbHelper.database;
     List<dynamic> hatlar = await _ybsApiCall('samair_ucaksefersaatleri_public', 'LokasyonlarList');
     
@@ -415,12 +416,12 @@ class SynchronizationService {
          }
       }
       await batch.commit(noResult: true);
-      print('✅ $hatCount Samair Hattı ve $seferCount Samair Seferi Eklendi.');
+      debugPrint('✅ $hatCount Samair Hattı ve $seferCount Samair Seferi Eklendi.');
     }
   }
 
   Future<void> _injectFixedPrices() async {
-    print('💰 Sabit Fiyatlar Ekleniyor (son güncelleme fallback)...');
+    debugPrint('💰 Sabit Fiyatlar Ekleniyor (son güncelleme fallback)...');
     final db = await dbHelper.database;
     final now = DateTime.now().toIso8601String();
     
@@ -469,17 +470,17 @@ class SynchronizationService {
           if (count > 0) {
             await batch.commit(noResult: true);
             proxySuccess = true;
-            print('✅ Proxy fiyatlar: $count hat güncellendi');
+            debugPrint('✅ Proxy fiyatlar: $count hat güncellendi');
           }
         }
       }
     } catch (e) {
-      print('⚠️ Proxy fiyat çekme hatası: $e');
+      debugPrint('⚠️ Proxy fiyat çekme hatası: $e');
     }
 
     // Proxy başarısız olduysa fallback: Kategori bazlı varsayılan fiyatlar
     if (!proxySuccess) {
-      print('⚠️ Proxy fiyatlar alınamadı, kategori bazlı fallback kullanılıyor...');
+      debugPrint('⚠️ Proxy fiyatlar alınamadı, kategori bazlı fallback kullanılıyor...');
       final batch = db.batch();
 
       void addPrice(String name, String code, double tam, double indirimli) {
@@ -544,7 +545,7 @@ class SynchronizationService {
       }
 
       await batch.commit(noResult: true);
-      print('✅ Fallback fiyatlar eklendi.');
+      debugPrint('✅ Fallback fiyatlar eklendi.');
     }
   }
 
@@ -559,13 +560,13 @@ class SynchronizationService {
       if (lastUpdate.isNotEmpty) {
         final lastDate = DateTime.tryParse(lastUpdate.first['value'] as String);
         if (lastDate != null && DateTime.now().difference(lastDate).inDays < 7) {
-          print('📦 Veriler güncel. Senkronizasyon atlanıyor.');
+          debugPrint('📦 Veriler güncel. Senkronizasyon atlanıyor.');
           return;
         }
       }
     }
 
-    print('🔄 **Büyük Veri Senkronizasyonu Başladı** 🔄');
+    debugPrint('🔄 **Büyük Veri Senkronizasyonu Başladı** 🔄');
     
     // Önce eski verileri temizle
     await db.delete(DatabaseHelper.tableHat);
@@ -593,7 +594,7 @@ class SynchronizationService {
       conflictAlgorithm: ConflictAlgorithm.replace
     );
 
-    print('🎉 **Senkronizasyon Başarıyla Tamamlandı** 🎉');
+    debugPrint('🎉 **Senkronizasyon Başarıyla Tamamlandı** 🎉');
   }
 
   // --- Yardımcı Fonksiyonlar ---

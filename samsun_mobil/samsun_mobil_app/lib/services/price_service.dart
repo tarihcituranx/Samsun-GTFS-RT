@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class PriceService {
@@ -27,7 +28,7 @@ class PriceService {
         return _cachedPrices!;
       }
     } catch (e) {
-      print("Dinamik fiyat çekme hatası: $e");
+      debugPrint("Dinamik fiyat çekme hatası: $e");
     }
 
     // Fallback Fiyatlar (Sunucuya ulaşılamazsa)
@@ -65,7 +66,7 @@ class PriceService {
         }
       }
     } catch (e) {
-      print("Proxy fiyat çekme hatası: $e");
+      debugPrint("Proxy fiyat çekme hatası: $e");
     }
 
     // 2. GitHub prices.json (kategori bazlı fallback)
