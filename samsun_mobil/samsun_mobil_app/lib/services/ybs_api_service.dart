@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class YbsApiService {
@@ -28,7 +29,7 @@ class YbsApiService {
         return json.decode(response.body) as Map<String, dynamic>;
       }
     } catch (e) {
-      print("Admin Config Error: $e");
+      debugPrint("Admin Config Error: $e");
     }
     return null;
   }
@@ -61,7 +62,7 @@ class YbsApiService {
         return data['ok'] == true;
       }
     } catch (e) {
-      print("Admin Config Update Error: $e");
+      debugPrint("Admin Config Update Error: $e");
     }
     return false;
   }
@@ -80,7 +81,7 @@ class YbsApiService {
         return json.decode(response.body) as Map<String, dynamic>;
       }
     } catch (e) {
-      print("Admin Stats Error: $e");
+      debugPrint("Admin Stats Error: $e");
     }
     return null;
   }
@@ -99,7 +100,7 @@ class YbsApiService {
         if (data is List) return data;
       }
     } catch (e) {
-      print("Odak Proxy Error: $e");
+      debugPrint("Odak Proxy Error: $e");
     }
     return [];
   }
@@ -118,7 +119,7 @@ class YbsApiService {
         if (data is List) return data;
       }
     } catch (e) {
-      print("SamAir Saatler Proxy Error: $e");
+      debugPrint("SamAir Saatler Proxy Error: $e");
     }
     return [];
   }
@@ -137,7 +138,7 @@ class YbsApiService {
         if (data is List) return data;
       }
     } catch (e) {
-      print("SamAir Araclar Proxy Error: $e");
+      debugPrint("SamAir Araclar Proxy Error: $e");
     }
     return [];
   }
@@ -155,7 +156,7 @@ class YbsApiService {
         return json.decode(response.body) as Map<String, dynamic>;
       }
     } catch (e) {
-      print("Odak Araclar Proxy Error: $e");
+      debugPrint("Odak Araclar Proxy Error: $e");
     }
     return {"active": false, "vehicles": []};
   }
@@ -176,7 +177,7 @@ class YbsApiService {
         }
       }
     } catch (e) {
-      print("Fiyat Proxy Error ($lineCode): $e");
+      debugPrint("Fiyat Proxy Error ($lineCode): $e");
     }
     return null;
   }
@@ -200,7 +201,7 @@ class YbsApiService {
         if (data is List && data.isNotEmpty) return data;
       }
     } catch (e) {
-      print("Odak DB Fallback Error: $e");
+      debugPrint("Odak DB Fallback Error: $e");
     }
     return [];
   }
@@ -219,7 +220,7 @@ class YbsApiService {
         if (data is List) return data;
       }
     } catch (e) {
-      print("Odak Durak Proxy Error ($hatId): $e");
+      debugPrint("Odak Durak Proxy Error ($hatId): $e");
     }
     return [];
   }

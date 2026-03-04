@@ -14,7 +14,6 @@ class OdakScreen extends StatefulWidget {
 class _OdakScreenState extends State<OdakScreen> {
   List<dynamic> _odaklar = [];
   bool _isLoading = true;
-  bool _isOfflineFallback = false;
 
   @override
   void initState() { super.initState(); _loadOdaklar(); }
@@ -25,7 +24,6 @@ class _OdakScreenState extends State<OdakScreen> {
     
     // 3. Son çare: yerel DB
     if (dynOdaklar.isEmpty) {
-      _isOfflineFallback = true;
       dynOdaklar = await DBService().getOdaklar();
     }
 
