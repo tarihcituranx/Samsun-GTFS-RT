@@ -727,10 +727,10 @@ class Collector:
         # 1. Ring hatları (En yüksek öncelik - R ile başlayanlar kesinlikle Ring'dir)
         if c.startswith('R') and len(c) > 1 and c[1].isdigit(): return 'ring'
         
-        # Odak turistik hatlar (G ile başlayanlar veya isimde geçenler)
+        # 2. Odak turistik hatlar (G ile başlayanlar veya isimde geçenler)
         if c.startswith('G_') or c.startswith('G1') or c.startswith('G2') or c.startswith('G3') or c.startswith('G4') or 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or 'ODAK' in n: return 'odak'
         
-        # 2. Yeni Kategoriler (Analiz Sonucu)
+        # 3. Yeni Kategoriler (Analiz Sonucu)
         if 'TRAMVAY' in c or 'TRAMVAY' in n: return 'tramvay'
         if 'TELEFERİK' in c or 'TELEFERİK' in n: return 'teleferik'
         if any(x in n for x in ['BANDIRMA', 'VAPUR']) or ('FERİBOT' in n and 'TELEFERİK' not in n): return 'tekne'
@@ -1246,61 +1246,68 @@ class Collector:
         log.info("   💰 Sabit Fiyatlar Ekleniyor...")
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         
-        # 1. Tramvay (Maksimum ücret)
-        self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', 'Tramvay', 'SAMULAŞ - TRAMVAY', 26.50, 16.50, 'Ücretsiz', now))
+        # 1. Tramvay (Maksimum ücret 1-42 İstasyon: 34.00, Eğitim: 20.00)
+        self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', 'Tramvay', 'SAMULAŞ - TRAMVAY', 34.00, 20.00, 20.00, 'Ücretsiz', now))
         
-        # 2. Teleferik
-        self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', 'Teleferik', 'TELEFERİK', 25.00, 15.00, 'Yok', now))
+        # 2. Teleferik (Tam: 50.00, Eğitim/İndirimli: 30.00)
+        self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', 'Teleferik', 'TELEFERİK', 50.00, 30.00, 30.00, 'Yok', now))
         
-        # 3. Ringler (R hatları)
+        # 3. Ringler (R hatları - Otobüs tarifesini desteklemek için özel ücret grubu) -> Tam: 22.00, Eğitim: 16.00
         ringler = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'R%' OR name LIKE 'RING%'")
         for r in ringler:
-             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', r['name'], r['code'], 17.00, 12.00, '6.50 TL', now))
+             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', r['name'], r['code'], 22.00, 16.00, 16.00, 'Ücretsiz', now))
              
-        # 4. Ekspresler
+        # 4. Ekspresler (Tam: 30.00, Eğitim: 20.00)
         ekspres = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'E%' OR name LIKE 'E%'")
         for e in ekspres:
-             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', e['name'], e['code'], 23.50, 15.00, 'Ücretsiz', now))
+             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', e['name'], e['code'], 30.00, 20.00, 20.00, 'Ücretsiz', now))
 
-        # 5. Tekneler (Samsunum)
+        # 4.5 Merkez Otobüs Hatları (Tüm standart hatlar - Tam: 30.00, Eğitim: 20.00)
+        # Ek olarak veritabanına varsayılan şehir içi otobüs hattı kategorisi tablosu ile varsayılan fiyattan da eklendi.
+        otobusler = self.db.get("SELECT code, name FROM hat WHERE kat='otobus'")
+        for o in otobusler:
+             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', o['name'], o['code'], 30.00, 20.00, 20.00, 'Ücretsiz', now))
+
+        # 5. Tekneler (Samsunum - Merkez/Ayvacık/Vezirköprü - Tam: 250.00, Öğrenci: 200.00)
         tekneler = self.db.get("SELECT code, name FROM hat WHERE name LIKE '%SAMSUNUM%' OR name LIKE '%GEMİ%'")
         for t in tekneler:
-             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', t['name'], t['code'], 200.00, 150.00, 'Yok', now))
+             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', t['name'], t['code'], 250.00, 200.00, 200.00, 'Yok', now))
 
         # 6. Altınkaya Feribot
         feribot = self.db.get("SELECT code, name FROM hat WHERE name LIKE '%ALTINKAYA%' OR name LIKE '%FERİBOT%'")
         for f in feribot:
-             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', f['name'], f['code'], 15.00, 7.00, 'Yok', now))
+             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', f['name'], f['code'], 15.00, 7.00, 7.00, 'Yok', now))
         
-        # 7. Samair/Havalimanı Servisleri (H1-H5)
+        # 7. Samair/Havalimanı Servisleri (H1-H5 - SAMAIR fiyatı sabit: 120.00)
         samair_hatlar = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'H_%%-%%-%%'")
         for sh in samair_hatlar:
-            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', sh['name'], sh['code'], 120.00, 60.00, 'Yok', now))
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', sh['name'], sh['code'], 120.00, 60.00, 60.00, 'Yok', now))
         if not samair_hatlar:
             # Fallback: SAMAIR_HATLAR'dan al
             for hatid, info in SAMAIR_HATLAR.items():
                 ad = info['ad']
-                self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                      ('fixed', ad, ad, 120.00, 60.00, 'Yok', now))
+                self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                      ('fixed', ad, ad, 120.00, 60.00, 60.00, 'Yok', now))
         
-        # 8. Odak Turistik Hatlar (G1-G4)
+        # 8. Odak Turistik Hatlar (G1-G4 - Samsunum Odak Harici Hatları - İsteğer göre düzenlenebilir ama Gemi tarifesi eklendi -> Tam: 250.00, Eğitim: 200.00)
         odak_hatlar = self.db.get("SELECT code, name FROM hat WHERE code LIKE 'G_%%'")
         for oh in odak_hatlar:
-            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', oh['name'], oh['code'], 250.00, 200.00, 'Yok', now))
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', oh['name'], oh['code'], 250.00, 200.00, 200.00, 'Yok', now))
         
-        # 9. İlçe Hatları (Samsun-Terme, Samsun-Çarşamba)
+        # 9. İlçe Hatları (Samsun-Terme, Samsun-Çarşamba - Özel listelere göre bırakılmıştır: varsayılan 60.00)
         ilce_hatlar = self.db.get("SELECT code, name FROM hat WHERE tip='ilce'")
         for ih in ilce_hatlar:
-            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?)",
-                  ('fixed', ih['name'], ih['code'], 60.00, 30.00, 'Yok', now))
+            self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
+                  ('fixed', ih['name'], ih['code'], 60.00, 30.00, 30.00, 'Yok', now))
         
         log.info("      ✅ Fiyatlar güncellendi.")
 
