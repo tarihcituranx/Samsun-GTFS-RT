@@ -1626,6 +1626,207 @@ class Collector:
             log.debug(f"Tahmini kalkış hesaplama hatası ({hat_kodu}): {e}")
             return None
 
+    def groq_rota_tavsiye(self, routes_data, start_info, end_info):
+        """Groq AI ile rota önerilerini akıllıca sıralar ve açıklama ekler"""
+        import os, json
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key or not routes_data:
+            return routes_data
+        
+        # Rotaları özetle (polyline'ları göndermeyiz, çok uzun)
+        routes_summary = []
+        for i, r in enumerate(routes_data):
+            summary = {
+                "index": i,
+                "type": r.get("type", "?"),
+                "total_score": r.get("total_score", 999),
+                "desc_text": r.get("desc", "").replace("<", " ").replace(">", " ")[:500]
+            }
+            routes_summary.append(summary)
+        
+        system_prompt = """Sen Samsun Büyükşehir Belediyesi toplu ulaşım sisteminin UZMAN rota danışmanısın.
+Görevin: Algoritmik olarak üretilmiş rota seçeneklerini DEĞERLENDİRMEK, SIRALAMAK ve her birine kısa Türkçe açıklama yazmaktır.
+
+SEN YENİ ROTA ÜRETMEZSİN. Sadece verilen rotaları değerlendirirsin.
+Sadece sana verilen bilgilere dayanarak karar ver. Bilmediğin veya emin olmadığın konularda tahminde BULUNMA.
+
+═══════════════════════════════════════
+ SAMSUN TOPLU TAŞIMA SİSTEMİ BİLGİLERİ
+═══════════════════════════════════════
+
+🚋 TRAMVAY (Samulaş T1 Hattı):
+- Güzergah: Gar ↔ Tekkeköy (toplam ~20 km, ~45 dk)
+- ÇİFT YÖNLÜ çalışır (aynı hat kodu ile gidiş VE dönüş yapılır)
+- Sefer sıklığı: ~10 dakikada bir (06:00-23:30)
+- Duraklar: Gar, Cumhuriyet Meydanı, 19 Mayıs, Liman, Halkevi, Piazza, Tekkeköy vb.
+- Genellikle sahil şeridindeki yolculuklar için EN HIZLI seçenektir
+- Tramvay güzergahı kıyı boyunca DOĞU-BATI ekseninde uzanır
+
+🚌 OTOBÜSLER:
+- TEK YÖNLÜ çalışır: Gidiş ve dönüş FARKLI hat kodlarıdır
+  Örnek: "22 TÜRKİŞ-SOĞUKSU" = gidiş, "22 SOĞUKSU-TÜRKİŞ" = dönüş
+- Hat adındaki ilk yer BAŞLANGIÇ, ikinci yer BİTİŞ noktasıdır
+- Sira numarası küçükten büyüğe gider: s1.sira < s2.sira ise DOĞRU YÖN demektir
+
+🔄 AKTARMA KURALLARI:
+- 1 saat içinde Otobüs↔Otobüs veya Otobüs↔Tramvay aktarması ÜCRETSİZDİR
+- 1 saat sonrası aktarma: 8,00 TL
+- Düşük ücretli → Yüksek ücretli hatta geçişte fark ücreti alınır
+
+⛔ HARİÇ TUTULAN HATLAR (rotalamaya dahil DEĞİLDİR):
+- Odak: Turistik hatlar (farklı fiyatlandırma)
+- Samair: Havalimanı servisi
+- Tekne: Deniz ulaşımı
+- Teleferik: Amisos Tepesi teleferik hattı
+- İlçe: Şehirlerarası ilçe hatları
+
+═══════════════════════════════════════
+ SAMSUN COĞRAFİ BİLGİLER
+═══════════════════════════════════════
+- Samsun kıyı şeridi DOĞU-BATI yönünde uzanır
+- Batıda Atakum, merkezde İlkadım/Meydan, doğuda Canik/Tekkeköy
+- Tramvay sahil boyunca Batı↔Doğu ekseninde çalışır
+- Cumhuriyet Meydanı şehrin merkezi ve ana aktarma noktasıdır
+- Latitude ~41.27-41.33, Longitude batıda ~36.25, doğuda ~36.45
+- Longitude ARTAN yönde gitmek = DOĞUYA gitmek
+- Longitude AZALAN yönde gitmek = BATIYA gitmek
+
+═══════════════════════════════════════
+ DEĞERLENDİRME KRİTERLERİ (Öncelik Sırasıyla)
+═══════════════════════════════════════
+
+1. YÖN KONTROLÜ (EN KRİTİK):
+   - Rota, başlangıçtan hedefe doğru İLERLEMELİ
+   - Ters yöne gidip geri dönen rotalar KÖTÜDÜR (yüksek skor ver)
+   - Hat adındaki yön bilgisi ile koordinat yönü uyuşmalı
+
+2. SÜRE MANTIKLıLıĞı:
+   - total_score < 60: Çok iyi
+   - total_score 60-120: Kabul edilebilir
+   - total_score 120-300: Kötü (ancak alternatif yoksa olabilir)
+   - total_score > 500: MANTIK DIŞI — büyük olasılıkla sefer bitmiş, ertesi güne sarkmış
+   - 1000+ dk süre gösteren rotaları ASLA önerme (skor 95+)
+
+3. DİREKT vs AKTARMALI:
+   - Direkt hat HER ZAMAN aktarmalıdan üstündür (süre farkı 15 dk'dan az ise)
+   - Aktarma bekleme süresi genellikle 5-15 dk arasıdır
+
+4. TRAMVAY TERCİHİ:
+   - Tramvay içeren rotalar daha güvenilirdir (düzenli sefer)
+   - Sahil hattına paralel yolculuklarda tramvay idealdir
+
+5. YÜRÜME MESAFESİ:
+   - Durağa yürüme mesafesi 500m altında: iyi
+   - 500m-1km: kabul edilebilir
+   - 1km üstü: kötü
+
+═══════════════════════════════════════
+ ÇIKTI FORMATI
+═══════════════════════════════════════
+SADECE aşağıdaki JSON formatında yanıt ver. Başka HİÇBİR ŞEY yazma.
+
+{"ranking": [
+  {"index": <orijinal_index>, "yeni_skor": <1-100>, "tavsiye": "<Türkçe 1-2 cümle açıklama>"},
+  ...
+]}
+
+KURALLAR:
+- "yeni_skor": 1 = mükemmel, 100 = çok kötü
+- "tavsiye": Kullanıcıya yönelik samimi ama profesyonel Türkçe. Neden iyi/kötü olduğunu kısaca açıkla.
+- Mantıksız rotaları 90+ skor ver ve nedenini açıkla
+- İyi rotaları 1-30 arası skor ver
+- Orta rotaları 30-60 arası skor ver
+- YENİ ROTA ÜRETMEZSİN, sadece mevcut rotaları değerlendirirsin
+- Tavsiye metninde emoji kullanma
+"""
+
+        user_prompt = f"""Kullanıcı şuradan: {start_info}
+Kullanıcı şuraya gitmek istiyor: {end_info}
+
+Aşağıdaki rota seçeneklerini değerlendir:
+{json.dumps(routes_summary, ensure_ascii=False, indent=2)}
+
+GÖREV: Her rotayı değerlendir ve JSON olarak döndür. Format:
+{{
+  "ranking": [
+    {{"index": 0, "yeni_skor": 10, "tavsiye": "Bu rotayı tercih edin çünkü..."}},
+    ...
+  ]
+}}
+
+Kurallar:
+- "index" orijinal rota indexi
+- "yeni_skor" 1-100 arası (1=en iyi)
+- "tavsiye" kısa Türkçe açıklama (max 2 cümle)
+- Mantıksız rotaları yüksek skor ver (90+)
+- SADECE JSON döndür, başka bir şey yazma"""
+
+        try:
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 1024,
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=8
+            )
+            
+            if resp.status_code == 200:
+                result = resp.json()
+                content = result['choices'][0]['message']['content']
+                ai_data = json.loads(content)
+                return ai_data.get('ranking', [])
+        except Exception as e:
+            log.debug(f"Groq AI hatası: {e}")
+        
+        return []
+
+    def _groq_postprocess(self, all_routes, lat1, lon1, lat2, lon2):
+        """Groq AI ile rotaları yeniden sıralar ve açıklama ekler"""
+        if not all_routes:
+            return all_routes
+        
+        start_info = f"({lat1:.4f}, {lon1:.4f})"
+        end_info = f"({lat2:.4f}, {lon2:.4f})"
+        
+        ranking = self.groq_rota_tavsiye(all_routes, start_info, end_info)
+        
+        if not ranking:
+            return all_routes
+        
+        # AI sonuçlarını uygula
+        index_map = {r['index']: r for r in ranking if 'index' in r}
+        
+        for i, route in enumerate(all_routes):
+            ai = index_map.get(i)
+            if ai:
+                route['total_score'] = ai.get('yeni_skor', route['total_score'])
+                tavsiye = ai.get('tavsiye', '')
+                if tavsiye:
+                    # Tavsiyeyi HTML desc'e ekle
+                    ai_html = f'<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);padding:8px 12px;font-size:0.75rem;color:#1e40af;border-radius:0 0 12px 12px;border-top:1px solid #bfdbfe"><span style="font-weight:700">🤖 AI Tavsiye:</span> {tavsiye}</div>'
+                    # route-card kapanış div'inden önce ekle
+                    route['desc'] = route['desc'].rstrip()
+                    if route['desc'].endswith('</div>'):
+                        # Son </div>'den önce ekle (route-card'ın kapanışı)
+                        last_div = route['desc'].rfind('</div>')
+                        route['desc'] = route['desc'][:last_div] + ai_html + route['desc'][last_div:]
+        
+        # Yeniden sırala
+        all_routes.sort(key=lambda x: x['total_score'])
+        
+        return all_routes
+
     def get_osrm_foot_path(self, lat1, lon1, lat2, lon2):
         """OSRM kullanarak iki nokta arası yürüme rotası çıkarır"""
         try:
@@ -1983,6 +2184,12 @@ class Collector:
             
         # Puanlamaya göre sırala (Küçük puan daha iyi)
         all_routes.sort(key=lambda x: x['total_score'])
+        
+        # Groq AI Post-Processing
+        try:
+            all_routes = self._groq_postprocess(all_routes[:8], lat1, lon1, lat2, lon2)
+        except Exception as e:
+            log.debug(f"Groq postprocess atlandı: {e}")
         
         return all_routes[:5]
 
