@@ -1095,12 +1095,12 @@ class Collector:
             self.db.ex("DELETE FROM hat_durak WHERE hat=?", (code,))
             
             # Alt İstasyon (Batıpark)
-            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T1', 'T1', 'Teleferik Alt İstasyon', 41.3204, 36.3231))
-            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T1', 'Teleferik Alt İstasyon', 1, 41.3204, 36.3231))
+            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T1', 'T1', 'Batıpark', 41.321704, 36.323564))
+            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T1', 'Batıpark', 1, 41.321704, 36.323564))
             
-            # Üst İstasyon (Amisos)
-            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T2', 'T2', 'Teleferik Üst İstasyon', 41.3246, 36.3228))
-            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T2', 'Teleferik Üst İstasyon', 2, 41.3246, 36.3228))
+            # Üst İstasyon (Amisos Tepesi)
+            self.db.ex("INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon) VALUES(?,?,?,?,?)", ('T2', 'T2', 'Amisos Tepesi', 41.318940, 36.322448))
+            self.db.ex("INSERT INTO hat_durak(hat, durak_id, ad, sira, lat, lon) VALUES(?,?,?,?,?,?)", (code, 'T2', 'Amisos Tepesi', 2, 41.318940, 36.322448))
 
         log.info("   🚢 Tekne ve Teleferik seferleri eklendi.")
 
@@ -2492,9 +2492,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .src-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text3)}
 
 /* Category Grid */
-.kg{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;scrollbar-width:none}
-.kg::-webkit-scrollbar{display:none}
-.kb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;border-radius:var(--radius2);cursor:pointer;font-size:.55rem;font-weight:600;color:var(--text2);transition:all .2s;white-space:nowrap;min-width:52px;background:var(--bg2);border:1px solid transparent}
+.kg{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:8px;margin-bottom:10px}
+.kb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;border-radius:var(--radius2);cursor:pointer;font-size:.55rem;font-weight:600;color:var(--text2);transition:all .2s;white-space:nowrap;min-width:52px;background:var(--bg2);border:1px solid transparent;flex:1 0 auto}
 .kb:hover{background:var(--bg3);border-color:var(--card-border)}
 .kb.on{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
 .kb .i{font-size:1.1rem}
