@@ -727,13 +727,13 @@ class Collector:
         # 1. Ring hatları (En yüksek öncelik - R ile başlayanlar kesinlikle Ring'dir)
         if c.startswith('R') and len(c) > 1 and c[1].isdigit(): return 'ring'
         
-        # 2. Odak turistik hatlar (G ile başlayanlar veya isimde geçenler)
-        if c.startswith('G_') or c.startswith('G1') or c.startswith('G2') or c.startswith('G3') or c.startswith('G4') or 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or 'ODAK' in n: return 'odak'
+        # 2. Odak turistik hatlar (G ile başlayanlar veya isimde Odak geçenler)
+        if c.startswith('G_') or c.startswith('G1') or c.startswith('G2') or c.startswith('G3') or c.startswith('G4') or 'ODAK' in n: return 'odak'
         
         # 3. Yeni Kategoriler (Analiz Sonucu)
         if 'TRAMVAY' in c or 'TRAMVAY' in n: return 'tramvay'
         if 'TELEFERİK' in c or 'TELEFERİK' in n: return 'teleferik'
-        if any(x in n for x in ['BANDIRMA', 'VAPUR']) or ('FERİBOT' in n and 'TELEFERİK' not in n): return 'tekne'
+        if 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or any(x in n for x in ['BANDIRMA', 'VAPUR']) or ('FERİBOT' in n and 'TELEFERİK' not in n): return 'tekne'
         # Havalimanı hatları
         if c.startswith('H') and len(c) > 1 and c[1].isdigit(): return 'havalimani'
         
@@ -2828,6 +2828,9 @@ def create_app(db, col):
                             
                     except Exception as e:
                         log.debug(f"GTFS-RT hat hatası ({code}): {e}")
+                    
+                    # Rate limit koruması: Her hat sorgusu arasında 100ms bekle
+                    await asyncio.sleep(0.1)
                 
                 with _gtfs_feed_lock:
                     global gtfs_feed
@@ -3050,7 +3053,7 @@ def create_app(db, col):
 
     @app.get("/api/proxy/lines")
     async def proxy_lines():
-        """Mobil uygulama için Lines proxy."""
+        """Mobil uygulama için Lines proxy (Alfabetik sıralı ve Vapur etiketli)."""
         try:
             data = await asyncio.wait_for(
                 asyncio.to_thread(col.http.asis, 'Lines'),
@@ -3059,7 +3062,19 @@ def create_app(db, col):
             _api_stats['asis_calls'] += 1
             if isinstance(data, dict):
                 data = data.get('data', data.get('result', []))
-            return JSONResponse(data or [])
+            
+            lines_list = data or []
+            # 'tekne' kategorisi varsa Vapur yap ve isme göre sırala
+            for line in lines_list:
+                # Custom category check fallback on asis data
+                c = str(line.get('lineCode', '')).strip()
+                n = str(line.get('lineName', '')).strip()
+                kategori = col.kat(c, n)
+                line['kat'] = 'Vapur' if kategori == 'tekne' else kategori.capitalize()
+            
+            # Hat Adına göre alfabetik sırala
+            lines_list.sort(key=lambda x: str(x.get('lineName', '')).lower())
+            return JSONResponse(lines_list)
         except Exception as e:
             log.error(f"Proxy Lines Hatası: {e}")
             return JSONResponse([])
@@ -3528,7 +3543,7 @@ loadStats(); setInterval(loadStats, 10000);
 
     @app.get("/api/hat")
     async def get_hatlar():
-        return JSONResponse(db.get("SELECT * FROM hat ORDER BY kat, name"))
+        return JSONResponse(db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC"))
     
     @app.get("/api/hat/info/{code:path}")
     async def api_hat_one(code: str):
@@ -3593,10 +3608,25 @@ loadStats(); setInterval(loadStats, 10000);
         
         # Fallback: DB'deki en yaygın fiyatı kullan (sıfır değilse)
         if not res:
-            avg = db.one("SELECT ROUND(AVG(tam_fiyat),2) as t, ROUND(AVG(indirimli_fiyat),2) as i FROM fiyat WHERE tam_fiyat>0 AND kaynak='samulas'")
-            if avg and avg.get('t'):
-                res = {"tam_fiyat": avg['t'], "indirimli_fiyat": avg['i'] or round(avg['t']*0.7, 2), "aktarma1": "Ücretsiz"}
-        return JSONResponse(res or {"tam_fiyat": 20.0, "indirimli_fiyat": 14.0, "aktarma1": "Ücretsiz"})
+            res = {"tam_fiyat": 20.0, "indirimli_fiyat": 14.0, "ogrenci_fiyat": 14.0, "aktarma1": "Ücretsiz"}
+        else:
+            # SQL row dict'e çevrildiyse doğrudan müdahale edebilmek için dict(res) kullan
+            res = dict(res)
+
+        # Öğrenci fiyatı için öncelikli gösterim (Yoksa indirimli fiyat kullanılır)
+        gosterilecek_indirimli = res.get("ogrenci_fiyat") or res.get("indirimli_fiyat") or 14.0
+
+        return JSONResponse({
+            "tam_fiyat": res.get("tam_fiyat", 20.0),
+            "indirimli_fiyat": gosterilecek_indirimli,
+            "aktarma1": res.get("aktarma1", "Ücretsiz"),
+            "extra_info": [
+                "1 Saat İçi Aktarma: Ücretsiz | 1 Saat Sonrası: 8,00 TL",
+                "Öğrenci Abonman: 50 Biniş 500 TL | Sınırsız 550 TL",
+                "Sivil Abonman: 50 Biniş 1000 TL | Sınırsız 1100 TL",
+                "Tam Samkart: 110 TL | Kayıp Kart: 150 TL"
+            ]
+        })
     
     @app.get("/api/hat/arac/{code:path}")
     async def api_arac(code: str):
