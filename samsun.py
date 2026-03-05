@@ -2366,8 +2366,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <div class="tabs">
     <div class="tab on" data-t="hat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg> Hatlar</div>
     <div class="tab" data-t="yakin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Yakın</div>
-    <div class="tab" data-t="odak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> Odak</div>
-    <div class="tab" data-t="samair"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.2-1.1.6L3 8l6 5-4 4-2.5-.5-1.5 1.5 4 1 1 4 1.5-1.5-.5-2.5 4-4 5 6l1.2-.7c.4-.2.7-.6.6-1.1z"/></svg> Samair</div>
+    <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"></div>
+    <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"></div>
     <div class="tab" data-t="rota" onclick="shRotaUI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Git</div>
 </div>
 <div class="pnl-body" id="ct"></div>
@@ -2440,7 +2440,16 @@ applyTheme(getPreferredTheme());
 
 // ===== GLOBALS =====
 let M={}, V={}, H=[], cur='hat', sK=null, liveT=null, userLoc=null, targetLoc=null;
-const K={dil:{i:'🌐',n:'Tümü',c:'#333'},otobus:{i:'🚌',n:'Otobüs',c:'#2563eb'},ekspres:{i:'🚀',n:'Ekspres',c:'#9333ea'},tramvay:{i:'🚃',n:'Tramvay',c:'#ea580c'},ring:{i:'🔄',n:'Ring',c:'#f59e0b'},tekne:{i:'⛴️',n:'Vapur',c:'#0284c7'},odak:{i:'🏔️',n:'Odak',c:'#16a34a'},teleferik:{i:'🚡',n:'Teleferik',c:'#ec4899'},havalimani:{i:'✈️',n:'H.limanı',c:'#dc2626'},ilce:{i:'🏘️',n:'İlçe',c:'#0d9488'}};
+const K={dil:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>',n:'Tümü',c:'#333'},
+otobus:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg>',n:'Otobüs',c:'#2563eb'},
+ekspres:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',n:'Ekspres',c:'#9333ea'},
+tramvay:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 5V3M16 5V3"/><path d="M3 3h18"/><circle cx="8.5" cy="17" r="1.2"/><circle cx="15.5" cy="17" r="1.2"/><path d="M6 21l2-2.5M18 21l-2-2.5"/><path d="M8 10v5M12 10v5M16 10v5"/></svg>',n:'Tramvay',c:'#ea580c'},
+ring:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',n:'Ring',c:'#f59e0b'},
+tekne:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M3 17l1.5-7h15l1.5 7"/><path d="M2 20c1.5-2 3-2 4.5 0s3 2 4.5 0 3 2 4.5 0 3-2 4.5 0"/><rect x="7" y="7" width="10" height="3" rx="1"/><path d="M12 7V4M9 4h6"/><path d="M5 10h14"/></svg>',n:'Vapur',c:'#0284c7'},
+odak:{i:'<img src="/static/images/odak.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'transparent'},
+teleferik:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M2 6l20-2"/><path d="M7 6l-1 2h12l-1-2"/><rect x="6" y="8" width="12" height="8" rx="2"/><path d="M9 8v8M15 8v8"/><circle cx="12" cy="5.5" r="1"/></svg>',n:'Teleferik',c:'#ec4899'},
+havalimani:{i:'<img src="/static/images/samair.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'transparent'},
+ilce:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><path d="M1 10l2-5h14l4 5v6H1z"/><path d="M1 10h19"/><circle cx="6" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/><path d="M6 16.5V19M16 16.5V19"/><rect x="4" y="11" width="4" height="3" rx="0.5"/><rect x="10" y="11" width="4" height="3" rx="0.5"/></svg>',n:'İlçe',c:'#0d9488'}};
 
 const busIcon=(c,p)=>L.divIcon({className:'',html:`<div style="position:relative"><div style="width:30px;height:30px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:14px">🚌</div><div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:1px 5px;border-radius:3px;font-size:9px;white-space:nowrap;z-index:99">${p}</div></div>`,iconSize:[30,30],iconAnchor:[15,15]});
 const bI=busIcon;
@@ -2465,7 +2474,7 @@ async function fetchWeather() {
             if (isNight && iconName.includes('-day')) iconName = iconName.replace('-day', '-night');
             
             wWidget.innerHTML = `<img src="/static/weather-icons/animated/${iconName}.svg" style="height:28px;width:28px;margin-right:2px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <span>${temp}°C</span>`;
-            wWidget.title = `Samsun Merkez (İlkadım)\nGüncelleme: ${data.zaman ? data.zaman.split('T')[1].substring(0,5) : ''}`;
+            wWidget.title = `Samsun Atakum\nGüncelleme: ${data.zaman ? data.zaman.split('T')[1].substring(0,5) : ''}`;
         } else {
             wWidget.style.display = 'none';
         }
@@ -2477,7 +2486,7 @@ async function fetchWeather() {
 async function init(){
     applyTheme(localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
     fetchWeather();
-    setInterval(fetchWeather, 3600000); // Saat başı hava durumu güncelle
+    setInterval(fetchWeather, 900000); // 15 dakikada bir hava durumu güncelle
     const defLoc={lat:41.2925,lon:36.3315};
     if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(async p=>{
@@ -3276,26 +3285,27 @@ def create_app(db, col):
         return JSONResponse(col.yol_tarifi(lat1, lon1, lat2, lon2))
 
     @app.get("/api/hava")
-    async def api_hava():
-        """Samsun (Merkez-İlkadım) güncel hava durumunu MGM'den çeker."""
+    async def get_hava():
+        """MGM'den Samsun Atakum güncel hava durumunu çeker"""
         try:
-            # 95503: Samsun İlkadım merkez ID
-            url = "https://servis.mgm.gov.tr/web/sondurumlar?merkezid=95503"
-            headers = {"Origin": "https://www.mgm.gov.tr"}
+            url = "https://servis.mgm.gov.tr/web/sondurumlar?merkezid=95501" # 95501 = Samsun Atakum
+            headers = {
+                "Origin": "https://www.mgm.gov.tr",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            }
             r = requests.get(url, headers=headers, timeout=5)
             r.raise_for_status()
             data = r.json()
-            if data and isinstance(data, list) and len(data) > 0:
-                d = data[0]
+            if data and len(data) > 0:
                 return JSONResponse({
-                    "sicaklik": d.get("sicaklik", ""),
-                    "hadise": d.get("hadiseKodu", ""),
-                    "nem": d.get("nem", ""),
-                    "zaman": d.get("veriZamani", "")
+                    "sicaklik": data[0].get("sicaklik"),
+                    "hadise": data[0].get("hadiseKodu"),
+                    "nem": data[0].get("nem"),
+                    "zaman": data[0].get("veriZamani")
                 })
-            return JSONResponse({"error": "Veri yok"})
+            return JSONResponse({"error": "Veri bulunamadı"})
         except Exception as e:
-            log.error(f"MGM Hava Hatası: {e}")
+            log.error(f"Hava durumu hatası: {e}")
             return JSONResponse({"error": str(e)}, status_code=500)
 
     # --- Health Check ---
