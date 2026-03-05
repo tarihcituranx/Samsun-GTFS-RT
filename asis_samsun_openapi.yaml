@@ -1,306 +1,531 @@
 openapi: "3.1.0"
 info:
-  title: Samsun Büyükşehir Belediyesi Asis Ulaşım API
-  summary: Samsun toplu taşıma, canlı araç takibi, sefer saatleri ve YBS servisleri
+  title: Samsun ASIS API — Gerçek Yanıt Yapısına Göre Güncel Şema
+  summary: Samsun toplu taşıma canlı araç takibi, durak sorgulama ve sefer saatleri
   description: >
-    **Resmi şema tarafımca düzenlenmiştir:** Turan KAYA
-
-    **Orijinal Şema:** https://api.samsun.bel.tr/OHSSoapToJson/swagger/index.html
-
-    **SAMSUN TRANSIT - SUPER APP (MASTER API DOKÜMANTASYONU)**
-
-    Bu API şeması, Samsun Büyükşehir Belediyesine ait tüm toplu taşıma,
-    akıllı şehir bileşenleri, havaalanı transferleri ve turistik hatların
-    verilerini kapsar.
+    **Düzenleyen:** Turan KAYA
+    **Orijinal Swagger:** https://api.samsun.bel.tr/OHSSoapToJson/swagger/index.html
+    **Son test tarihi:** 2026-03-05
 
     ---
 
-    ## Veri Kaynakları
+    ## Bu Şema Hakkında
 
-    **A. ASİS API (SOAP to JSON Adaptörü)**
-    - Sistemin ana omurgası. Otobüs hatları, tramvay saatleri ve 1600+ durak verisi.
-    - Lines/OrjLines: Hat ID'leri ve isimleri
-    - StopsStations: Durak koordinatları
-    - RealTimeData & Schedules: Anlık lokasyon ve sefer planları
+    Bu şema, resmi Swagger dokümantasyonunun **gerçek API davranışını yanlış yansıttığı**
+    noktaları canlı testlerle doğrulayarak düzeltilmiştir. Her endpoint için:
 
-    **B. YBS (Yönetim Bilgi Sistemi) API'leri**
-    - Token mekanizması: `getGuestToken` ile ~200 saniyelik misafir token alınır
-    - Samair API: Havalimanı otobüs sefer saatleri
-    - Odak Samsun API: Turistik hatlar (Ayvacık Barajı, Şahinkaya Kanyonu vb.)
-    - **Önemli:** `odakSamsun_Crud` için `Referer: https://odak.samsun.bel.tr/` header zorunlu
+    - Gerçek yanıt yapısı (wrapper format, alan adları, veri tipleri)
+    - Gizli kısıtlamalar ve zorunlu parametre kombinasyonları
+    - Belgelenmemiş davranışlar ve yan etkiler
+    - Flutter/Dart uygulamalarında dikkat edilmesi gerekenler
 
-    **C. Samulaş Web Sitesi (Scraping)**
-    - Bilet fiyatları `samulas.com.tr/otobusler` adresinden HTML ayrıştırma ile alınır
+    ayrıntılı biçimde açıklanmıştır.
 
     ---
 
-    ## Önemli Notlar (Quirks)
+    ## Tüm Endpoint'lerde Geçerli Kurallar
 
-    - **ID Mapping:** H1 OMÜ=YBS ID 3, H2 TTTM=4, H3 BAFRA=5, H4 ÇARŞAMBA=9
-    - **Turistik Hat Hatası:** Odak API Şahinkaya/Kızılırmak/Ayvacık rotalarında
-      Gidiş/Dönüş değerlerini ters döndürür — `ODAK_ISIM_DUZELTME` tablosu ile düzeltilir
-    - **Encoding:** Windows-1254 kaynaklı bozuk Türkçe karakterler `fix_turkish` ile düzeltilir
+    ### Yanıt Zarfı (ApiResponse Wrapper)
+    **Tüm endpoint'ler**, veri döndürsün ya da dönmesin, her zaman aşağıdaki
+    zarflı yapıyı kullanır:
+    ```json
+    { "statusCode": <integer>, "message": "<string>", "data": <list|null> }
+    ```
+    Ham liste (`[{...}]`) formatı DÖNDÜRÜLMEZ. Önceki şemada "düz liste dönebilir"
+    şeklinde belirtilen davranış testlerde doğrulanamadı.
 
-  version: "1.0.0"
+    ### İç statusCode Değeri
+    HTTP durum kodu her zaman `200` gelse de, zarftaki `statusCode` alanı
+    hata durumlarında `500` olabilir (ör. Schedules'ta sadece lineCode gönderilince).
+    HTTP durum kodu ile iç statusCode **bağımsız** hareket eder.
+
+    ### Zorunlu Parametre Gerektiren Endpoint'ler
+    `LineDirections` ve `RealTimeData` endpoint'leri parametresiz çağrıldığında
+    HTTP `400` döndürür (ASP.NET model validation hatası).
+    Boş string (`lineCode=`) göndermek de `400` alır.
+
+    ---
+
+    ## Kritik Davranış Notları (Bilinen Kısıtlamalar)
+
+    ### 1. LineDirections — Filtre Çalışmıyor
+    `lineCode` parametresi gönderilmesi **zorunludur** (yoksa 400),
+    ancak değeri ne olursa olsun (gerçek hat kodu, sahte kod, farklı hatlar)
+    **daima sistemdeki tüm 8557 kayıt** döner. Sunucu taraflı filtreleme yoktur.
+    Belirli bir hat için veri istiyorsanız istemci tarafında `lineCode` alanına
+    göre filtreleme yapmanız **zorunludur**.
+
+    ### 2. Schedules — scheduleDate Filtresi Etkisiz
+    Her iki parametre de gönderilmesi **zorunludur** (biri eksikse statusCode=500, data=[]).
+    Ancak `scheduleDate` değeri (dün, bugün, yarın) sonucu **hiç etkilemez**.
+    API daima aktif çizelge programını döndürür. Tarih bazlı farklılaşma yoktur.
+
+    ### 3. StopsStations — Sıfır/Negatif stopId Tümünü Getirir
+    `stopId=0` veya `stopId=-1` gönderildiğinde tüm 4522 durak döner.
+    Bu, "geçersiz giriş = tüm veri" anti-pattern'ıdır.
+    Uygulama katmanında `stopId > 0` doğrulaması yapılmalıdır.
+
+    ### 4. RealTimeData — yon Alanı Pusula Derecesidir
+    `yon` alanı `"gidis"` / `"donus"` değil, **0–360 aralığında pusula derecesi** taşır.
+    Örnek değerler: `"47"`, `"248"`, `"0"`, `"72"`.
+
+    ### 5. Schedules — yon Alanı Tek Harf
+    `"gidis"` / `"donus"` değil, **`"G"` (gidiş) veya `"D"` (dönüş)** gelir.
+
+  version: "2.0.0"
   contact:
     name: Turan KAYA
     url: https://github.com/tarihcituranx
   license:
-    name: Resmi Belediye API — Gayriresmi şema düzenlemesi
+    name: Resmi Belediye API — Gayriresmi şema (canlı test tabanlı düzeltme)
     url: https://github.com/tarihcituranx/TuranAPI
 
 servers:
   - url: https://api.samsun.bel.tr/OHSSoapToJson
-    description: ASİS API Sunucusu
-  - url: https://ybs.samsun.bel.tr/service
-    description: YBS API Sunucusu
-  - url: https://samulas.com.tr
-    description: Samulaş Web API
+    description: >
+      ASIS API Sunucusu (SOAP → JSON adaptörü).
+      Doğrudan erişim mümkündür; proxy gerekmez.
 
 security: []
 
+# ═══════════════════════════════════════════════════════════════════
 components:
   schemas:
 
+    # ── Tüm endpoint'lerin ortak yanıt zarfı ──────────────────────
     ApiResponse:
       type: object
-      description: Standart API yanıt zarfı
+      description: >
+        **Tüm endpoint'lerin kullandığı standart yanıt zarfı.**
+        Ham liste dönmez; her yanıt bu yapıyla gelir.
+
+        `statusCode` alanı HTTP durum kodundan **bağımsızdır**.
+        HTTP 200 gelse bile `statusCode` 500 olabilir (ör. eksik parametre).
+        500 geldiğinde `data` genellikle boş listedir.
+      required: [statusCode, message, data]
       properties:
         statusCode:
           type: integer
+          description: >
+            İç durum kodu. Başarıda `200`, SOAP backend hatasında `500`.
+            HTTP durum kodu ile karıştırılmamalıdır.
           example: 200
         message:
           type: string
+          description: Hata veya bilgi mesajı. Başarıda genellikle boş string.
           example: ""
         data:
-          description: Yanıt verisi (liste veya nesne)
+          description: Dönen kayıt listesi. Hata veya sonuç yoksa boş liste `[]`.
+          oneOf:
+            - type: array
+            - type: "null"
 
+    # ── Hata yanıtı (HTTP 400) ─────────────────────────────────────
+    ValidationErrorResponse:
+      type: object
+      description: >
+        ASP.NET model doğrulama hatası. `LineDirections` ve `RealTimeData`
+        endpoint'leri zorunlu parametresiz çağrıldığında döner.
+        Boş string (`lineCode=`) da bu hatayı tetikler.
+      properties:
+        type:
+          type: string
+          example: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+        title:
+          type: string
+          example: "One or more validation errors occurred."
+        status:
+          type: integer
+          example: 400
+        traceId:
+          type: string
+          example: "00-abc123-def456-00"
+        errors:
+          type: object
+          description: Alan bazlı hata detayları
+
+    # ── Hat Kaydı (Lines / OrjLines) ──────────────────────────────
     LineItem:
       type: object
-      description: Hat bilgisi
+      description: >
+        Tek bir hat kaydı. `Lines` ve `OrjLines` endpoint'lerinden döner.
+
+        **Dikkat — Lines vs OrjLines farkı:**
+        - `Lines` (74 kayıt): Aktif, operasyonel hatlar. `tip` alanı içerir.
+          `shortLineName` GTFS kısa kodu içerir (örn. `"339"`).
+        - `OrjLines` (134 kayıt): Ham/tüm hatlar. `tip` alanı yoktur.
+          `shortLineName` tam hat adını taşır (örn. `"15 BÜYÜK CAMİ - SOĞUKSU"`).
+          `totalRow` ek alanı bulunur.
+      required: [lineCode, lineNo, lineName, shortLineName]
       properties:
         lineCode:
           type: string
-          description: Hat kodu
+          description: >
+            Hat kodu. `StopsStations`, `RealTimeData`, `Schedules` endpoint'lerinde
+            bu değer `lineCode` parametresi olarak kullanılır.
+            **Boşluk hassastır:** `"13  BL.EVLERİ-TOKİ"` (çift boşluk) gibi değerler
+            URL encode edilerek tam eşleşme ile gönderilmelidir.
           example: "13 TOKİ-BL.EVLERİ"
         lineNo:
           type: string
-          description: Hat numarası
+          description: Hat numarası (integer gibi görünse de string olarak gelir).
           example: "35"
         lineName:
           type: string
-          description: Hat tam adı
+          description: Hattın tam açıklama adı.
           example: "13 KAMALI TOKİ - SOĞUKSU"
         shortLineName:
           type: string
-          description: Kısa hat adı (GTFS route_short_name)
+          description: >
+            **Lines'ta:** GTFS `route_short_name` standardında kısa hat kodu (örn. `"339"`).
+            **OrjLines'ta:** Tam hat adı (örn. `"15 BÜYÜK CAMİ - SOĞUKSU"`).
+            İki endpoint arasında anlam farklıdır.
           example: "339"
         tip:
           type: string
-          description: Yön tipi (gidis/donus)
+          description: >
+            **Yalnızca Lines endpoint'inde gelir; OrjLines'ta bu alan yoktur.**
+            Hattın yönünü gösterir.
+          enum: [gidis, donus]
           example: "donus"
 
+    # ── Durak Kaydı ───────────────────────────────────────────────
     StopItem:
       type: object
-      description: Durak bilgisi
+      description: >
+        Bir durağın statik bilgileri (konum, ad, sıra).
+        Canlı araç bilgisi **içermez** — bunun için `SmartStationItem` kullanın.
+
+        **orderId Notu:** `lineCode` ile sorgulandığında hat üzerindeki sıra numarasını
+        gösterir (1'den başlar). `stopId` ile sorgulandığında durak birden fazla hatta
+        geçebileceğinden birden fazla kayıt dönebilir (farklı `orderId` ile).
+
+        **lineCode + stopId birlikte kullanımı:** Tek kayıt döner; o hattaki orderId
+        ile birlikte gelir. Her iki filtreyi birden kullanarak spesifik konumu alabilirsiniz.
+      required: [stopId, stopName, orderId, latitude, longitude]
       properties:
         stopId:
           type: string
-          description: Durak ID'si
-          example: "800"
+          description: >
+            Durak kimlik numarası. `SmartStations` endpoint'inin `stationId`
+            parametresiyle aynı değerdir.
+          example: "5392"
         stopName:
           type: string
-          description: Durak adı
-          example: "İLK DURAK"
+          description: >
+            Durak adı. Format genellikle `"<durak_kodu> - <açıklama>"` şeklindedir
+            (örn. `"32561 - ŞEHİT YÜZBAŞI TUNÇ FİDANERİ İÖO"`).
+          example: "32561 - ŞEHİT YÜZBAŞI TUNÇ FİDANERİ İÖO"
         orderId:
           type: string
-          description: Sıra numarası
-          example: "0"
+          description: >
+            Durak sıra numarası. `lineCode` ile sorgularda 1'den başlar.
+            Parametresiz sorgularda 0 olabilir.
+          example: "1"
         latitude:
           type: string
-          description: Enlem
-          example: "41.2915"
+          description: Enlem (WGS84). Samsun için ~41.xx aralığında.
+          example: "41.326801248568"
         longitude:
           type: string
-          description: Boylam
-          example: "36.3374"
+          description: Boylam (WGS84). Samsun için ~36.xx aralığında.
+          example: "36.236367954589"
 
-    RealTimeItem:
-      type: object
-      description: Canlı araç konumu (gerçek ASIS yanıt formatı)
-      properties:
-        plaka:
-          type: string
-          description: Araç plakası
-          example: "55 APK 901"
-        enlem:
-          type: string
-          description: Enlem (latitude)
-          example: "41.45349167"
-        boylam:
-          type: string
-          description: Boylam (longitude)
-          example: "36.12655833"
-        renk:
-          type: string
-          description: Harita ikonunda kullanılacak renk (hex)
-          example: "00FF00"
-        hiz:
-          type: string
-          description: Anlık hız (km/s)
-          example: "68.00"
-        mesafe:
-          type: string
-          description: Toplam kat edilen mesafe (metre)
-          example: "227523"
-        surucu:
-          type: string
-          description: Şoför adı ve telefon numarası (KVKK dikkat!)
-          example: "MUSTAFA ATEŞ ((535)359 34 60)"
-        gunlukYolcu:
-          type: string
-          description: Günlük toplam taşınan yolcu
-          example: "443"
-        seferYolcu:
-          type: string
-          description: Bu seferde taşınan yolcu
-          example: "47"
-        durakYolcu:
-          type: string
-          description: Durakta bekleyen yolcu sayısı
-          example: "0"
-        toplamHasilat:
-          type: string
-          description: Günlük toplam hasılat (TL)
-          example: "3618.00"
-        maxHiz:
-          type: string
-          description: Günlük maksimum hız (km/s)
-          example: "81"
-        yon:
-          type: string
-          description: Aracın yönü (derece, 0-360)
-          example: "126"
-        editDate:
-          type: string
-          description: Son güncelleme zamanı (ISO 8601)
-          example: "2026-03-02T16:50:20.533+03:00"
-        ImageUrl:
-          type: string
-          description: Harita ikonu URL'si
-          example: "images/icon/green_bus.gif"
-        HatKodu:
-          type: string
-          description: Hat kodu (aracın bağlı olduğu hat)
-          example: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
-        validatorNo:
-          type: string
-          description: Validatör (bilet okuyucu) numarası
-          example: "111"
-        tarih:
-          type: string
-          description: Konum verisinin zamanı (ISO 8601)
-          example: "2026-03-02T16:50:12+03:00"
-
-    ScheduleItem:
-      type: object
-      description: Sefer saati (gerçek ASIS yanıt formatı)
-      properties:
-        cizelgekodu:
-          type: string
-          description: Çizelge (program) kodu
-          example: "CZL001"
-        hatkodu:
-          type: string
-          description: Hat kodu
-          example: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
-        saat:
-          type: string
-          description: Kalkış saati (HH:MM)
-          example: "06:30"
-        yon:
-          type: string
-          description: Yön bilgisi
-          example: "gidis"
-
+    # ── Akıllı Durak (SmartStations) ──────────────────────────────
     SmartStationItem:
       type: object
-      description: Akıllı durak ekranında gösterilen durağa yaklaşan araç bilgisi
+      description: >
+        Bir durağa yaklaşan **canlı** araç bilgisi.
+        Bu veri fiziksel akıllı durak ekranlarıyla aynı kaynaktan gelir.
+
+        **Yorumlama Rehberi:**
+        - `RemainingTimeCurr`: En yakın aracın tahmini varış süresi (dakika).
+          `"0"` = araç durağa ulaştı veya çok yakın.
+        - `RemainingTimeNext`: İkinci aracın tahmini varış süresi.
+          `"60"` veya `"61"` = planlanmış ama henüz yola çıkmamış.
+        - `IsAccordingToTimeSchedule`: `"A"` = çizelgeye uygun.
+        - `BusStatusCurr/Next`: `"0"` = normal. Diğer değerler: arıza/gecikme kodu.
+        - `distance`: Ham mesafe değeri (çok büyük sayılar gelebilir, güvenilirliği sınırlı).
+        - `latitude`/`longitude`: Aracın **anlık** konumu (WGS84, ~41.xx / ~36.xx).
+        - `direction`: Aracın **pusula derecesi** (0–360, integer string).
+        - `speed`: Aracın anlık hızı (km/s, integer string).
+      required: [BusLineCode, BusLineNo, BusLineShortName, panelId]
       properties:
         BusLineCode:
           type: string
-          description: Hat kodu ve adı
-          example: "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU (137)"
+          description: >
+            Hat kodu ve adı. Format: `"<hat_adı> (<sayı>)"`.
+            Parantez içindeki sayı iç bir referans numarasıdır.
+            Windows-1254 kaynaklı karakter bozuklukları olabilir; Türkçe düzeltmesi önerilir.
+          example: "13 SOĞUKSU - KAMALI TOKİ (275)"
         BusLineNo:
           type: string
-          description: Hat numarası
-          example: "85"
+          description: Hat numarası.
+          example: "36"
         BusLineShortName:
           type: string
-          description: Kısa hat adı (GTFS route_short_name)
-          example: "365"
+          description: GTFS kısa hat kodu.
+          example: "338"
         panelId:
           type: string
-          description: Akıllı durak panel numarası
-          example: "5328"
+          description: Sorgulanan durak/panel kimliği. `StopsStations`'daki `stopId` ile aynıdır.
+          example: "6119"
         RemainingTimeCurr:
           type: string
-          description: En yakın aracın tahmini varış süresi (dakika)
+          description: En yakın aracın tahmini varış süresi (dakika). `"0"` = durağa geldi/çok yakın.
           example: "1"
         RemainingTimeNext:
           type: string
-          description: İkinci en yakın aracın tahmini varış süresi (dakika)
+          description: İkinci en yakın aracın tahmini varış süresi (dakika). `"61"` tipik bekleme değeri.
           example: "61"
         IsAccordingToTimeSchedule:
           type: string
-          description: Zaman çizelgesine uygunluk (A=Uygun)
+          description: Çizelgeye uygunluk. `"A"` = uygun.
           example: "A"
         BusStatusCurr:
           type: string
-          description: Mevcut aracın durumu (0=normal)
+          description: Mevcut aracın operasyonel durumu. `"0"` = normal.
           example: "0"
         BusStatusNext:
           type: string
-          description: Sonraki aracın durumu
+          description: Sonraki aracın operasyonel durumu. `"0"` = normal.
           example: "0"
         distance:
           type: string
-          description: Araç ile durak arasındaki mesafe
-          example: "549480906"
+          description: >
+            Araç ile durak arasındaki ham mesafe değeri.
+            Çok büyük sayılar gelebilir (örn. `"27136011373"`); hesaplama güvenilirliği sınırlıdır.
+          example: "381753479"
         RemainingNumberOfBusStops:
           type: string
-          description: Aracın bu durağa kaç durak kaldığı
+          description: >
+            Araç bu durağa kaç durak kaldığı. `"0"` = araç şu an durağın önünde.
           example: "15"
         latitude:
           type: string
-          description: Aracın enlemi
+          description: Aracın anlık enlemi (WGS84). Samsun için ~41.xx.
           example: "41.37006833"
         longitude:
           type: string
-          description: Aracın boylamı
+          description: Aracın anlık boylamı (WGS84). Samsun için ~36.xx.
           example: "36.22803333"
         speed:
           type: string
-          description: Aracın anlık hızı (km/s)
+          description: Aracın anlık hızı (km/s).
           example: "51"
         direction:
           type: string
-          description: Aracın yön derecesi
+          description: Aracın pusula yönü (0–360 derece, 0=Kuzey, 90=Doğu, 180=Güney, 270=Batı).
           example: "157"
 
+    # ── Hat Yön Kaydı (LineDirections) ────────────────────────────
+    LineDirectionItem:
+      type: object
+      description: >
+        Bir hattın durak bazındaki yön/güzergah kaydı.
+
+        **KRİTİK UYARI — Filtre Çalışmıyor:**
+        `lineCode` parametresi ne gönderilirse gönderilsin (gerçek hat, sahte kod)
+        daima **tüm sistemdeki 8557 kayıt** döner. Sunucu taraflı filtreleme yoktur.
+        **İstemci tarafında `lineCode` alanına göre filtreleme zorunludur.**
+
+        Bu endpoint'in amacı: Tüm hatların güzergah/durak sırası ile yön verisi.
+      properties:
+        Direction:
+          type: string
+          description: >
+            Hat yön tipi. Tespit edilen üç değer:
+            - `"FORWARD"`: Gidiş yönü
+            - `"BACKWARD"`: Dönüş yönü
+            - `"CIRCULAR"`: Dairesel/ring hat
+          enum: [FORWARD, BACKWARD, CIRCULAR]
+          example: "FORWARD"
+        lineCode:
+          type: string
+          description: >
+            Kaydın ait olduğu hat kodu. İstemci filtrelemesi için bu alan kullanılır.
+          example: "13 TOKİ-BL.EVLERİ"
+        lineNo:
+          type: string
+          description: Hat numarası.
+          example: "35"
+        stopName:
+          type: string
+          description: Durağın adı.
+          example: "32561 - ŞEHİT YÜZBAŞI TUNÇ FİDANERİ İÖO"
+        orderId:
+          type: string
+          description: Bu durağın hat üzerindeki sıra numarası.
+          example: "1"
+        durakId:
+          type: string
+          description: >
+            Durağın kimlik numarası. `StopsStations.stopId` ve
+            `SmartStations.stationId` ile aynı değerdir.
+          example: "5392"
+
+    # ── Canlı Araç Konumu (RealTimeData) ──────────────────────────
+    RealTimeItem:
+      type: object
+      description: >
+        Hatta aktif olarak sefer yapan bir aracın anlık verisi.
+
+        **yon Alanı:** `"gidis"/"donus"` değil, **0–360 arası pusula derecesidir.**
+        Hareket yönünü gösterir (0=Kuzey, 90=Doğu, 180=Güney, 270=Batı).
+        Örnek değerler: `"47"`, `"248"`, `"0"`, `"72"`, `"270"`.
+
+        **KVKK Uyarısı:** `surucu` alanı sürücünün **ad-soyad ve cep telefonu numarasını**
+        açık metin içerir. Kullanıcı arayüzünde gösterilmesi önerilmez.
+      properties:
+        plaka:
+          type: string
+          description: Aracın plaka numarası.
+          example: "55 APK 902"
+        enlem:
+          type: string
+          description: Aracın anlık enlemi (WGS84, ~41.xx).
+          example: "41.36777833"
+        boylam:
+          type: string
+          description: Aracın anlık boylamı (WGS84, ~36.xx).
+          example: "36.18768167"
+        renk:
+          type: string
+          description: >
+            Harita ikonunda kullanılan renk kodu (hex, # olmadan).
+            Tespit edilen değerler: `"00FF00"` (yeşil=normal), `"FF0000"` (kırmızı=dikkat),
+            `"FFFF00"` (sarı=uyarı).
+          example: "00FF00"
+        hiz:
+          type: string
+          description: Anlık hız (km/s, iki ondalık basamaklı string). `"0.00"` = araç duruyor.
+          example: "67.00"
+        mesafe:
+          type: string
+          description: Aracın günlük toplam kat ettiği mesafe (metre).
+          example: "129120"
+        surucu:
+          type: string
+          description: >
+            **⚠ KVKK:** Sürücü adı ve telefon numarası. Format: `"AD SOYAD ((5XX)XXX XX XX)"`.
+            Kullanıcıya gösterilmesi önerilmez.
+          example: "EMRE KAYIRICI ((542)390 45 77)"
+        gunlukYolcu:
+          type: string
+          description: Araçın günlük toplam taşıdığı yolcu sayısı.
+          example: "492"
+        seferYolcu:
+          type: string
+          description: Mevcut seferde taşınan yolcu sayısı.
+          example: "151"
+        durakYolcu:
+          type: string
+          description: Şu an durağa inen/binen yolcu sayısı.
+          example: "0"
+        toplamHasilat:
+          type: string
+          description: >
+            Günlük toplam hasılat (TL). Float string olarak gelir.
+            **Not:** Test scriptinde koordinat analiz fonksiyonu bu alanı yanlışlıkla
+            koordinat olarak işaretledi — koordinat değil, TL hasılat değeridir.
+          example: "3210.02"
+        maxHiz:
+          type: string
+          description: Günlük maksimum hız (km/s, integer string).
+          example: "72"
+        yon:
+          type: string
+          description: >
+            **Pusula derecesi (0–360).** `"gidis"/"donus"` değildir.
+            0 = Kuzey, 90 = Doğu, 180 = Güney, 270 = Batı.
+            Tespit edilen örnek değerler: `"47"`, `"248"`, `"0"`, `"72"`, `"270"`, `"333"`.
+          example: "47"
+        editDate:
+          type: string
+          format: date-time
+          description: Konumun son güncellenme zamanı (ISO 8601, +03:00 saat dilimi).
+          example: "2026-03-05T14:21:15.063+03:00"
+        ImageUrl:
+          type: string
+          description: Harita ikonu URL'si (göreli yol). Renk ile uyumludur.
+          example: "images/icon/green_bus.gif"
+        HatKodu:
+          type: string
+          description: Aracın bağlı olduğu hat kodu. `lineCode` ile aynı değer.
+          example: "SAMULAŞ EKSPRES D"
+        validatorNo:
+          type: string
+          description: Araçtaki bilet okuyucu (validator) cihaz numarası.
+          example: "112"
+        tarih:
+          type: string
+          format: date-time
+          description: Konum verisinin zaman damgası (ISO 8601, +03:00 saat dilimi).
+          example: "2026-03-05T14:21:10+03:00"
+
+    # ── Sefer Saati Kaydı (Schedules) ─────────────────────────────
+    ScheduleItem:
+      type: object
+      description: >
+        Bir hattın ilk durağından kalkış saati kaydı.
+
+        **cizelgekodu Notu:** Alan adı "çizelge kodu" anlamına gelse de gerçekte
+        hat kodunu taşır (`hatkodu` ile aynı değerdir). Program/çizelge ID'si değildir.
+
+        **yon Notu:** `"gidis"/"donus"` değil, tek harf `"G"` (gidiş) veya `"D"` (dönüş).
+        `"G"` = hattın gidiş yönündeki seferler, `"D"` = dönüş yönündeki seferler.
+        Gidiş ve dönüş hatları ayrı `lineCode` değerleriyle sorgulanır (ör. "13 TOKİ-BL.EVLERİ"
+        ve "13  BL.EVLERİ-TOKİ"); dolayısıyla tek hattan gelen tüm kayıtlar aynı `yon` değerini taşır.
+      required: [cizelgekodu, hatkodu, saat, yon]
+      properties:
+        cizelgekodu:
+          type: string
+          description: >
+            Hat kodu. İsim "çizelge kodu" olsa da `hatkodu` ile aynı değeri taşır.
+            Bağımsız bir program/çizelge kimliği değildir.
+          example: "13 TOKİ-BL.EVLERİ"
+        hatkodu:
+          type: string
+          description: Hat kodu (`cizelgekodu` ile aynı değer).
+          example: "13 TOKİ-BL.EVLERİ"
+        saat:
+          type: string
+          description: >
+            Kalkış saati. Format: `"HH:MM"` (24 saat).
+            API sıralı dönmeyebilir; uygulamada sıralama yapılmalıdır.
+          pattern: '^\d{2}:\d{2}$'
+          example: "15:30"
+        yon:
+          type: string
+          description: >
+            Yön. **`"G"` = Gidiş, `"D"` = Dönüş.**
+            Şemada `"gidis"/"donus"` yazıyordu; gerçek değer tek harftir.
+          enum: ["G", "D"]
+          example: "G"
+
+# ═══════════════════════════════════════════════════════════════════
 paths:
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/Lines:
     get:
       operationId: getLines
-      tags: [ASİS - Hat ve Güzergah]
-      summary: Tüm Aktif Hatları Getir
+      tags: [Hatlar]
+      summary: Aktif Hat Listesi
       description: >
-        Sistemde tanımlı olan tüm toplu taşıma hatlarının
-        (Otobüs, Ekspres, Ring vb.) listesini döndürür.
+        Sistemde operasyonel olan 74 hattı döndürür.
+        Duraklanmış, pasif veya arşivlenmiş hatlar dahil değildir.
+
+        **OrjLines ile Fark:**
+        - `Lines` = 74 aktif hat, `tip` (gidis/donus) alanı içerir, `shortLineName` GTFS kısa kodu.
+        - `OrjLines` = 134 toplam hat, `tip` yoktur, `shortLineName` tam hat adı, `totalRow` ek alanı.
+
+        **Yanıt:** `{statusCode: 200, message: "", data: [LineItem]}`
+
+        **Dikkat:** Zarftaki `statusCode` bazı durumlarda `500` gelebilir (HTTP 200 olsa da).
       responses:
         '200':
-          description: Hat listesi
+          description: Hat listesi başarıyla döndü.
           content:
             application/json:
               schema:
@@ -321,69 +546,111 @@ paths:
                     lineName: "13 KAMALI TOKİ - SOĞUKSU"
                     shortLineName: "339"
                     tip: "donus"
-                  - lineCode: "SAMULAŞ EKSPRES"
-                    lineNo: "158"
-                    lineName: "E1 OMÜ - SOĞUKSU"
-                    shortLineName: "302"
-                    tip: "donus"
-        '400':
-          description: Geçersiz istek
+                  - lineCode: "13  BL.EVLERİ-TOKİ"
+                    lineNo: "36"
+                    lineName: "13 SOĞUKSU - KAMALI TOKİ"
+                    shortLineName: "338"
+                    tip: "gidis"
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/OrjLines:
     get:
       operationId: getOrjLines
-      tags: [ASİS - Hat ve Güzergah]
-      summary: Orijinal Hat Listesini Getir
-      description: Asis sistemindeki filtrelenmemiş/ham orijinal hat verilerini döndürür.
+      tags: [Hatlar]
+      summary: Tüm Hat Listesi (Ham/Orijinal)
+      description: >
+        Aktif/pasif tüm 134 hattı içeren ham listeyi döndürür.
+
+        **Lines ile farkları:**
+        1. `tip` alanı **yoktur** (gidiş/dönüş belirtilmez).
+        2. `shortLineName` GTFS kısa kodu değil, **tam hat adını** taşır.
+        3. Yanıt zarfında `totalRow` ek alanı bulunur.
+        4. 134 kayıt (Lines'ın 74'ünün yaklaşık iki katı).
+
+        **Yanıt:** `{statusCode: 200, message: "", totalRow: 134, data: [LineItem (tip yok)]}`
       responses:
         '200':
-          description: Ham hat listesi
+          description: Ham hat listesi başarıyla döndü.
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/ApiResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/LineItem'
-        '400':
-          description: Geçersiz istek
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: ""
+                  totalRow:
+                    type: integer
+                    description: Toplam kayıt sayısı. Yalnızca OrjLines yanıtında bulunur.
+                    example: 134
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LineItem'
+              example:
+                statusCode: 200
+                message: ""
+                totalRow: 134
+                data:
+                  - lineCode: "15/A BÜYÜK CAMİ-SOĞUKSU"
+                    lineNo: "69"
+                    lineName: "15 BÜYÜK CAMİ - SOĞUKSU"
+                    shortLineName: "15 BÜYÜK CAMİ - SOĞUKSU"
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/StopsStations:
     get:
       operationId: getStopsStations
-      tags: [ASİS - Durak]
-      summary: Durak Bilgilerini Sorgula (Statik)
+      tags: [Duraklar]
+      summary: Durak Bilgileri (Statik Konum ve Ad)
       description: >
-        **STATİK VERİ:** Belirli bir hatta ait tüm durakların veya
-        belirli bir durağa ait statik bilgileri (ad, koordinat, sıra) getirir.
+        Durak/istasyon bilgilerini döndürür. Canlı araç takibi **yapmaz**.
+        Canlı araç için `SmartStations` kullanın.
 
-        **Önemli:** Bu endpoint canlı araç takibi YAPMAZ.
-        Canlı araç bilgisi için `SmartStations` endpoint'ini kullanın.
+        ## Parametre Kombinasyonları ve Sonuçları
 
-        **stopId == stationId:** Her iki endpoint de aynı durak ID'sini
-        kullanır. Örneğin `stopId=5328` ile durağın adını/konumunu alın,
-        sonra `stationId=5328` ile o durağa yaklaşan otobüsleri çekin.
-        (Kaynak: mobil.samsun.bel.tr/QRDurak.php)
+        | lineCode | stopId | Sonuç |
+        |----------|--------|-------|
+        | ✓ var | — | Hattaki tüm duraklar (orderId ile sıralı) |
+        | — | ✓ var (>0) | O durağın geçtiği tüm hatlar (birden fazla kayıt olabilir) |
+        | ✓ var | ✓ var | Tek kayıt: o hattaki o durağın konumu ve orderId'si |
+        | — | — | Tüm 4522 durak |
+        | — | 0 veya negatif | Tüm 4522 durak (0/-1 = parametresiz gibi davranır) |
+        | — | 99999 (geçersiz) | Boş liste, statusCode=200 |
+
+        **Önemli:** `stopId=0` veya `stopId=-1` hata döndürmez; tümünü getirir.
+        Uygulama katmanında `stopId > 0` doğrulaması yapılmalıdır.
+
+        **stopId == stationId:** Bu endpoint'teki `stopId` değeri, `SmartStations`
+        endpoint'indeki `stationId` parametresiyle aynıdır.
       parameters:
         - name: lineCode
           in: query
+          required: false
           schema:
             type: string
-          description: Sorgulanacak hattın tam kodu
+          description: >
+            Hat kodu. `Lines` endpoint'inden alınan `lineCode` değeri kullanılır.
+            **Boşluk hassasiyeti:** `"13  BL.EVLERİ-TOKİ"` (çift boşluk içeren) gibi
+            kodlar URL encode ile tam eşleşme gerektirir.
           example: "13 TOKİ-BL.EVLERİ"
         - name: stopId
           in: query
+          required: false
           schema:
             type: integer
-          description: Spesifik durağın ID numarası
-          example: 800
+            format: int32
+            minimum: 1
+          description: >
+            Durak kimlik numarası. **1 ve üzeri olmalıdır.**
+            0 veya negatif değer, tüm 4522 durağı getirir (beklenmedik davranış).
+          example: 6119
       responses:
         '200':
-          description: Durak veri seti
+          description: Durak listesi döndü.
           content:
             application/json:
               schema:
@@ -399,40 +666,48 @@ paths:
                 statusCode: 200
                 message: ""
                 data:
-                  - stopId: "800"
-                    stopName: "İLK DURAK"
-                    orderId: "0"
-                    latitude: "41.2915"
-                    longitude: "36.3374"
-        '400':
-          description: Geçersiz istek
+                  - stopId: "5392"
+                    stopName: "32561 - ŞEHİT YÜZBAŞI TUNÇ FİDANERİ İÖO"
+                    orderId: "1"
+                    latitude: "41.326801248568"
+                    longitude: "36.236367954589"
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/SmartStations:
     get:
       operationId: getSmartStations
-      tags: [ASİS - Durak]
-      summary: Durağa Yaklaşan Otobüsler (Canlı)
+      tags: [Duraklar]
+      summary: Durağa Yaklaşan Araçlar (Canlı)
       description: >
-        **CANLI VERİ:** Belirtilen durak paneline yaklaşan otobüslerin
-        gerçek zamanlı bilgilerini döndürür: hat adı, tahmini varış süresi,
-        kalan durak sayısı, otobüsün anlık konumu ve hızı.
+        Belirtilen durağa yaklaşan araçların **gerçek zamanlı** verilerini döndürür.
+        Fiziksel akıllı durak ekranlarıyla aynı veri kaynağını kullanır.
 
-        Fiziksel akıllı durak ekranlarındaki bilgilendirme verilerini
-        dijital ortamda simüle eder.
+        **Parametresiz çağrı:** HTTP 200 döner ama `data: []` gelir.
 
-        **stationId == stopId:** `StopsStations` endpoint'indeki
-        `stopId` ile aynı numarayı kullanır.
-        (Kaynak: mobil.samsun.bel.tr/QRDurak.php)
+        **stationId == stopId:** `StopsStations`'daki `stopId` ile aynı değerdir.
+        Durak adı/koordinatı için önce `StopsStations?stopId=X` çağrısı yapın,
+        sonra `SmartStations?stationId=X` ile canlı araç bilgisi alın.
+
+        **Boş sonuç ne anlama gelir?** Durağa yaklaşan araç yoktur veya
+        durak henüz akıllı sisteme bağlı değildir.
+
+        **Yanıt formatı her zaman aynıdır:**
+        `{statusCode: 200, message: "", data: [...]}` — kayıt olsun ya da olmasın.
       parameters:
         - name: stationId
           in: query
+          required: false
           schema:
             type: integer
-          description: Durak/Panel Kimlik Numarası (stopId ile aynı)
-          example: 5328
+            format: int32
+            minimum: 1
+          description: >
+            Durak/panel kimlik numarası. `StopsStations.stopId` ile aynı değer.
+            Parametresiz çağrı boş sonuç döndürür (hata değil).
+          example: 6119
       responses:
         '200':
-          description: Akıllı durak verisi
+          description: Akıllı durak verisi döndü. Durağa araç yoksa `data: []`.
           content:
             application/json:
               schema:
@@ -448,46 +723,70 @@ paths:
                 statusCode: 200
                 message: ""
                 data:
-                  - BusLineCode: "26 OMÜ - EĞİTİM ARAŞTIRMA - SOĞUKSU (137)"
-                    BusLineNo: "85"
-                    BusLineShortName: "365"
-                    panelId: "5328"
-                    RemainingTimeCurr: "1"
-                    RemainingTimeNext: "61"
+                  - BusLineCode: "13 SOĞUKSU - KAMALI TOKİ (275)"
+                    BusLineNo: "36"
+                    BusLineShortName: "338"
+                    panelId: "6119"
+                    RemainingTimeCurr: "0"
+                    RemainingTimeNext: "60"
                     IsAccordingToTimeSchedule: "A"
                     BusStatusCurr: "0"
                     BusStatusNext: "0"
-                    distance: "549480906"
-                    RemainingNumberOfBusStops: "15"
-                    latitude: "41.37006833"
-                    longitude: "36.22803333"
-                    speed: "51"
-                    direction: "157"
-        '400':
-          description: Geçersiz istek
+                    distance: "0"
+                    RemainingNumberOfBusStops: "0"
+                    latitude: "41.26631333"
+                    longitude: "36.35035833"
+                    speed: "17"
+                    direction: "71"
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/LineDirections:
     get:
       operationId: getLineDirections
-      tags: [ASİS - Hat ve Güzergah]
-      summary: Hat Yön Bilgilerini Getir
+      tags: [Hat Güzergahı]
+      summary: Tüm Hatların Yön ve Güzergah Verisi
       description: >
-        Belirtilen hattın Gidiş (Forward) ve Dönüş (Backward) olmak üzere
-        operasyonel yön bilgilerini verir.
+        **⚠ KRİTİK UYARI — SUNUCU TARAFI FİLTRE ÇALIŞMIYOR:**
+
+        `lineCode` parametresi gönderilmesi **zorunludur** (boş string veya parametresiz = HTTP 400).
+        Ancak parametre değerinin **hiçbir önemi yoktur** — gerçek hat kodu, yanlış kod,
+        sahte kod fark etmez; her durumda **tüm sisteme ait 8557 kayıt** döner.
+
+        **Bu endpoint'i doğru kullanmak için:**
+        1. Herhangi bir geçerli `lineCode` ile çağırın (tüm veriyi çekmek için).
+        2. Dönen 8557 kayıt içinde `lineCode` alanına göre **istemci tarafında filtreleyin**.
+
+        **Direction Değerleri:**
+        - `"FORWARD"`: Gidiş yönü
+        - `"BACKWARD"`: Dönüş yönü
+        - `"CIRCULAR"`: Dairesel/ring hat (başlangıç = bitiş)
       parameters:
         - name: lineCode
           in: query
+          required: true
           schema:
             type: string
-          description: Yön bilgileri istenen hat kodu
-          example: "KAMALI TOP.KONT."
+            minLength: 1
+          description: >
+            **Zorunludur** (yoksa veya boş string = HTTP 400).
+            Ancak değeri filtrelemeyi **etkilemez**; daima tüm 8557 kayıt döner.
+            Herhangi geçerli bir hat kodu kullanılabilir.
+          example: "13 TOKİ-BL.EVLERİ"
       responses:
         '200':
-          description: Hat yön bilgileri
+          description: >
+            Tüm sisteme ait yön/güzergah verisi. Her zaman ~8557 kayıt döner.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponse'
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LineDirectionItem'
               example:
                 statusCode: 200
                 message: ""
@@ -498,27 +797,57 @@ paths:
                     stopName: "İLK DURAK"
                     orderId: "0"
                     durakId: "800"
+                  - Direction: "FORWARD"
+                    lineCode: "13 TOKİ-BL.EVLERİ"
+                    lineNo: "35"
+                    stopName: "32561 - ŞEHİT YÜZBAŞI TUNÇ FİDANERİ İÖO"
+                    orderId: "1"
+                    durakId: "5392"
         '400':
-          description: Geçersiz istek
+          description: >
+            `lineCode` parametresi eksik veya boş string.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/RealTimeData:
     get:
       operationId: getRealTimeData
-      tags: [ASİS - Canlı Araç Takibi]
-      summary: Canlı Araç Konumları
+      tags: [Canlı Araç Takibi]
+      summary: Hattaki Araçların Anlık Konumları
       description: >
-        Seçilen hatta şu anda aktif olarak hizmet veren araçların
-        anlık GPS koordinatlarını ve plaka bilgilerini döndürür.
+        Belirtilen hatta şu an aktif sefer yapan araçların GPS verilerini döndürür.
+
+        **`lineCode` zorunludur.** Parametresiz veya boş string = HTTP 400.
+
+        **`yon` alanı pusula derecesidir (0–360).** `"gidis"/"donus"` değildir.
+        Harita üzerinde araç yönü için bu değeri kullanın.
+        Aracın gidişat yönünü belirlemek için hat kodu sonekine bakın
+        (GİDİŞ/DÖNÜŞ veya gidiş/dönüş hat kodu çifti kullanın).
+
+        **`renk` alanı araç durumunu gösterir:**
+        - `"00FF00"` (yeşil) = normal
+        - `"FF0000"` (kırmızı) = dikkat
+        - `"FFFF00"` (sarı) = uyarı
+
+        **Araçsız hat:** HTTP 200, `data: []` döner.
       parameters:
         - name: lineCode
           in: query
+          required: true
           schema:
             type: string
-          description: Araçları takip edilecek hattın kodu
-          example: "SAMULAŞ EKSPRES 4-GİDİŞ"
+            minLength: 1
+          description: >
+            Araçları takip edilecek hattın kodu. `Lines` endpoint'inden alınır.
+            **Zorunludur** — eksik veya boş = HTTP 400.
+          example: "SAMULAŞ EKSPRES D"
       responses:
         '200':
-          description: Anlık lokasyon verisi
+          description: >
+            Anlık araç konumları. Hatta araç yoksa `data: []`.
           content:
             application/json:
               schema:
@@ -534,52 +863,89 @@ paths:
                 statusCode: 200
                 message: ""
                 data:
-                  - plaka: "55 APK 901"
-                    enlem: "41.45349167"
-                    boylam: "36.12655833"
+                  - plaka: "55 APK 902"
+                    enlem: "41.36777833"
+                    boylam: "36.18768167"
                     renk: "00FF00"
-                    hiz: "68.00"
-                    mesafe: "227523"
-                    surucu: "MUSTAFA ATEŞ ((535)359 34 60)"
-                    gunlukYolcu: "443"
-                    seferYolcu: "47"
+                    hiz: "67.00"
+                    mesafe: "129120"
+                    surucu: "AD SOYAD ((5XX)XXX XX XX)"
+                    gunlukYolcu: "492"
+                    seferYolcu: "151"
                     durakYolcu: "0"
-                    toplamHasilat: "3618.00"
-                    maxHiz: "81"
-                    yon: "126"
-                    editDate: "2026-03-02T16:50:20.533+03:00"
+                    toplamHasilat: "3210.02"
+                    maxHiz: "72"
+                    yon: "47"
+                    editDate: "2026-03-05T14:21:15.063+03:00"
                     ImageUrl: "images/icon/green_bus.gif"
-                    HatKodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
-                    validatorNo: "111"
-                    tarih: "2026-03-02T16:50:12+03:00"
+                    HatKodu: "SAMULAŞ EKSPRES D"
+                    validatorNo: "112"
+                    tarih: "2026-03-05T14:21:10+03:00"
         '400':
-          description: Geçersiz istek
+          description: >
+            `lineCode` parametresi eksik veya boş string.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
 
+  # ─────────────────────────────────────────────────────────────────
   /api/Asis/Schedules:
     get:
       operationId: getSchedules
-      tags: [ASİS - Sefer Saatleri]
-      summary: Hareket Saatleri Planlaması
+      tags: [Sefer Saatleri]
+      summary: Hat Sefer Saatleri (Aktif Çizelge)
       description: >
-        Otobüs veya tramvayların ilk duraktan kalkış saatleri planını
-        günlük formatta verir.
+        Bir hattın ilk durağından kalkış saatlerini döndürür.
+
+        ## Zorunlu Parametre Kombinasyonu
+
+        `lineCode` **ve** `scheduleDate` **birlikte gönderilmek zorundadır.**
+        Biri eksikse HTTP 200 alınır ama zarftaki `statusCode=500` olur ve `data: []` gelir.
+
+        ## scheduleDate Hakkında Kritik Not
+
+        `scheduleDate` parametresi **zorunludur** ama **etkisizdir**.
+        Dün, bugün veya yarının tarihi gönderilmesi sonucu **değiştirmez**.
+        API daima **aktif çizelge programını** döndürür.
+
+        `date` formatı (`"2026-03-05"`) yeterlidir.
+        `date-time` formatı (`"2026-03-05T00:00:00"`) da kabul edilir.
+
+        ## Yanıt Alanları Hakkında
+
+        - `cizelgekodu`: Alan adı yanıltıcıdır — hat kodunu taşır, çizelge ID'si değildir.
+        - `yon`: `"G"` (gidiş) veya `"D"` (dönüş). `"gidis"/"donus"` değildir.
+        - Sefer saatleri sırasız gelebilir; uygulamada saat sıralaması yapılmalıdır.
       parameters:
         - name: lineCode
           in: query
+          required: true
           schema:
             type: string
-          description: Sefer saatleri istenen hattın kodu
-          example: "E1 OMÜ-SOĞUKSU"
+            minLength: 1
+          description: >
+            Hat kodu. **Zorunludur** — eksikse statusCode=500, data=[].
+          example: "13 TOKİ-BL.EVLERİ"
         - name: scheduleDate
           in: query
+          required: true
           schema:
             type: string
-            format: date
-          description: Sorgulanacak günün tarihi (YYYY-MM-DD)
-          example: "2026-02-27"
+          description: >
+            Tarih parametresi. **Zorunludur** — eksikse statusCode=500, data=[].
+            Ancak **değeri sonucu etkilemez**; her tarih için aynı aktif çizelge döner.
+
+            Kabul edilen formatlar:
+            - `"2026-03-05"` (date — önerilir)
+            - `"2026-03-05T00:00:00"` (date-time — da çalışır)
+          example: "2026-03-05"
       responses:
         '200':
-          description: Sefer planı listesi
+          description: >
+            Sefer saatleri listesi.
+            Her iki parametre varsa ve hat geçerliyse sefer saatleri gelir.
+            Parametre eksikse HTTP 200 ama `statusCode=500`, `data=[]`.
           content:
             application/json:
               schema:
@@ -591,314 +957,55 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/ScheduleItem'
-              example:
-                statusCode: 200
-                message: ""
-                data:
-                  - cizelgekodu: "CZL001"
-                    hatkodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
-                    saat: "06:30"
-                    yon: "gidis"
-                  - cizelgekodu: "CZL001"
-                    hatkodu: "SAMULAŞ EKSPRES 2-DÖNÜŞ"
-                    saat: "07:00"
-                    yon: "gidis"
-        '400':
-          description: Geçersiz istek
+              examples:
+                basarili:
+                  summary: Başarılı yanıt (her iki parametre mevcut)
+                  value:
+                    statusCode: 200
+                    message: ""
+                    data:
+                      - cizelgekodu: "13 TOKİ-BL.EVLERİ"
+                        hatkodu: "13 TOKİ-BL.EVLERİ"
+                        saat: "06:30"
+                        yon: "G"
+                      - cizelgekodu: "13 TOKİ-BL.EVLERİ"
+                        hatkodu: "13 TOKİ-BL.EVLERİ"
+                        saat: "07:00"
+                        yon: "G"
+                eksik_parametre:
+                  summary: Eksik parametre (statusCode=500)
+                  value:
+                    statusCode: 500
+                    message: ""
+                    data: []
 
-  /ybs/getGuestToken:
-    get:
-      operationId: getGuestToken
-      tags: [YBS - Yetkilendirme]
-      summary: Misafir Token Al (Guest Token)
-      description: >
-        **ÖNEMLİ:** YBS servislerinin büyük çoğunluğu her istekte güncel bir
-        `token` parametresine ihtiyaç duyar. Token süresi ~200 saniyedir.
-
-        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=getGuestToken`
-      servers:
-        - url: https://ybs.samsun.bel.tr/service
-          description: YBS API Sunucusu
-      responses:
-        '200':
-          description: Misafir token
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: "ikyRM7OdnfKl"
-              example:
-                token: "ikyRM7OdnfKl"
-        '400':
-          description: Geçersiz istek
-
-  /ybs/samair-ucaksefersaatleri:
-    get:
-      operationId: getSamairFlightSchedules
-      tags: [YBS - Samair Havaalanı]
-      summary: Havaalanı Sefer Saatleri
-      description: >
-        Samair otobüslerinin uçuş saatine göre kalkış detaylarını verir.
-
-        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=samair_ucaksefersaatleri_public`
-
-        **Hat ID Mapping:**
-        - H1 OMÜ = YBS ID 3
-        - H2 TTTM = YBS ID 4
-        - H3 BAFRA = YBS ID 5
-        - H4 ÇARŞAMBA = YBS ID 9
-      servers:
-        - url: https://ybs.samsun.bel.tr/service
-          description: YBS API Sunucusu
-      parameters:
-        - name: submethod
-          in: query
-          schema:
-            type: string
-          description: Alt metod adı (örn. HatlarList)
-          example: "HatlarList"
-        - name: hatid
-          in: query
-          schema:
-            type: integer
-          description: Hat ID'si (H1=3, H2=4, H3=5, H4=9)
-          example: 3
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Geçerli YBS token'ı (getGuestToken'dan alınır)
-      responses:
-        '200':
-          description: Sefer saatleri
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "SUCCESS"
-                  data:
-                    type: array
-              example:
-                status: "SUCCESS"
-                data:
-                  - id: 21793
-                    hatid: 3
-                    saat: "00:30:00"
-                    varis_saati: "01:45:00"
-                    tarih: "2026-02-27"
-                    ucak_firmasi: "AJET"
-                    ucak_saatleri: "03:30"
-                    formatted_date: "27 Şubat 2026 Cuma"
-        '400':
-          description: Geçersiz istek
-        '401':
-          description: Token geçersiz
-
-  /ybs/samair-duraklar:
-    get:
-      operationId: getSamairStops
-      tags: [YBS - Samair Havaalanı]
-      summary: Samair Durak Listesi
-      description: >
-        Samair otobüslerine ait durak koordinatlarını ve bilet fiyatlandırmalarını listeler.
-
-        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=samair_duraklar_public`
-      servers:
-        - url: https://ybs.samsun.bel.tr/service
-          description: YBS API Sunucusu
-      parameters:
-        - name: submethod
-          in: query
-          schema:
-            type: string
-          description: Alt metod adı (örn. DuraklarList)
-          example: "DuraklarList"
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Geçerli YBS token'ı
-      responses:
-        '200':
-          description: Durak listesi
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "SUCCESS"
-                  data:
-                    type: array
-              example:
-                status: "SUCCESS"
-                data:
-                  - id: 1
-                    durak_adi: "Rektörlük Tramvay İstasyonu"
-                    durak_lat: "36.225315980358843"
-                    durak_long: "41.3718854642756"
-                    durak_kodu: "31632"
-                    durak_fiyat: "130"
-        '400':
-          description: Geçersiz istek
-
-  /ybs/odakSamsun:
-    get:
-      operationId: getOdakSamsun
-      tags: [YBS - Odak (İlçe Hatlar)]
-      summary: Odak Samsun Hat ve Durak Verileri
-      description: >
-        Turistik hatlar (Ayvacık Barajı, Şahinkaya Kanyonu vb.) ve ilçe hatları.
-
-        **Gerçek URL:** `GET https://ybs.samsun.bel.tr/service?method=odakSamsun_Crud`
-
-        **⚠️ Zorunlu Header:** `Referer: https://odak.samsun.bel.tr/`
-
-        **Gidiş/Dönüş Hatası:** Şahinkaya, Kızılırmak ve Ayvacık rotalarında
-        API Gidiş/Dönüş değerlerini ters döndürür. `ODAK_ISIM_DUZELTME` tablosu
-        ile düzeltilir.
-      servers:
-        - url: https://ybs.samsun.bel.tr/service
-          description: YBS API Sunucusu
-      parameters:
-        - name: submethod
-          in: query
-          schema:
-            type: string
-            enum: [HatlarAllList, HatlarList, GetHatDuraklar]
-          description: Alt metod adı
-          example: "HatlarAllList"
-        - name: id
-          in: query
-          schema:
-            type: integer
-          description: Hat ID'si (GetHatDuraklar için zorunlu)
-        - name: token
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Geçerli YBS token'ı
-      responses:
-        '200':
-          description: Hat ve durak verileri
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "SUCCESS"
-                  data:
-                    type: array
-              example:
-                status: "SUCCESS"
-                data:
-                  - id: 6
-                    durak_adi: "Toplu Taşıma Transfer Merkezi"
-                    durak_lat: null
-                    durak_long: null
-                    durak_kodu: "13831"
-                    durak_fiyat: "115,00"
-                    durak_fiyat_ogr: "92,00"
-        '400':
-          description: Geçersiz istek
-        '403':
-          description: Referer header eksik
-
-  /api/v1/lines/list:
-    get:
-      operationId: getSamulasLines
-      tags: [Samulaş Web API (V1)]
-      summary: Tüm Hatlar ve Kısa Kodları (Short Names)
-      description: >
-        Samulaş'ın yeni V1 API'si. GTFS route_short_name ve güzergah
-        ilk/son durak koordinatlarını sağlar.
-
-        Sunucu: `https://samulas.com.tr`
-      servers:
-        - url: https://samulas.com.tr
-          description: Samulaş Web API
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-          description: Sayfa numarası
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 500
-          description: Sayfa başına kayıt sayısı
-      responses:
-        '200':
-          description: Hat listesi
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "success"
-                  statusCode:
-                    type: integer
-                    example: 200
-                  data:
-                    type: object
-                    properties:
-                      data:
-                        type: array
-              example:
-                status: "success"
-                statusCode: 200
-                data:
-                  data:
-                    - text: "R2 CEZAEVİ-EĞİTİM ARAŞTIRMA-BÜYÜK CAMİ"
-                      id: 993
-                      line_code: "R2 CEZAEVİ-BÜYÜK CAMİ"
-                      short_line_name: "R2"
-                      first_station:
-                        station_name: "10052 - BÜYÜK CAMİ"
-                        latitude: "41.294762"
-                        longitude: "36.333906"
-                      last_station:
-                        station_name: "11872 - YENİ CEZAEVİ"
-                        latitude: "41.259421"
-                        longitude: "36.234579"
-        '400':
-          description: Geçersiz istek
-
+# ═══════════════════════════════════════════════════════════════════
 tags:
-  - name: ASİS - Hat ve Güzergah
-    description: Otobüs ve tramvay hat bilgileri
-  - name: ASİS - Durak
-    description: Durak koordinatları ve akıllı durak verileri
-  - name: ASİS - Canlı Araç Takibi
-    description: Anlık araç konumları
-  - name: ASİS - Sefer Saatleri
-    description: Günlük sefer planları
-  - name: YBS - Yetkilendirme
-    description: YBS token yönetimi
-  - name: YBS - Samair Havaalanı
-    description: Havalimanı otobüs servisleri
-  - name: YBS - Odak (İlçe Hatlar)
-    description: Turistik ve ilçe hatları
-  - name: Samulaş Web API (V1)
-    description: Samulaş GTFS zenginleştirici API
+  - name: Hatlar
+    description: >
+      Hat listeleri. `Lines` = 74 aktif hat (tip alanı var, shortLineName GTFS kodu).
+      `OrjLines` = 134 toplam hat (tip yok, shortLineName tam ad, totalRow ek alanı).
+  - name: Duraklar
+    description: >
+      `StopsStations` = statik durak bilgisi (konum, ad, sıra — canlı araç yok).
+      `SmartStations` = durağa yaklaşan canlı araçlar. Her ikisi de aynı durak ID'sini kullanır.
+  - name: Hat Güzergahı
+    description: >
+      `LineDirections` = tüm hatların yön ve güzergah verisi.
+      ⚠ lineCode filtresi sunucu tarafında çalışmaz; istemci tarafında filtreleme zorunludur.
+  - name: Canlı Araç Takibi
+    description: >
+      `RealTimeData` = hattaki araçların anlık GPS konumu. `yon` alanı 0–360 pusula derecesidir.
+  - name: Sefer Saatleri
+    description: >
+      `Schedules` = aktif çizelge saatleri. Her iki parametre zorunlu, ama scheduleDate etkisiz.
+      `yon` değeri "G" veya "D" (tek harf).
 
-# x-kaynak: Samsun Transit projesi — samsun.py
-# x-orijinal-swagger: https://api.samsun.bel.tr/OHSSoapToJson/swagger/index.html
-# x-not: Bu ortamdan API'ye erişilemiyor (Türkiye yerel sunucusu)
+# ─── Flutter/Dart Uygulama Notları ─────────────────────────────────
+# x-flutter-notes:
+#   - Tüm endpoint'ler _extractDataList() ile işlenmeli (ham liste dönmez)
+#   - getHattakiAraclar ve getDuragaYaklasanAraclar'da "data is List" kontrolü kaldırılmalı
+#   - Schedules'ta "yon == G" kontrolü yapılmalı ("gidis" değil)
+#   - RealTimeData'da "yon" pusula derecesi — "gidis/donus" dönüşümü yapılmamalı
+#   - LineDirections'tan dönen 8557 kayıt arasında lineCode'a göre istemci filtrelemesi şart
+#   - scheduleDate parametresi gereksiz kompleksilik içeriyor; herhangi tarih geçerlidir
