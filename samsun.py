@@ -2211,12 +2211,13 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .pnl-footer{padding:8px 14px;border-top:1px solid var(--card-border);font-size:.6rem;color:var(--text3);text-align:center;flex-shrink:0}
 
 /* Top bar */
-.top-bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.brand{display:flex;align-items:center;gap:8px}
+.top-bar{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.brand{display:flex;align-items:center;justify-content:center;gap:12px;width:100%}
 .brand img{height:42px;width:auto;transition:transform .2s;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
 .brand img:hover{transform:scale(1.05)}
-.top-actions{display:flex;gap:6px;align-items:center}
-.theme-btn{background:var(--bg3);border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s;color:var(--text)}
+.top-actions{display:flex;gap:8px;align-items:center;justify-content:space-between;width:100%}
+.right-btns{display:flex;gap:6px;align-items:center}
+.theme-btn{background:var(--bg3);border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s;color:var(--text);border:1px solid var(--card-border)}
 .theme-btn:hover{background:var(--accent-bg);transform:scale(1.1)}
 
 /* Warning */
@@ -2343,13 +2344,15 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
         <div class="brand">
             <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi" style="height:40px">
             <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş" style="height:40px">
-            <div id="weatherWidget" style="font-size:0.75rem;font-weight:600;display:flex;align-items:center;gap:4px;color:var(--text);margin-left:8px;padding:4px 8px;background:var(--bg3);border-radius:20px;box-shadow:var(--shadow1)">⏳ --°C</div>
         </div>
         <div class="top-actions">
-            <button class="theme-btn" id="settingsBtn" onclick="toggleSettings()" title="Ayarlar">⚙️</button>
-            <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Tema Değiştir">🌙</button>
+            <div id="weatherWidget" style="font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--text);padding:4px 10px;background:var(--bg3);border-radius:20px;box-shadow:var(--shadow1)">⏳ --°C</div>
+            <div class="right-btns">
+                <button class="theme-btn" id="settingsBtn" onclick="toggleSettings()" title="Ayarlar">⚙️</button>
+                <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Tema Değiştir">🌙</button>
+            </div>
         </div>
-        <div id="settingsPanel" style="display:none;position:absolute;top:60px;right:10px;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;box-shadow:var(--shadow2);z-index:100;width:240px;font-size:.75rem">
+        <div id="settingsPanel" style="display:none;position:absolute;top:110px;right:10px;background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px;box-shadow:var(--shadow2);z-index:100;width:240px;font-size:.75rem">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700;font-size:.85rem">⚙️ Ayarlar</div><button onclick="closeSettings()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--text)">✕</button></div>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;border-bottom:1px solid var(--card-border)"><input type="checkbox" id="chkHasilat" onchange="saveSetting('showHasilat',this.checked)" style="width:16px;height:16px;accent-color:var(--accent)"> 💰 Günlük Hasılat</label>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;border-bottom:1px solid var(--card-border)"><input type="checkbox" id="chkLabels" onchange="saveSetting('showLabels',this.checked)" style="width:16px;height:16px;accent-color:var(--accent)" checked> 🏷️ Durak İsimleri</label>
@@ -2444,7 +2447,7 @@ const clr=()=>{if(liveT)clearInterval(liveT);Object.values(M).forEach(m=>map.rem
 function showToast(msg){const x=document.getElementById("toast");x.innerText=msg;x.className="toast show";setTimeout(()=>{x.className=x.className.replace("show","")},3000)}
 
 // ===== INIT =====
-const weaI={'-9999':'❓','A':'Açık','AB':'Az Bulutlu','PB':'Parçalı Bulutlu','CB':'Çok Bulutlu','HY':'Hafif Yağmurlu','Y':'Yağmurlu','KY':'Kuvvetli Yağmurlu','KKY':'Karla Karışık Yağmurlu','HK':'Hafif Kar Yağışlı','K':'Kar Yağışlı','YY':'Yoğun Kar Yağışlı','S':'Sisli','D':'Dumanlı','P':'Puslu'};
+const weaI={'-9999':'cloudy','A':'clear-day','AB':'cloudy-1-day','PB':'cloudy-2-day','CB':'cloudy-3-day','HY':'rainy-1','Y':'rainy-2','KY':'rainy-3','KKY':'rain-and-snow-mix','HK':'snowy-1','K':'snowy-2','YY':'snowy-3','S':'fog','D':'haze','P':'haze'};
 async function fetchWeather() {
     try {
         const res = await fetch('/api/hava');
@@ -2452,8 +2455,12 @@ async function fetchWeather() {
         const wWidget = document.getElementById('weatherWidget');
         if (data && data.sicaklik) {
             const temp = Math.round(data.sicaklik);
-            const icon = weaI[data.hadise] || '☁️';
-            wWidget.innerHTML = `<span style="font-size:1.1rem">${icon}</span> ${temp}°C`;
+            const isNight = new Date().getHours() < 6 || new Date().getHours() > 19;
+            let iconName = weaI[data.hadise] || 'cloudy';
+            // Adjust for night icons
+            if (isNight && iconName.includes('-day')) iconName = iconName.replace('-day', '-night');
+            
+            wWidget.innerHTML = `<img src="/static/weather-icons/animated/${iconName}.svg" style="height:28px;width:28px;margin-right:2px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <span>${temp}°C</span>`;
             wWidget.title = `Samsun Merkez (İlkadım)\nGüncelleme: ${data.zaman ? data.zaman.split('T')[1].substring(0,5) : ''}`;
         } else {
             wWidget.style.display = 'none';
@@ -2473,14 +2480,12 @@ async function init(){
             if(lat<41.0||lat>41.6||lon<35.0||lon>37.0){
                 userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);
                 L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Varsayılan Konum (Samsun)").openPopup();
-                const d=await(await fetch(`/api/yakin?lat=${defLoc.lat}&lon=${defLoc.lon}`)).json();
-                shYakin(d);showToast("Samsun dışındasınız, varsayılan konuma gidildi.");
+                showToast("Samsun dışındasınız, varsayılan konuma gidildi.");
             }else{
                 userLoc={lat,lon};map.setView([lat,lon],15);
                 L.marker([lat,lon]).addTo(map).bindPopup("Siz Buradasınız").openPopup();
-                const d=await(await fetch(`/api/yakin?lat=${lat}&lon=${lon}`)).json();
-                shYakin(d);
             }
+            loadHats(); // Always default to lines (hatlar) list
         },()=>{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();showToast("Konum izni alınamadı, varsayılan konum yüklendi.")});
     }else{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.")}
     map.on('contextmenu',function(e){targetLoc=e.latlng;L.popup().setLatLng(e.latlng).setContent('<button onclick="calcRota()">Buraya Nasıl Giderim?</button>').openOn(map)});
