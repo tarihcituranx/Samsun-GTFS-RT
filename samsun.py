@@ -2561,7 +2561,8 @@ const clr=()=>{if(liveT)clearInterval(liveT);Object.values(M).forEach(m=>map.rem
 function showToast(msg){const x=document.getElementById("toast");x.innerText=msg;x.className="toast show";setTimeout(()=>{x.className=x.className.replace("show","")},3000)}
 
 // ===== INIT =====
-const weaI={'-9999':'cloudy','A':'clear-day','AB':'cloudy-1-day','PB':'cloudy-2-day','CB':'cloudy-3-day','HY':'rainy-1','Y':'rainy-2','KY':'rainy-3','KKY':'rain-and-snow-mix','HK':'snowy-1','K':'snowy-2','YY':'snowy-3','S':'fog','D':'haze','P':'haze'};
+const weaI={'-9999':'cloudy','A':'clear-day','AB':'cloudy-1-day','PB':'cloudy-2-day','CB':'cloudy-3-day','HY':'rainy-1','Y':'rainy-2','KY':'rainy-3','KKY':'rain-and-snow-mix','HK':'snowy-1','K':'snowy-2','YY':'snowy-3','S':'fog','D':'haze','P':'haze','GSY':'thunderstorms','KGY':'thunderstorms','SY':'thunderstorms','MSY':'thunderstorms','DY':'thunderstorms','R':'wind','GKR':'wind','GG':'thunderstorms','GKR':'wind'};
+const hadiseAd={'-9999':'Bilinmiyor','A':'Açık','AB':'Az Bulutlu','PB':'Parçalı Bulutlu','CB':'Çok Bulutlu','HY':'Hafif Yağmurlu','Y':'Yağmurlu','KY':'Kuvvetli Yağmur','KKY':'Karla Karışık Yağmur','HK':'Hafif Kar','K':'Kar Yağışlı','YY':'Yoğun Kar','S':'Sisli','D':'Dumanlı','P':'Puslu','GSY':'Gök Gürültülü Sağanak','KGY':'Kuvvetli Sağanak','SY':'Sağanak Yağışlı','MSY':'Mevzii Sağanak','DY':'Dolu','R':'Rüzgarlı','GKR':'Kum Fırtınası','GG':'Gök Gürültülü'};
 async function fetchWeather() {
     try {
         const res = await fetch('/api/hava');
@@ -2580,7 +2581,7 @@ async function fetchWeather() {
                 trTime = d.toLocaleTimeString('tr-TR', {timeZone: 'Europe/Istanbul', hour: '2-digit', minute:'2-digit'});
             }
             
-            const hadiseName = data.hadise || '';
+            const hadiseName = hadiseAd[data.hadise] || data.hadise || '';
             wWidget.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><img src="/static/weather-icons/animated/${iconName}.svg" style="height:40px;width:40px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <div style="display:flex;flex-direction:column;align-items:flex-start"><span style="font-size:0.9rem;font-weight:800">${temp}°C</span><span style="font-size:0.55rem;font-weight:500;color:var(--text2);margin-top:-2px">${hadiseName}</span></div></div>`;
             wWidget.title = `Samsun Atakum\nGüncelleme: ${trTime}`;
         } else {
