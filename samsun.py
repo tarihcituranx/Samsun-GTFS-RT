@@ -2539,6 +2539,38 @@ async function shL(e,backToRoute=false){clr();document.getElementById('ct').inne
             <p style="margin-top:8px">📞 Bilgi: <b>0362 431 10 12</b></p>
         </div>`;
     }
+    else if(nm.includes('ECZANELER') && nm.includes('TEKKEKÖY') && nm.includes('GİDİŞ')){
+        x+=`<div style="background:rgba(234,88,12,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px;margin:10px 0;font-size:0.75rem;color:var(--text)">
+            <h4 style="margin-bottom:8px">🚋 ECZANELER → TEKKEKÖY Gidiş</h4>
+            <p>Tramvay hattı • Aynı hat durakları, farklı başlangıç noktası</p>
+            <p style="margin-top:6px"><b>Ücret:</b> Tam 34 TL / Öğrenci 20 TL</p>
+            <p>📞 <b>0362 431 10 12</b></p>
+        </div>`;
+    }
+    else if(nm.includes('TEKKEKÖY') && nm.includes('ECZANELER') && nm.includes('DÖNÜŞ')){
+        x+=`<div style="background:rgba(234,88,12,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px;margin:10px 0;font-size:0.75rem;color:var(--text)">
+            <h4 style="margin-bottom:8px">🚋 TEKKEKÖY → ECZANELER Dönüş</h4>
+            <p>Tramvay hattı • Aynı hat durakları, farklı başlangıç noktası</p>
+            <p style="margin-top:6px"><b>Ücret:</b> Tam 34 TL / Öğrenci 20 TL</p>
+            <p>📞 <b>0362 431 10 12</b></p>
+        </div>`;
+    }
+    else if(nm.includes('YURTLAR') && nm.includes('BELEDİYE')){
+        x+=`<div style="background:rgba(234,88,12,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px;margin:10px 0;font-size:0.75rem;color:var(--text)">
+            <h4 style="margin-bottom:8px">🚋 YURTLAR → BELEDİYE EVLERİ</h4>
+            <p>Tramvay hattı • Aynı hat durakları, farklı başlangıç noktası</p>
+            <p style="margin-top:6px"><b>Ücret:</b> Tam 34 TL / Öğrenci 20 TL</p>
+            <p>📞 <b>0362 431 10 12</b></p>
+        </div>`;
+    }
+    else if(nm.includes('BELEDİYE') && nm.includes('YURTLAR') && nm.includes('DÖNÜŞ')){
+        x+=`<div style="background:rgba(234,88,12,0.1);border:1px solid var(--orange);border-radius:10px;padding:12px;margin:10px 0;font-size:0.75rem;color:var(--text)">
+            <h4 style="margin-bottom:8px">🚋 BELEDİYE EVLERİ → YURTLAR Dönüş</h4>
+            <p>Tramvay hattı • Aynı hat durakları, farklı başlangıç noktası</p>
+            <p style="margin-top:6px"><b>Ücret:</b> Tam 34 TL / Öğrenci 20 TL</p>
+            <p>📞 <b>0362 431 10 12</b></p>
+        </div>`;
+    }
     else if(nm.includes('TRAMVAY')){
         x+=`<div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:10px 0;font-size:0.75rem;text-align:center;color:var(--text)">
              ℹ️ <b>Bilgi:</b> Güncel sefer saatleri için <a href="tel:03624311012" style="color:var(--accent)">0362 431 10 12</a> arayabilirsiniz.
