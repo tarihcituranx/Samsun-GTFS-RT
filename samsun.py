@@ -874,6 +874,7 @@ class Collector:
                             eslesen += 1
                         
                         if name and tam_fiyat > 0:
+                            toplam += 1  # Counter artırılmalı — önceden eksikti
                             self.db.ex("INSERT INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,aktarma1,aktarma2,link,guncelleme) VALUES(?,?,?,?,?,?,?,?,?)",
                                       ('samulas', name, hat_code, tam_fiyat, indirimli, aktarma1, aktarma2, url, now))
         
@@ -960,8 +961,9 @@ class Collector:
             db_short = str(h['short_name']).strip() if h['short_name'] else ''
             raw_long = str(h['name']).strip() if h['name'] else h['code']
             g_long = title_case_tr(clean_long_name(g_short, raw_long, db_short)).replace(',', ' -')
-            g_type = gtfs_route_type(h['tip'])
-            g_color = gtfs_route_color(h['tip'])
+            # KAT kullanılmalı (tip="gidis/donus", kat="otobus/ekspres/tramvay"...)
+            g_type = gtfs_route_type(h['kat'])
+            g_color = gtfs_route_color(h['kat'])
             self.db.ex(
                 "UPDATE hat SET gtfs_route_id=?, gtfs_route_short_name=?, gtfs_route_long_name=?, gtfs_route_type=?, gtfs_route_color=? WHERE code=?",
                 (g_route_id, g_short, g_long, g_type, g_color, h['code'])
@@ -1017,8 +1019,11 @@ class Collector:
             for gun, t in [('hi', hi), ('hs', hs)]:
                 service_id = gun_to_service(gun)
                 for d in self.http.asis('Schedules', lineCode=code, scheduleDate=t.strftime("%Y-%m-%d")):
-                    saat = d.get('time', d.get('saat', ''))
-                    yon = d.get('yon', '')
+                    # API 'saat' döndürür — 'time' alanı yoktur
+                    saat = d.get('saat', '')
+                    # yon: API "G"/"D" döndürür — okunabilir forma çevir
+                    yon_raw = d.get('yon', '')
+                    yon = {'G': 'Gidiş', 'D': 'Dönüş'}.get(yon_raw, yon_raw)
                     if saat:
                         self.db.ex(
                             "INSERT INTO sefer(hat,saat,yon,gun,gtfs_route_id,gtfs_service_id) VALUES(?,?,?,?,?,?)",
@@ -1309,8 +1314,9 @@ class Collector:
             db_short = str(h['short_name']).strip() if h['short_name'] else ''
             raw_long = str(h['name']).strip() if h['name'] else h['code']
             g_long = title_case_tr(clean_long_name(g_short, raw_long, db_short)).replace(',', ' -')
-            g_type = gtfs_route_type(h['tip'])
-            g_color = gtfs_route_color(h['tip'])
+            # KAT kullanılmalı (tip="gidis/donus", kat="otobus/ekspres/tramvay"...)
+            g_type = gtfs_route_type(h['kat'])
+            g_color = gtfs_route_color(h['kat'])
             self.db.ex(
                 "UPDATE hat SET gtfs_route_id=?, gtfs_route_short_name=?, gtfs_route_long_name=?, gtfs_route_type=?, gtfs_route_color=? WHERE code=?",
                 (g_route_id, g_short, g_long, g_type, g_color, h['code'])
@@ -2785,9 +2791,11 @@ def create_app(db, col):
                             entity.vehicle.position.speed = hiz / 3.6
                             
                             try:
-                                aci = parse_float(d.get('aci', 0))
-                                if aci > 0:
-                                    entity.vehicle.position.bearing = aci
+                                # 'yon' alanı 0-360 derece pusula yönüdür (0=Kuzey, 90=Doğu...)
+                                # API'de 'aci' diye alan yok, doğrusu 'yon'
+                                yon_val = parse_float(d.get('yon', 0))
+                                if yon_val > 0:
+                                    entity.vehicle.position.bearing = yon_val
                             except Exception:
                                 pass
                             
@@ -2815,6 +2823,7 @@ def create_app(db, col):
                         log.debug(f"GTFS-RT hat hatası ({code}): {e}")
                 
                 with _gtfs_feed_lock:
+                    global gtfs_feed
                     gtfs_feed = feed
                 log.info(f"GTFS-RT: {vehicle_count} araç / {len(target_codes)} hat ({mode})")
                 
@@ -3051,14 +3060,18 @@ def create_app(db, col):
 
     @app.get("/api/proxy/stops_stations")
     async def proxy_stops_stations(lineCode: str):
-        """Mobil uygulama için StopsStations proxy (Hat durakları)"""
+        """Mobil uygulama için StopsStations proxy (Hat durakları)
+        
+        lineCode verilirse o hattın durak sırası döner.
+        asis() zaten data listesini döndürür — ekstra dict check gerekmez.
+        """
         try:
             data = await asyncio.wait_for(
                 asyncio.to_thread(col.http.asis, 'StopsStations', lineCode=lineCode),
                 timeout=10
             )
             _api_stats['asis_calls'] += 1
-            # ASIS bazen {"data": [...]} bazen düz liste döner — ikisini de normalize et
+            # asis() zaten data listesini döndürür; dict kontrolü gereksiz ama güvenlik için tutuyoruz
             if isinstance(data, dict):
                 data = data.get('data', data.get('result', []))
             return JSONResponse(data or [])
@@ -3068,15 +3081,23 @@ def create_app(db, col):
 
     @app.get("/api/proxy/line_directions")
     async def proxy_line_directions(lineCode: str):
-        """Mobil uygulama için LineDirections proxy (Hat yönleri)"""
+        """Mobil uygulama için LineDirections proxy (Hat yönleri)
+        
+        KRİTİK: ASIS API'de lineCode filtresi sunucu tarafında çalışmıyor.
+        Her çağrıda tüm sistem verisi (~8557 kayıt) döner.
+        Bu proxy istemci tarafında lineCode alanına göre filtreler.
+        """
         try:
             data = await asyncio.wait_for(
                 asyncio.to_thread(col.http.asis, 'LineDirections', lineCode=lineCode),
-                timeout=10
+                timeout=15  # 8557 kayıt için timeout artırıldı
             )
             _api_stats['asis_calls'] += 1
             if isinstance(data, dict):
                 data = data.get('data', data.get('result', []))
+            if isinstance(data, list) and lineCode:
+                # Sunucu tarafı filtresi çalışmıyor — istemci tarafında filtrele
+                data = [d for d in data if d.get('lineCode') == lineCode]
             return JSONResponse(data or [])
         except Exception as e:
             log.error(f"Proxy LineDirections Hatası: {e}")
@@ -3084,17 +3105,30 @@ def create_app(db, col):
 
     @app.get("/api/proxy/schedules")
     async def proxy_schedules(lineCode: str, scheduleDate: str = None):
-        """Mobil uygulama için Schedules proxy (Hat saatleri / tarife)"""
+        """Mobil uygulama için Schedules proxy (Hat saatleri / tarife)
+        
+        NOT: scheduleDate parametresi API'de zorunlu ama etkisizdir —
+        her tarih için aynı aktif çizelge döner. Yine de gönderilmesi gerekir.
+        Format: YYYY-MM-DD (T00:00:00 suffix gereksiz, her ikisi kabul edilir)
+        """
         if not scheduleDate:
-            scheduleDate = datetime.now().strftime("%Y-%m-%dT00:00:00")
+            scheduleDate = datetime.now().strftime("%Y-%m-%d")
         try:
+            # scheduleDate'deki T00:00:00 suffix'ini temizle (API ikisini de kabul eder ama sade tutalım)
+            clean_date = scheduleDate.split('T')[0] if 'T' in scheduleDate else scheduleDate
             data = await asyncio.wait_for(
-                asyncio.to_thread(col.http.asis, 'Schedules', lineCode=lineCode, scheduleDate=scheduleDate),
+                asyncio.to_thread(col.http.asis, 'Schedules', lineCode=lineCode, scheduleDate=clean_date),
                 timeout=10
             )
             _api_stats['asis_calls'] += 1
             if isinstance(data, dict):
                 data = data.get('data', data.get('result', []))
+            # yon alanını okunabilir forma çevir: "G" → "Gidiş", "D" → "Dönüş"
+            if isinstance(data, list):
+                yon_map = {'G': 'Gidiş', 'D': 'Dönüş'}
+                for item in data:
+                    if isinstance(item, dict) and 'yon' in item:
+                        item['yon'] = yon_map.get(item['yon'], item['yon'])
             return JSONResponse(data or [])
         except Exception as e:
             log.error(f"Proxy Schedules Hatası: {e}")
@@ -3799,10 +3833,8 @@ loadStats(); setInterval(loadStats, 10000);
 
     return app
 
-    return app
-
 # ==========================================
-# GLOABAL ASGI INITIALIZATION (SAMSUN TRANSIT)
+# GLOBAL ASGI INITIALIZATION (SAMSUN TRANSIT)
 # ==========================================
 # Bu bölüm Render/Vercel gibi ASGI sunucularının 'app' objesini bulabilmesi içindir.
 
