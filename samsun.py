@@ -1535,7 +1535,8 @@ class Collector:
                      except: pass
         except: pass
 
-        hatlar = self.db.get("""SELECT DISTINCT h.code, h.name, h.kat, hd.sira FROM hat_durak hd JOIN hat h ON hd.hat = h.code WHERE hd.durak_id = (SELECT id FROM durak WHERE kod = ?) ORDER BY h.code""", (durak_kodu,))
+        # id veya kod ile durak bul
+        hatlar = self.db.get("""SELECT DISTINCT h.code, h.name, h.kat, hd.sira FROM hat_durak hd JOIN hat h ON hd.hat = h.code WHERE hd.durak_id = (SELECT id FROM durak WHERE id = ? OR kod = ? LIMIT 1) ORDER BY h.code""", (durak_kodu, durak_kodu))
         sonuc = []
         for h in hatlar:
             araclar = self.canli(h['code'])
@@ -2835,8 +2836,8 @@ function shYakin(duraklar){
     x+=`<div class="lst" id="yakinList">`;
     if(duraklar && duraklar.length){
         duraklar.forEach((d,i)=>{
-            x+=`<div class="drk" onclick="shDurakDetay('${d.kod}')"><span class="no">${i+1}</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.dist?d.dist+'m uzakta':'Mesafe Bilinmiyor'}</small></div></div>`;
-            M['d'+d.kod]=L.marker([d.lat,d.lon],{icon:stopIcon(i+1)}).addTo(map).bindPopup(d.ad);
+            x+=`<div class="drk" onclick="shDurakDetay('${d.id||d.kod}')"><span class="no">${i+1}</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.dist?d.dist+'m uzakta':'Mesafe Bilinmiyor'}</small></div></div>`;
+            M['d'+(d.id||d.kod)]=L.marker([d.lat,d.lon],{icon:stopIcon(i+1)}).addTo(map).bindPopup(d.ad);
         });
     }else x+=`<div class="no-data">Yakında durak bulunamadı. Lütfen arama yapın.</div>`;
     x+=`<button class="bk" style="margin-top:10px" onclick="loadHats()">Tüm Hatları Göster</button></div>`;
@@ -2851,7 +2852,7 @@ async function araDurak(){
         if(res.length){
             let h='';
             res.forEach((d,i)=>{
-                h+=`<div class="drk" onclick="shDurakDetay('${d.kod}');if(window.innerWidth<=480)togglePnl(true)"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">Kod: ${d.kod}</small></div></div>`;
+                h+=`<div class="drk" onclick="shDurakDetay('${d.id||d.kod}');if(window.innerWidth<=480)togglePnl(true)"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.kod?'Kod: '+d.kod:'ID: '+d.id}</small></div></div>`;
                 if(i===0){ map.setView([d.lat, d.lon], 16); }
             });
             document.getElementById('yakinList').innerHTML=h;
@@ -2901,7 +2902,7 @@ async function toggleAllStops(show){
         const sIcon=L.divIcon({className:'',html:'<div style="width:8px;height:8px;background:#6366f1;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>',iconSize:[12,12],iconAnchor:[6,6]});
         stops.forEach(s=>{
             const m=L.marker([s.lat,s.lon],{icon:sIcon}).addTo(map)
-                .bindPopup(`<b>${s.ad}</b><br><small>Kod: ${s.kod}</small><br><button onclick="shDurakDetay('${s.kod}');if(window.innerWidth<=480)togglePnl(true)" style="margin-top:4px;padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`);
+                .bindPopup(`<b>${s.ad}</b><br><small>${s.kod?'Kod: '+s.kod:'ID: '+s.id}</small><br><button onclick="shDurakDetay('${s.id||s.kod}');if(window.innerWidth<=480)togglePnl(true)" style="margin-top:4px;padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`);
             allStopMarkers.push(m);
         });
         showToast(`${stops.length} durak haritada gösteriliyor`);
@@ -3256,7 +3257,7 @@ def create_app(db, col):
     async def api_durak_ara(q: str):
         if not q or len(q) < 2: return JSONResponse([])
         q_like = f"%{q.lower()}%"
-        res = col.db.get("SELECT kod, ad, lat, lon FROM durak WHERE lower(ad) LIKE ? OR kod LIKE ? LIMIT 20", (q_like, q_like))
+        res = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE lower(ad) LIKE ? OR kod LIKE ? OR id LIKE ? LIMIT 20", (q_like, q_like, q_like))
         # Override with tram correct coords if found
         if hasattr(col.db, 'tram_corrections'):
             for d in res:
@@ -3276,7 +3277,7 @@ def create_app(db, col):
     @app.get("/api/tum_duraklar")
     async def api_tum_duraklar():
         """Haritada tüm durakları göstermek için"""
-        res = col.db.get("SELECT kod, ad, lat, lon FROM durak WHERE lat IS NOT NULL AND lon IS NOT NULL")
+        res = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE lat IS NOT NULL AND lon IS NOT NULL")
         return JSONResponse(res)
 
     # ==========================================
