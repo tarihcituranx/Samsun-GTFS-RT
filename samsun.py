@@ -1626,6 +1626,21 @@ class Collector:
             log.debug(f"Tahmini kalkış hesaplama hatası ({hat_kodu}): {e}")
             return None
 
+    def get_osrm_foot_path(self, lat1, lon1, lat2, lon2):
+        """OSRM kullanarak iki nokta arası yürüme rotası çıkarır"""
+        try:
+            url = f"http://router.project-osrm.org/route/v1/foot/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson"
+            r = requests.get(url, timeout=2)
+            if r.status_code == 200:
+                data = r.json()
+                if data.get('routes') and len(data['routes']) > 0:
+                    coords = data['routes'][0]['geometry']['coordinates']
+                    # OSRM lon,lat döndürür; Leaflet lat,lon ister
+                    return [[c[1], c[0]] for c in coords], data['routes'][0]['distance']
+        except Exception:
+            pass
+        return None, None
+
     def akilli_rota(self, lat1, lon1, lat2, lon2):
         """Başlangıç ve bitiş koordinatlarından rota hesapla (Puanlama Algoritması)"""
         all_routes = []
@@ -1697,6 +1712,7 @@ class Collector:
             q_direct = f"""
             SELECT h.code, h.name, h.kat, s1.ad as s_ad, s1.sira as s_sira, s2.ad as e_ad, 
                    s1.durak_id as s_id, s2.durak_id as e_id,
+                   s1.lat as s_lat, s1.lon as s_lon, s2.lat as e_lat, s2.lon as e_lon,
                    ABS(s2.sira - s1.sira) as durak_sayisi
             FROM hat h
             JOIN hat_durak s1 ON h.code = s1.hat
@@ -1767,10 +1783,16 @@ class Collector:
                 except Exception as e:
                     print("Direct path error:", e)
 
+                # OSRM Walking Polylines
+                s_walk_poly, _ = self.get_osrm_foot_path(lat1, lon1, r['s_lat'], r['s_lon']) if r.get('s_lat') else (None, None)
+                e_walk_poly, _ = self.get_osrm_foot_path(r['e_lat'], r['e_lon'], lat2, lon2) if r.get('e_lat') else (None, None)
+
                 all_routes.append({
                     'total_score': puan,
                     'type': 'DIRECT',
                     'polyline': path_coords,
+                    'walk_start': s_walk_poly,
+                    'walk_end': e_walk_poly,
                     'desc': f"""
                     <div class="route-card direct">
                         <div class="route-header">
@@ -1793,7 +1815,7 @@ class Collector:
                                 <div class="dot start" style="background:#555"></div>
                                 <div class="content">
                                     <b>Başlangıç</b>
-                                    <div class="sub"><a href="{map_walk_start}" target="_blank" style="color:#007bff">Durağa Yürü ↗</a></div>
+                                    <div class="sub"><a href="{map_walk_start}" target="_blank" style="color:#007bff">🚶 Durağa Yürü ↗</a></div>
                                 </div>
                             </div>
                             <div class="step">
@@ -1823,11 +1845,12 @@ class Collector:
             q_transfer = f"""
             SELECT 
                 h1.code as hat1, h1.kat as kat1,
-                s1.ad as start_stop, s1.sira as s1_sira,
+                s1.ad as start_stop, s1.sira as s1_sira, s1.lat as s_lat, s1.lon as s_lon,
                 t1.ad as transfer_name, t1.sira as t1_sira,
                 h2.code as hat2, h2.kat as kat2,
                 t2.sira as t2_sira,
-                s2.ad as end_stop,
+                s2.ad as end_stop, s2.lat as e_lat, s2.lon as e_lon,
+                s2.sira as e_sira,
                 (t1.sira - s1.sira) as durak1,
                 (s2.sira - t2.sira) as durak2
             FROM hat_durak s1
@@ -1904,10 +1927,16 @@ class Collector:
                 except Exception as e:
                     print("Transfer path error:", e)
 
+                # OSRM Walking Polylines
+                s_walk_poly, _ = self.get_osrm_foot_path(lat1, lon1, r.get('s_lat', 0), r.get('s_lon', 0)) if r.get('s_lat') else (None, None)
+                e_walk_poly, _ = self.get_osrm_foot_path(r.get('e_lat', 0), r.get('e_lon', 0), lat2, lon2) if r.get('e_lat') else (None, None)
+
                 all_routes.append({
                     'total_score': puan,
                     'type': 'TRANSFER',
                     'polyline': path_coords,
+                    'walk_start': s_walk_poly,
+                    'walk_end': e_walk_poly,
                     'desc': f"""
                     <div class="route-card transfer">
                         <div class="route-header">
@@ -1926,7 +1955,6 @@ class Collector:
                                     <button onclick="shL('{r['hat1']}')" style="display:block;margin-top:3px;font-size:0.65rem;border:1px solid #ccc">📡 Canlı</button>
                                 </div>
                             </div>
-                            <!-- ... Ara adımlar (basitlik için kısalttım) ... -->
                             <div class="step transfer-point">
                                 <div class="time">{varis1_str}</div>
                                 <div class="dot transfer"></div>
@@ -2214,15 +2242,15 @@ HTML = '''<!DOCTYPE html>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s}
 #map{height:100vh;width:100%;position:fixed;top:0;left:0}
-.pnl{position:fixed;top:10px;right:10px;z-index:1000;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0;border-radius:var(--radius);box-shadow:var(--shadow2);width:380px;max-height:92vh;overflow:hidden;border:1px solid var(--panel-border);display:flex;flex-direction:column;transition:background .3s}
+.pnl{position:fixed;top:10px;right:10px;z-index:1000;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0;border-radius:var(--radius);box-shadow:var(--shadow2);width:380px;max-height:92vh;border:1px solid var(--panel-border);display:flex;flex-direction:column;transition:background .3s}
 .pnl-header{padding:12px 16px;border-bottom:1px solid var(--card-border);flex-shrink:0;position:relative}
 .pnl-body{overflow-y:auto;padding:12px 14px;flex:1;transition:opacity 0.2s}
 .pnl.minimized .pnl-body, .pnl.minimized .pnl-footer { display:none; }
-.pnl-toggle { position:absolute; bottom:-14px; left:50%; transform:translateX(-50%); background:var(--bg3); border:1px solid var(--card-border); width:40px; height:24px; border-radius:12px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:var(--text); box-shadow:var(--shadow1) }
+.pnl-toggle { position:absolute; bottom:-32px; left:50%; transform:translateX(-50%); background:var(--panel); border:1px solid var(--panel-border); border-top:none; width:48px; height:32px; border-radius:0 0 16px 16px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:100; color:var(--text); box-shadow:0 8px 16px rgba(0,0,0,0.15); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
 @media(max-width:480px){
   .pnl-toggle { display:flex; }
   .pnl{width:calc(100% - 16px);right:8px;top:8px;max-height:94vh;border-radius:12px}
-  .pnl.minimized{max-height:none;height:auto}
+  .pnl.minimized{max-height:none;height:auto;overflow:visible}
 }
 .pnl-footer{padding:10px 14px;border-top:1px solid var(--card-border);font-size:.65rem;color:var(--text);font-weight:600;text-align:center;flex-shrink:0;background:var(--bg2)}
 .pnl-footer a{color:var(--accent);text-decoration:none}
@@ -2630,7 +2658,7 @@ async function calcRotaFromInput(){const q=document.getElementById('rotaInput')?
 
 async function calcRota(){if(!userLoc||!targetLoc)return alert("Konum alınamadı!");document.getElementById('ct').innerHTML='<div class="loading">Akıllı Rota Hesaplanıyor...<br><small>Otobüs ve Tramvay Aktarmaları Taranıyor</small></div>';try{const res=await(await fetch(`/api/rota?lat1=${userLoc.lat}&lon1=${userLoc.lon}&lat2=${targetLoc.lat}&lon2=${targetLoc.lng}`)).json();if(res.error){document.getElementById('ct').innerHTML=`<button class="bk" onclick="shRotaUI()">← Yeniden Ara</button><div class="no-data">${res.error}</div>`;return}drawRotaResults(res)}catch(e){document.getElementById('ct').innerHTML='<button class="bk" onclick="shRotaUI()">← Geri</button><div class="no-data">Rota hesaplanamadı.</div>'}}
 
-function drawRotaResults(res,query){Object.keys(M).filter(k=>k.startsWith('rota_')).forEach(k=>{map.removeLayer(M[k]);delete M[k]});let x=`<button class="bk" onclick="shRotaUI()">← Yeni Arama</button><div class="sec">📍 Gezi Planı${query?' — '+query:''}</div><div class="lst">`;if(res.length){res.forEach((r,i)=>{x+=r.desc;if(r.polyline&&r.polyline.length>1){const color=r.type==='DIRECT'?'#16a34a':'#ea580c';const pl=L.polyline(r.polyline,{color:color,weight:5,opacity:0.8}).addTo(map);M['rota_'+i]=pl;if(i===0)map.fitBounds(pl.getBounds(),{padding:[40,40]})}})}else{x+=`<div class="no-data">Uygun toplu taşıma rotası bulunamadı.<br><small>Mesafeler çok uzak olabilir.</small></div>`}document.getElementById('ct').innerHTML=x+'</div>'}
+function drawRotaResults(res,query){Object.keys(M).filter(k=>k.startsWith('rota_')||k.startsWith('walk_')).forEach(k=>{map.removeLayer(M[k]);delete M[k]});let x=`<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Yeni Arama</button><div class="sec">📍 Gezi Planı${query?' — '+query:''}</div><div class="lst">`;if(res.length){res.forEach((r,i)=>{x+=r.desc;if(r.polyline&&r.polyline.length>1){const color=r.type==='DIRECT'?'#16a34a':'#ea580c';const pl=L.polyline(r.polyline,{color:color,weight:5,opacity:0.8}).addTo(map);M['rota_'+i]=pl;if(i===0)map.fitBounds(pl.getBounds(),{padding:[40,40]})}if(r.walk_start&&r.walk_start.length>1){const wl=L.polyline(r.walk_start,{color:'#3b82f6',weight:4,opacity:0.9,dashArray:'8,6'}).addTo(map);M['walk_s'+i]=wl}if(r.walk_end&&r.walk_end.length>1){const wl=L.polyline(r.walk_end,{color:'#3b82f6',weight:4,opacity:0.9,dashArray:'8,6'}).addTo(map);M['walk_e'+i]=wl}})}else{x+=`<div class="no-data">Uygun toplu taşıma rotası bulunamadı.<br><small>Mesafeler çok uzak olabilir.</small></div>`}document.getElementById('ct').innerHTML=x+'</div>'}
 
 // ===== DURAK DETAY =====
 async function shDurakDetay(kod){document.getElementById('ct').innerHTML='<div class="loading">Durak bilgileri alınıyor...</div>';try{const inf=await(await fetch(`/api/durak_panel/${kod}`)).json();let x=`<button class="bk" onclick="init()">← Geri</button><div class="sec">🚏 Duraktan Geçen Hatlar</div><div class="lst">`;Object.values(V).forEach(m=>map.removeLayer(m));V={};const activeBuses=[];if(inf.length){inf.forEach(h=>{x+=`<div class="it ${h.kat}" onclick="shL('${encodeURIComponent(h.hat)}')"><div><b>${h.hat}</b> - ${h.ad}</div>${h.gelen?(()=>{let vb='';if(h.gelen.verify){const v=h.gelen.verify;if(v.status==='OK')vb='<span style="color:#fff;background:var(--green);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">✅ Doğrulandı</span>';else if(v.status==='WARN')vb=`<span style="color:#fff;background:#f59e0b;padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">⚠️ ${v.msg}</span>`;else if(v.status==='ERR')vb=`<span style="color:#fff;background:var(--red);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">❌ ${v.msg}</span>`;else vb=`<span style="color:#fff;background:var(--accent);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">ℹ️ ${v.msg}</span>`}if(h.gelen.lat&&h.gelen.lon){const m=L.marker([h.gelen.lat,h.gelen.lon],{icon:bI(K[h.kat].c,h.gelen.plaka)}).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`);V['v'+h.gelen.plaka]=m;activeBuses.push([h.gelen.lat,h.gelen.lon])}return`<div class="live-badge">⏱️ ${h.gelen.tahmini_dk} dk (${h.gelen.durak_kaldi} durak)${vb}<br><span style="font-weight:400;font-size:0.6rem">Hız: ${h.gelen.hiz} km/s • ${h.gelen.doluluk} yolcu</span></div>`})():''}</div>`});if(activeBuses.length>0){const group=L.featureGroup(Object.values(V));map.fitBounds(group.getBounds().pad(0.2))}}else x+=`<div class="no-data">Hat bilgisi yok</div>`;document.getElementById('ct').innerHTML=x+'</div>'}catch(e){}}
