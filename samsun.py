@@ -2580,7 +2580,8 @@ async function fetchWeather() {
                 trTime = d.toLocaleTimeString('tr-TR', {timeZone: 'Europe/Istanbul', hour: '2-digit', minute:'2-digit'});
             }
             
-            wWidget.innerHTML = `<img src="/static/weather-icons/animated/${iconName}.svg" style="height:28px;width:28px;margin-right:2px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <span>${temp}°C</span>`;
+            const hadiseName = data.hadise || '';
+            wWidget.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><img src="/static/weather-icons/animated/${iconName}.svg" style="height:40px;width:40px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <div style="display:flex;flex-direction:column;align-items:flex-start"><span style="font-size:0.9rem;font-weight:800">${temp}°C</span><span style="font-size:0.55rem;font-weight:500;color:var(--text2);margin-top:-2px">${hadiseName}</span></div></div>`;
             wWidget.title = `Samsun Atakum\nGüncelleme: ${trTime}`;
         } else {
             wWidget.style.display = 'none';
