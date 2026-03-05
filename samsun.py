@@ -2341,8 +2341,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <div class="pnl-header">
     <div class="top-bar">
         <div class="brand">
-            <img src="/static/images/sbb_v2.png?v=2" title="SBB" style="height:40px">
-            <img src="/static/images/samulas.png?v=2" title="Samulaş" style="height:40px">
+            <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi" style="height:40px">
+            <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş" style="height:40px">
+            <div id="weatherWidget" style="font-size:0.75rem;font-weight:600;display:flex;align-items:center;gap:4px;color:var(--text);margin-left:8px;padding:4px 8px;background:var(--bg3);border-radius:20px;box-shadow:var(--shadow1)">⏳ --°C</div>
         </div>
         <div class="top-actions">
             <button class="theme-btn" id="settingsBtn" onclick="toggleSettings()" title="Ayarlar">⚙️</button>
@@ -2397,8 +2398,16 @@ function getPreferredTheme(){
 }
 function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
-    document.getElementById('themeToggle').textContent=t==='dark'?'☀️':'🌙';
+    const btn=document.getElementById('themeToggle');
+    if(btn) btn.textContent=t==='dark'?'☀️':'🌙';
     localStorage.setItem('theme',t);
+    
+    // Logo Degisimi
+    const sbb=document.getElementById('sbbLogo');
+    const sam=document.getElementById('samulasLogo');
+    if(sbb) sbb.src=t==='dark'?'/static/images/sbb_dark.png':'/static/images/sbb_v2.png?v=2';
+    if(sam) sam.src=t==='dark'?'/static/images/samulas_3.png':'/static/images/samulas.png?v=2';
+
     if(typeof updateMapTiles==='function') updateMapTiles(t);
 }
 function toggleTheme(){
@@ -2435,7 +2444,28 @@ const clr=()=>{if(liveT)clearInterval(liveT);Object.values(M).forEach(m=>map.rem
 function showToast(msg){const x=document.getElementById("toast");x.innerText=msg;x.className="toast show";setTimeout(()=>{x.className=x.className.replace("show","")},3000)}
 
 // ===== INIT =====
+const weaI={'-9999':'❓','A':'Açık','AB':'Az Bulutlu','PB':'Parçalı Bulutlu','CB':'Çok Bulutlu','HY':'Hafif Yağmurlu','Y':'Yağmurlu','KY':'Kuvvetli Yağmurlu','KKY':'Karla Karışık Yağmurlu','HK':'Hafif Kar Yağışlı','K':'Kar Yağışlı','YY':'Yoğun Kar Yağışlı','S':'Sisli','D':'Dumanlı','P':'Puslu'};
+async function fetchWeather() {
+    try {
+        const res = await fetch('/api/hava');
+        const data = await res.json();
+        const wWidget = document.getElementById('weatherWidget');
+        if (data && data.sicaklik) {
+            const temp = Math.round(data.sicaklik);
+            const icon = weaI[data.hadise] || '☁️';
+            wWidget.innerHTML = `<span style="font-size:1.1rem">${icon}</span> ${temp}°C`;
+            wWidget.title = `Samsun Merkez (İlkadım)\nGüncelleme: ${data.zaman ? data.zaman.split('T')[1].substring(0,5) : ''}`;
+        } else {
+            wWidget.style.display = 'none';
+        }
+    } catch {
+        document.getElementById('weatherWidget').style.display = 'none';
+    }
+}
+
 async function init(){
+    applyTheme(localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
+    fetchWeather();
     const defLoc={lat:41.2925,lon:36.3315};
     if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(async p=>{
@@ -3234,6 +3264,29 @@ def create_app(db, col):
             return JSONResponse({"error": "Konum bulunamadı. Lütfen daha açık bir adres girin."}, status_code=400)
             
         return JSONResponse(col.yol_tarifi(lat1, lon1, lat2, lon2))
+
+    @app.get("/api/hava")
+    async def api_hava():
+        """Samsun (Merkez-İlkadım) güncel hava durumunu MGM'den çeker."""
+        try:
+            # 95503: Samsun İlkadım merkez ID
+            url = "https://servis.mgm.gov.tr/web/sondurumlar?merkezid=95503"
+            headers = {"Origin": "https://www.mgm.gov.tr"}
+            r = requests.get(url, headers=headers, timeout=5)
+            r.raise_for_status()
+            data = r.json()
+            if data and isinstance(data, list) and len(data) > 0:
+                d = data[0]
+                return JSONResponse({
+                    "sicaklik": d.get("sicaklik", ""),
+                    "hadise": d.get("hadiseKodu", ""),
+                    "nem": d.get("nem", ""),
+                    "zaman": d.get("veriZamani", "")
+                })
+            return JSONResponse({"error": "Veri yok"})
+        except Exception as e:
+            log.error(f"MGM Hava Hatası: {e}")
+            return JSONResponse({"error": str(e)}, status_code=500)
 
     # --- Health Check ---
     @app.get("/api/health")
