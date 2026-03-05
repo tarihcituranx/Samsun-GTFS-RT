@@ -2215,9 +2215,15 @@ HTML = '''<!DOCTYPE html>
 body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);transition:background .3s,color .3s}
 #map{height:100vh;width:100%;position:fixed;top:0;left:0}
 .pnl{position:fixed;top:10px;right:10px;z-index:1000;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0;border-radius:var(--radius);box-shadow:var(--shadow2);width:380px;max-height:92vh;overflow:hidden;border:1px solid var(--panel-border);display:flex;flex-direction:column;transition:background .3s}
-@media(max-width:480px){.pnl{width:calc(100% - 16px);right:8px;top:8px;max-height:94vh;border-radius:12px}}
-.pnl-header{padding:12px 16px;border-bottom:1px solid var(--card-border);flex-shrink:0}
-.pnl-body{overflow-y:auto;padding:12px 14px;flex:1}
+.pnl-header{padding:12px 16px;border-bottom:1px solid var(--card-border);flex-shrink:0;position:relative}
+.pnl-body{overflow-y:auto;padding:12px 14px;flex:1;transition:opacity 0.2s}
+.pnl.minimized .pnl-body, .pnl.minimized .pnl-footer { display:none; }
+.pnl-toggle { position:absolute; bottom:-14px; left:50%; transform:translateX(-50%); background:var(--bg3); border:1px solid var(--card-border); width:40px; height:24px; border-radius:12px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:10; color:var(--text); box-shadow:var(--shadow1) }
+@media(max-width:480px){
+  .pnl-toggle { display:flex; }
+  .pnl{width:calc(100% - 16px);right:8px;top:8px;max-height:94vh;border-radius:12px}
+  .pnl.minimized{max-height:none;height:auto}
+}
 .pnl-footer{padding:10px 14px;border-top:1px solid var(--card-border);font-size:.65rem;color:var(--text);font-weight:600;text-align:center;flex-shrink:0;background:var(--bg2)}
 .pnl-footer a{color:var(--accent);text-decoration:none}
 /* Top bar */
@@ -2380,6 +2386,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
     <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"> Odak Samsun</div>
     <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"> Samair</div>
     <div class="tab" data-t="rota" onclick="shRotaUI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Git</div>
+</div>
+<div class="pnl-toggle" onclick="togglePnl()" title="Paneli Küçült/Büyüt">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
 </div>
 <div class="pnl-body" id="ct"></div>
 <div class="pnl-footer">
@@ -2602,7 +2611,7 @@ async function araDurak(){
         if(res.length){
             let h='';
             res.forEach((d,i)=>{
-                h+=`<div class="drk" onclick="shDurakDetay('${d.kod}')"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">Kod: ${d.kod}</small></div></div>`;
+                h+=`<div class="drk" onclick="shDurakDetay('${d.kod}');if(window.innerWidth<=480)togglePnl(true)"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">Kod: ${d.kod}</small></div></div>`;
                 if(i===0){ map.setView([d.lat, d.lon], 16); }
             });
             document.getElementById('yakinList').innerHTML=h;
@@ -2676,8 +2685,20 @@ const stopLbl=(n,num,c)=>{
     return L.divIcon({className:'',html:`<div style="position:relative"><div style="width:20px;height:20px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">${num}</div><div style="position:absolute;top:-8px;left:24px;background:${bg};color:${tc};padding:1px 6px;border-radius:4px;font-size:9px;white-space:nowrap;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">${n}</div></div>`,iconSize:[20,20],iconAnchor:[10,10]});
 };
 
+function togglePnl(forceMinimize = false){
+    const p = document.querySelector('.pnl');
+    const svg = document.querySelector('.pnl-toggle svg path');
+    if(forceMinimize || !p.classList.contains('minimized')){
+        p.classList.add('minimized');
+        svg.setAttribute('d', 'M5 15l7-7 7 7'); // Arrow up
+    } else {
+        p.classList.remove('minimized');
+        svg.setAttribute('d', 'M19 9l-7 7-7-7'); // Arrow down
+    }
+}
+
 // ===== HAT DETAY (shL) =====
-async function shL(e,backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>`:`<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş ➝':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
+async function shL(e,backToRoute=false){if(window.innerWidth<=480)togglePnl(true);clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>`:`<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`;x+=`<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş ➝':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
 
     // === BİLGİLENDİRME KUTULARI ===
     if(nm.includes('SAMSUNUM-1')){
