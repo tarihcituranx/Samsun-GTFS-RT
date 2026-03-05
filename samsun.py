@@ -727,8 +727,8 @@ class Collector:
         # 1. Ring hatları (En yüksek öncelik - R ile başlayanlar kesinlikle Ring'dir)
         if c.startswith('R') and len(c) > 1 and c[1].isdigit(): return 'ring'
         
-        # Odak turistik hatlar
-        if 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or 'ODAK' in n: return 'odak'
+        # Odak turistik hatlar (G ile başlayanlar veya isimde geçenler)
+        if c.startswith('G_') or c.startswith('G1') or c.startswith('G2') or c.startswith('G3') or c.startswith('G4') or 'SAMSUNUM' in c or 'SAMSUNUM' in n or 'ALTINKAYA' in n or 'ODAK' in n: return 'odak'
         
         # 2. Yeni Kategoriler (Analiz Sonucu)
         if 'TRAMVAY' in c or 'TRAMVAY' in n: return 'tramvay'
@@ -806,7 +806,7 @@ class Collector:
         # 8 sayfa tara (samulas.com.tr/otobusler)
         for page in range(1, 9):
             try:
-                res = requests.get(f"{SAMULAS_URL}/otobusler?page={page}", headers=headers, timeout=15)
+                res = self.http.session.get(f"{SAMULAS_URL}/otobusler?page={page}", headers=headers, timeout=15)
                 soup = BeautifulSoup(res.content, 'html.parser')
                 
                 # Otobüs detay linklerini bul
@@ -820,7 +820,7 @@ class Collector:
                 # Her otobüs detayına gir
                 for url in links:
                     try:
-                        r = requests.get(url, headers=headers, timeout=10)
+                        r = self.http.session.get(url, headers=headers, timeout=10)
                         s = BeautifulSoup(r.content, 'html.parser')
                         
                         # Hat adını al
@@ -3041,6 +3041,40 @@ def create_app(db, col):
             log.error(f"Proxy SmartStations Hatası: {e}")
             return JSONResponse([])
 
+    @app.get("/api/proxy/lines")
+    async def proxy_lines():
+        """Mobil uygulama için Lines proxy."""
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'Lines'),
+                timeout=10
+            )
+            _api_stats['asis_calls'] += 1
+            if isinstance(data, dict):
+                data = data.get('data', data.get('result', []))
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy Lines Hatası: {e}")
+            return JSONResponse([])
+
+    @app.get("/api/proxy/orjlines")
+    async def proxy_orjlines():
+        """Mobil uygulama için OrjLines proxy."""
+        try:
+            # OpenAPI şemasına göre OrjLines ekstra bir top-level nesne ve totalRow içeriyor olabilir
+            # Ancak Http.asis fonksiyonu data arrayini çeviriyor
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'OrjLines'),
+                timeout=10
+            )
+            _api_stats['asis_calls'] += 1
+            if isinstance(data, dict):
+                data = data.get('data', data.get('result', []))
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy OrjLines Hatası: {e}")
+            return JSONResponse([])
+
     @app.get("/api/proxy/realtime")
     async def proxy_realtime(lineCode: str):
         """Mobil uygulama için RealTimeData proxy (Hat canlı araç)"""
@@ -3143,6 +3177,8 @@ def create_app(db, col):
             "uptime_seconds": int(time.time() - _START_TIME),
             "endpoints": {
                 "proxy": [
+                    "/api/proxy/lines",
+                    "/api/proxy/orjlines",
                     "/api/proxy/smart_stations?stationId=",
                     "/api/proxy/realtime?lineCode=",
                     "/api/proxy/stops_stations?lineCode=",
