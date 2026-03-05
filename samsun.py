@@ -2477,6 +2477,7 @@ async function fetchWeather() {
 async function init(){
     applyTheme(localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
     fetchWeather();
+    setInterval(fetchWeather, 3600000); // Saat başı hava durumu güncelle
     const defLoc={lat:41.2925,lon:36.3315};
     if(navigator.geolocation){
         navigator.geolocation.getCurrentPosition(async p=>{
