@@ -2816,7 +2816,7 @@ async function init(){
                 L.marker([lat,lon]).addTo(map).bindPopup("Siz Buradasınız").openPopup();
             }
             loadHats(); // Always default to lines (hatlar) list
-        },()=>{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();showToast("Konum izni alınamadı, varsayılan konum yüklendi.")});
+        },()=>{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();showToast("Konum izni alınamadı, varsayılan konum yüklendi.")},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
     }else{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.")}
     map.on('contextmenu',function(e){targetLoc=e.latlng;L.popup().setLatLng(e.latlng).setContent('<button onclick="calcRota()">Buraya Nasıl Giderim?</button>').openOn(map)});
 }
@@ -3622,11 +3622,14 @@ def create_app(db, col):
         """
         async def geocode(query: str):
             if not query: return None, None
-            # Samsun Bounding Box: 35.0, 41.0, 37.0, 41.6
-            url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&limit=1&viewbox=35.0,41.6,37.0,41.0&bounded=1"
-            headers = {"User-Agent": "SamsunTransitApp/1.0"}
+            # Samsun'a yönelik arama — query'ye "Samsun" ekle (zaten yoksa)
+            q = query.strip()
+            q_search = q if 'samsun' in q.lower() else f"{q}, Samsun"
+            
+            # 1. Nominatim (birincil)
             try:
-                import requests
+                url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(q_search)}&format=json&limit=3&viewbox=35.5,41.5,36.8,41.1&bounded=0&countrycodes=tr"
+                headers = {"User-Agent": "SamsunTransitApp/2.0 (contact@samsun-transit.com)"}
                 resp = await asyncio.wait_for(
                     asyncio.to_thread(requests.get, url, headers=headers, timeout=5),
                     timeout=6.0
@@ -3634,9 +3637,38 @@ def create_app(db, col):
                 if resp.ok:
                     data = resp.json()
                     if data and len(data) > 0:
-                        return float(data[0]['lat']), float(data[0]['lon'])
-            except:
-                pass
+                        # Samsun sınırları içinde olan ilk sonucu tercih et
+                        for d in data:
+                            lat, lon = float(d['lat']), float(d['lon'])
+                            if 41.0 <= lat <= 41.6 and 35.5 <= lon <= 37.0:
+                                log.info(f"Geocode OK (Nominatim): '{q}' -> {lat},{lon} ({d.get('display_name','')[:50]})")
+                                return lat, lon
+                        # Samsun dışı sonuç varsa yine al
+                        lat, lon = float(data[0]['lat']), float(data[0]['lon'])
+                        log.info(f"Geocode (Nominatim, dış): '{q}' -> {lat},{lon}")
+                        return lat, lon
+            except Exception as e:
+                log.debug(f"Nominatim hata: {e}")
+            
+            # 2. Photon API (fallback — Nominatim verisi kullanır ama farklı sunucu)
+            try:
+                url2 = f"https://photon.komoot.io/api/?q={urllib.parse.quote(q_search)}&limit=3&lat=41.29&lon=36.33&lang=tr"
+                resp2 = await asyncio.wait_for(
+                    asyncio.to_thread(requests.get, url2, timeout=5),
+                    timeout=6.0
+                )
+                if resp2.ok:
+                    pdata = resp2.json()
+                    features = pdata.get('features', [])
+                    if features:
+                        coords = features[0]['geometry']['coordinates']
+                        lat, lon = coords[1], coords[0]
+                        log.info(f"Geocode OK (Photon): '{q}' -> {lat},{lon}")
+                        return lat, lon
+            except Exception as e:
+                log.debug(f"Photon hata: {e}")
+            
+            log.warning(f"Geocode BAŞARISIZ: '{q}'")
             return None, None
 
         # Resolve Start
