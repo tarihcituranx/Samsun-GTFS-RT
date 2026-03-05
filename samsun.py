@@ -1503,8 +1503,18 @@ class Collector:
         )
         yakindakiler = []
         for s in nearby:
+            # Override with explicit Tram coordinates if it's a tram stop
+            if hasattr(self.db, 'tram_corrections'):
+                for csv_name, coords in self.db.tram_corrections.items():
+                    cv_low = csv_name.lower().replace(' i̇stasyonu', '').replace(' istasyonu', '')
+                    ad_low = s['ad'].lower()
+                    if cv_low in ad_low or ad_low in cv_low:
+                        s['lat'] = coords[0]
+                        s['lon'] = coords[1]
+                        break
+                        
             dist = haversine(lat, lon, s['lat'], s['lon'])
-            if dist < 1000:
+            if dist < 1200: # 1.2 KM'ye çıkardık sonuç bulma ihtimali için
                 s['dist'] = int(dist)
                 yakindakiler.append(s)
         yakindakiler.sort(key=lambda x: x['dist'])
@@ -2208,14 +2218,14 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 @media(max-width:480px){.pnl{width:calc(100% - 16px);right:8px;top:8px;max-height:94vh;border-radius:12px}}
 .pnl-header{padding:12px 16px;border-bottom:1px solid var(--card-border);flex-shrink:0}
 .pnl-body{overflow-y:auto;padding:12px 14px;flex:1}
-.pnl-footer{padding:8px 14px;border-top:1px solid var(--card-border);font-size:.6rem;color:var(--text3);text-align:center;flex-shrink:0}
-
+.pnl-footer{padding:10px 14px;border-top:1px solid var(--card-border);font-size:.65rem;color:var(--text);font-weight:600;text-align:center;flex-shrink:0;background:var(--bg2)}
+.pnl-footer a{color:var(--accent);text-decoration:none}
 /* Top bar */
 .top-bar{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
-.brand{display:flex;align-items:center;justify-content:center;gap:12px;width:100%}
-.brand img{height:42px;width:auto;transition:transform .2s;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
+.brand{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%}
+.brand img{height:54px;width:auto;transition:transform .2s;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
 .brand img:hover{transform:scale(1.05)}
-.top-actions{display:flex;gap:8px;align-items:center;justify-content:space-between;width:100%}
+.top-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end;width:100%}
 .right-btns{display:flex;gap:6px;align-items:center}
 .theme-btn{background:var(--bg3);border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s;color:var(--text);border:1px solid var(--card-border)}
 .theme-btn:hover{background:var(--accent-bg);transform:scale(1.1)}
@@ -2227,9 +2237,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 /* Tabs */
 .tabs{display:flex;gap:3px;padding:8px 14px;border-bottom:1px solid var(--card-border);flex-shrink:0}
 .tab{flex:1;padding:8px 4px;text-align:center;background:transparent;border:none;border-radius:var(--radius2);cursor:pointer;font-size:.72rem;font-weight:600;color:var(--text2);transition:all .2s;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
-.tab svg{width:20px;height:20px;stroke-width:1.5;margin-bottom:2px}
+.tab svg{width:20px;height:20px;stroke-width:1.5;margin-bottom:2px;transition:color 0.2s}
 .tab:hover{background:var(--bg3);color:var(--text)}
 .tab.on{background:var(--accent);color:#fff}
+.tab.on svg{color:#fff !important}
 
 /* Search */
 .src{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--card-border);border-radius:var(--radius2);font-size:.82rem;background:var(--bg2);color:var(--text);transition:all .2s;outline:none;font-family:inherit}
@@ -2372,10 +2383,48 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 </div>
 <div class="pnl-body" id="ct"></div>
 <div class="pnl-footer">
-    Veriler anlık değişebilir. Resmi uygulama değildir.<br>
-    📞 <b>İletişim:</b> Samsun içi <a href="tel:153" style="color:var(--accent)">153</a>, dışı <a href="tel:03624311012" style="color:var(--accent)">0362 431 10 12</a>
+    ⚠️ <b>YASAL UYARI:</b> Değerler anlık değişebilir. Resmi uygulama değildir.<br>
+    📞 İletişim: Samsun içi <a href="tel:153">153</a>, dışı <a href="tel:03624311012">0362 431 10 12</a>
 </div>
 </div>
+<!-- Aktarma Kuralları Modalı -->
+<div id="aktarmaModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+    <div style="background:var(--panel);width:100%;max-width:400px;border-radius:16px;padding:20px;box-shadow:var(--shadow2);border:1px solid var(--card-border);max-height:85vh;overflow-y:auto">
+        <h3 style="margin-bottom:12px;color:var(--text);display:flex;align-items:center;gap:8px">🔄 Aktarma Kuralları</h3>
+        
+        <div style="font-size:0.75rem;color:var(--text);line-height:1.5;margin-bottom:16px">
+            <h4 style="color:var(--accent);margin:10px 0 4px 0">1 saat içinde yapılan:</h4>
+            <ul style="margin-left:20px;color:var(--text2)">
+                <li>Otobüs → Otobüs</li>
+                <li>Otobüs → Hafif Raylı Sistem</li>
+                <li>Hafif Raylı Sistem → Otobüs</li>
+            </ul>
+            <p style="margin-top:4px">Aktarmalar <b>ÜCRETSİZDİR</b>.</p>
+
+            <h4 style="color:var(--orange);margin:12px 0 4px 0">1 saat sonrasında yapılan aktarmalar:</h4>
+            <p style="color:var(--text2)">8,00 TL ücretlendirilir.</p>
+
+            <h4 style="color:var(--accent);margin:12px 0 4px 0">Düşük ücretli hattan yüksek ücretli hatta geçiş:</h4>
+            <p style="color:var(--text2)">Aradaki ücret farkı tahsil edilir.</p>
+
+            <h4 style="color:var(--green);margin:12px 0 4px 0">Aynı veya daha düşük ücretli hatta geçiş:</h4>
+            <p style="color:var(--text2)">Ek ücret alınmaz.</p>
+
+            <br>
+            <h4 style="color:var(--red);margin:10px 0 4px 0">İADE / ÜCRET DÜZELTME DURUMLARI</h4>
+            <ul style="margin-left:20px;color:var(--text2)">
+                <li style="margin-bottom:4px">1 saat içindeki ücretsiz aktarmalarda ücret iadesi yapılmaz (zaten ücret alınmaz).</li>
+                <li style="margin-bottom:4px">Daha düşük ücretli hatta geçişlerde iade yapılmaz; sistem ek ücret tahsil etmez.</li>
+                <li style="margin-bottom:4px">Yüksek ücretli hatta geçişte fark ücreti alınır; iade söz konusu değildir.</li>
+                <li style="margin-bottom:4px">1 saat sonrasında yapılan aktarmalarda tahsil edilen 8,00 TL iade edilmez.</li>
+                <li style="margin-bottom:4px">Abonman binişlerinde ücret iadesi uygulanmaz (biniş hakkı düşer).</li>
+                <li style="margin-bottom:4px">Kart kaybı durumunda kart bedeli iade edilmez.</li>
+            </ul>
+        </div>
+        <button onclick="document.getElementById('aktarmaModal').style.display='none'" style="background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;width:100%">Kapat</button>
+    </div>
+</div>
+
 <!-- Bilgilendirme Modalı -->
 <div id="infoModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
     <div style="background:var(--card);padding:24px;border-radius:16px;width:85%;max-width:400px;text-align:center;border:1px solid var(--card-border)">
@@ -2389,11 +2438,25 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
             📞 Samsun içi: <a href="tel:153" style="color:var(--accent)">153</a><br>
             📞 Samsun dışı: <a href="tel:03624311012" style="color:var(--accent)">0362 431 10 12</a>
         </p>
-        <button onclick="document.getElementById('infoModal').style.display='none'" style="background:var(--accent);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Anladım</button>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+            <label style="font-size:0.7rem;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chkGosterme"> Bir daha gösterme</label>
+            <button onclick="closeInfoModal()" style="background:var(--accent);color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Anladım</button>
+        </div>
     </div>
 </div>
 
 <script>
+function closeInfoModal() {
+    if(document.getElementById('chkGosterme').checked) {
+        localStorage.setItem('hideInfoModal', 'true');
+    }
+    document.getElementById('infoModal').style.display='none';
+}
+window.addEventListener('DOMContentLoaded', () => {
+    if(localStorage.getItem('hideInfoModal') !== 'true') {
+        document.getElementById('infoModal').style.display='flex';
+    }
+});
 // ===== THEME SYSTEM =====
 function getPreferredTheme(){
     const saved=localStorage.getItem('theme');
@@ -2407,8 +2470,8 @@ function applyTheme(t){
     localStorage.setItem('theme',t);
     
     // Logo Degisimi
-    const sbb=document.getElementById('sbbLogo');
-    const sam=document.getElementById('samulasLogo');
+    const sbb=document.querySelector('.brand img[title="Samsun Büyükşehir Belediyesi"]') || document.getElementById('sbbLogo');
+    const sam=document.querySelector('.brand img[title="Samulaş"]') || document.getElementById('samulasLogo');
     if(sbb) sbb.src=t==='dark'?'/static/images/sbb_dark.png':'/static/images/sbb_v2.png?v=2';
     if(sam) sam.src=t==='dark'?'/static/images/samulas_3.png':'/static/images/samulas.png?v=2';
 
@@ -2466,8 +2529,8 @@ async function fetchWeather() {
         const res = await fetch('/api/hava');
         const data = await res.json();
         const wWidget = document.getElementById('weatherWidget');
-        if (data && data.sicaklik) {
-            const temp = Math.round(data.sicaklik);
+        if (data && data.sicaklik !== undefined && data.sicaklik !== null) {
+            const temp = Number(data.sicaklik).toFixed(1);
             const isNight = new Date().getHours() < 6 || new Date().getHours() > 19;
             let iconName = weaI[data.hadise] || 'cloudy';
             // Adjust for night icons
@@ -2517,15 +2580,38 @@ async function loadHats(){try{H=await(await fetch('/api/hat')).json();shH()}catc
 function shYakin(duraklar){
     if(duraklar) lastNearbyStops=duraklar; else duraklar=lastNearbyStops;
     clr();
-    let x=`<div class="sec">📍 Yakınınızdaki Duraklar</div><div class="lst">`;
-    if(duraklar.length){
+    let x=`<div class="sec">📍 Yakınınızdaki Duraklar</div>`;
+    x+=`<div class="src-wrap" style="margin:10px 0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input class="src" id="durakInput" placeholder="Durak Ara (Ör: Türkiş, 12055...)" style="padding-left:36px" onkeyup="if(event.key==='Enter') araDurak()"></div><button class="bk" onclick="araDurak()" style="margin-bottom:12px">🔍 Durak Ara</button>`;
+    
+    x+=`<div class="lst" id="yakinList">`;
+    if(duraklar && duraklar.length){
         duraklar.forEach((d,i)=>{
-            x+=`<div class="drk" onclick="shDurakDetay('${d.kod}')"><span class="no">${i+1}</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.dist}m uzakta</small></div></div>`;
+            x+=`<div class="drk" onclick="shDurakDetay('${d.kod}')"><span class="no">${i+1}</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.dist?d.dist+'m uzakta':'Mesafe Bilinmiyor'}</small></div></div>`;
             M['d'+d.kod]=L.marker([d.lat,d.lon],{icon:stopIcon(i+1)}).addTo(map).bindPopup(d.ad);
         });
-    }else x+=`<div class="no-data">Yakında durak bulunamadı.</div>`;
+    }else x+=`<div class="no-data">Yakında durak bulunamadı. Lütfen arama yapın.</div>`;
     x+=`<button class="bk" style="margin-top:10px" onclick="loadHats()">Tüm Hatları Göster</button></div>`;
     document.getElementById('ct').innerHTML=x;
+}
+async function araDurak(){
+    const q=document.getElementById('durakInput')?.value?.trim();
+    if(!q)return;
+    document.getElementById('yakinList').innerHTML='<div class="loading">Aranıyor...</div>';
+    try{
+        const res = await (await fetch(`/api/durak_ara?q=${encodeURIComponent(q)}`)).json();
+        if(res.length){
+            let h='';
+            res.forEach((d,i)=>{
+                h+=`<div class="drk" onclick="shDurakDetay('${d.kod}')"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">Kod: ${d.kod}</small></div></div>`;
+                if(i===0){ map.setView([d.lat, d.lon], 16); }
+            });
+            document.getElementById('yakinList').innerHTML=h;
+        }else{
+            document.getElementById('yakinList').innerHTML='<div class="no-data">Durak bulunamadı.</div>';
+        }
+    }catch(e){
+        document.getElementById('yakinList').innerHTML='<div class="no-data">Arama hatası.</div>';
+    }
 }
 
 // ===== ROTA =====
@@ -2591,7 +2677,7 @@ const stopLbl=(n,num,c)=>{
 };
 
 // ===== HAT DETAY (shL) =====
-async function shL(e,backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>`:`<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr"><div style="font-weight:700;font-size:.9rem">${ki.i} ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
+async function shL(e,backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>`:`<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş ➝':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
 
     // === BİLGİLENDİRME KUTULARI ===
     if(nm.includes('SAMSUNUM-1')){
@@ -2871,6 +2957,23 @@ def create_app(db, col):
     @app.get("/api/yakin")
     async def api_yakin(lat: float, lon: float):
         return JSONResponse(col.yakindaki_duraklar(lat, lon))
+
+    @app.get("/api/durak_ara")
+    async def api_durak_ara(q: str):
+        if not q or len(q) < 2: return JSONResponse([])
+        q_like = f"%{q.lower()}%"
+        res = col.db.get("SELECT kod, ad, lat, lon FROM durak WHERE lower(ad) LIKE ? OR kod LIKE ? LIMIT 20", (q_like, q_like))
+        # Override with tram correct coords if found
+        if hasattr(col.db, 'tram_corrections'):
+            for d in res:
+                for csv_name, coords in col.db.tram_corrections.items():
+                    cv_low = csv_name.lower().replace(' i̇stasyonu', '').replace(' istasyonu', '')
+                    ad_low = d['ad'].lower()
+                    if cv_low in ad_low or ad_low in cv_low:
+                        d['lat'] = coords[0]
+                        d['lon'] = coords[1]
+                        break
+        return JSONResponse(res)
 
     @app.get("/api/durak_panel/{kod}")
     async def api_durak_panel(kod: str):
