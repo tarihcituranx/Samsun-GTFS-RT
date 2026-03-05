@@ -2493,6 +2493,38 @@ window.flt=q=>{q=q.toLowerCase();const bk={};H.forEach(h=>{const k=h.kat||'otobu
 function toggleSettings(){const p=document.getElementById('settingsPanel');p.style.display=p.style.display==='none'?'block':'none';document.getElementById('chkHasilat').checked=localStorage.getItem('showHasilat')==='1'}
 async function upV(e,col){try{const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};let html='';const showH=localStorage.getItem('showHasilat')==='1';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa)&&aa.length>0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';const durumIcon=a.durum==='dikkat'?'🔴':a.durum==='uyari'?'🟡':'🟢';html+=`<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)" style="flex-wrap:wrap"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><div><div class="pl">${durumIcon} ${a.plaka}</div><div class="inf" style="color:var(--text2)">${yak?'📍 '+yak:''}</div></div><div style="text-align:right"><div style="font-weight:700;font-size:.85rem">${a.hiz} km/s</div><div style="font-size:.6rem;color:var(--text3)">${a.saat?'⏱ '+a.saat:''}</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);font-size:.6rem;color:var(--text2)"><span>👥 ${a.yolcu} yolcu</span><span>📊 Gün: ${a.gunluk_yolcu||0}</span><span>🏎 Max: ${a.max_hiz||0}</span><span>📏 ${a.mesafe_km||0} km</span>${showH?`<span>💰 ₺${(a.hasilat||0).toFixed(0)}</span>`:''}</div></div>`;if(yak){const rows=document.querySelectorAll('.drk');rows.forEach(r=>{if(r.innerText.includes(yak)){if(!r.querySelector('.vtg'))r.innerHTML+=`<span class="vtg">🚌 ${a.plaka}</span>`}})}});document.getElementById('vlist').innerHTML=html}else{document.getElementById('acnt').innerText='0';document.getElementById('vlist').innerHTML='<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'}}catch(e){}}
 
+// ===== OSRM ROUTE HELPER =====
+async function drawRouteOSRM(coords,color){
+    if(!coords||coords.length<2) return;
+    try{
+        // Max 25 waypoints for OSRM demo, sample if more
+        let pts=coords;
+        if(pts.length>25){
+            const step=Math.ceil(pts.length/24);
+            const sampled=[pts[0]];
+            for(let i=step;i<pts.length-1;i+=step) sampled.push(pts[i]);
+            sampled.push(pts[pts.length-1]);
+            pts=sampled;
+        }
+        const wp=pts.map(c=>c[1]+','+c[0]).join(';');
+        const res=await fetch(`https://router.project-osrm.org/route/v1/driving/${wp}?overview=full&geometries=geojson`);
+        const data=await res.json();
+        if(data.routes&&data.routes[0]){
+            const geo=data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+            const pl=L.polyline(geo,{color:color,weight:4,opacity:0.7,dashArray:null}).addTo(map);
+            M['routeLine']=pl;
+        }
+    }catch(e){console.log('OSRM route error:',e)}
+}
+
+// Stop marker with name label
+const stopLbl=(n,num,c)=>{
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const bg=isDark?'rgba(15,23,42,0.85)':'rgba(255,255,255,0.9)';
+    const tc=isDark?'#e2e8f0':'#1e293b';
+    return L.divIcon({className:'',html:`<div style="position:relative"><div style="width:20px;height:20px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">${num}</div><div style="position:absolute;top:-8px;left:24px;background:${bg};color:${tc};padding:1px 6px;border-radius:4px;font-size:9px;white-space:nowrap;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">${n}</div></div>`,iconSize:[20,20],iconAnchor:[10,10]});
+};
+
 // ===== HAT DETAY (shL) =====
 async function shL(e,backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>`:`<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr"><div style="font-weight:700;font-size:.9rem">${ki.i} ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
 
@@ -2594,7 +2626,7 @@ async function shL(e,backToRoute=false){clr();document.getElementById('ct').inne
     const haftasonu=sa.filter(s=>s.gun==='Hafta Sonu').sort((a,b)=>(a.saat||'').localeCompare(b.saat||''));
     if(hergun.length){x+=`<div class="saat"><div class="t">📅 Sefer Saatleri (Her Gün)</div><div class="saatlar">${hergun.map(s=>`<span>${s.saat}${s.yon?'<br><small>'+s.yon+'</small>':''}</span>`).join('')}</div></div>`}
     if(haftasonu.length){x+=`<div class="saat"><div class="t">📅 Sefer Saatleri (Hafta Sonu)</div><div class="saatlar">${haftasonu.map(s=>`<span>${s.saat}${s.yon?'<br><small>'+s.yon+'</small>':''}</span>`).join('')}</div></div>`}
-    if(hi.length||hs.length){x+=`<div class="saat"><div class="t">📅 Saatler</div><div class="saattab"><div class="on" onclick="schT('hi',this)">Hİ (${hi.length})</div><div onclick="schT('hs',this)">HS (${hs.length})</div></div><div class="saatlar" id="scht">${hi.slice(0,40).map(s=>`<span>${s.saat}</span>`).join('')}${hi.length>40?`<span>+${hi.length-40}</span>`:''}</div></div>`;window._s={hi,hs}}}if(da.length){x+=`<div class="sec">📍 Duraklar (${da.length})</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],17)"><span class="no" style="background:${col}">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span></span></div>`;if(d.lat&&d.lon){co.push([d.lat,d.lon]);M['d'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,col)}).addTo(map)}});if(co.length)map.fitBounds(co,{padding:[40,40]})}else x+=`<div class="no-data">📍 Durak bilgisi yok</div>`;document.getElementById('ct').innerHTML=x;upV(e,col);liveT=setInterval(()=>upV(e,col),5000)}catch(e){console.error(e);document.getElementById('ct').innerHTML=`<button class="bk" onclick="shH()">← Hatlar</button><div class="no-data">❌ Hata</div>`}}
+    if(hi.length||hs.length){x+=`<div class="saat"><div class="t">📅 Saatler</div><div class="saattab"><div class="on" onclick="schT('hi',this)">Hİ (${hi.length})</div><div onclick="schT('hs',this)">HS (${hs.length})</div></div><div class="saatlar" id="scht">${hi.slice(0,40).map(s=>`<span>${s.saat}</span>`).join('')}${hi.length>40?`<span>+${hi.length-40}</span>`:''}</div></div>`;window._s={hi,hs}}}if(da.length){x+=`<div class="sec">📍 Duraklar (${da.length})</div>`;const co=[];const stopCol='#475569';da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],17)"><span class="no" style="background:${stopCol}">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span></span></div>`;if(d.lat&&d.lon){co.push([d.lat,d.lon]);M['d'+i]=L.marker([d.lat,d.lon],{icon:stopLbl(d.ad,i+1,stopCol)}).addTo(map)}});if(co.length){map.fitBounds(co,{padding:[40,40]});drawRouteOSRM(co,col)}}else x+=`<div class="no-data">📍 Durak bilgisi yok</div>`;document.getElementById('ct').innerHTML=x;upV(e,col);liveT=setInterval(()=>upV(e,col),5000)}catch(e){console.error(e);document.getElementById('ct').innerHTML=`<button class="bk" onclick="shH()">← Hatlar</button><div class="no-data">❌ Hata</div>`}}
 window.shL=shL;
 window.schT=(t,b)=>{document.querySelectorAll('.saattab div').forEach(x=>x.classList.remove('on'));b.classList.add('on');const d=window._s?.[t]||[];document.getElementById('scht').innerHTML=d.slice(0,40).map(s=>`<span>${s.saat}</span>`).join('')+(d.length>40?`<span>+${d.length-40}</span>`:'')};
 window.openTramTab=function(tabId,el){document.getElementById('tab_hi').style.display='none';document.getElementById('tab_cmt').style.display='none';document.getElementById('tab_pzr').style.display='none';document.getElementById('tab_'+tabId).style.display='block';let tabs=el.parentNode.children;for(let i=0;i<tabs.length;i++){tabs[i].style.borderBottom='2px solid transparent';tabs[i].style.fontWeight='normal';tabs[i].style.backgroundColor='transparent'}el.style.borderBottom='2px solid var(--accent)';el.style.fontWeight='bold';el.style.backgroundColor='var(--card)'};
