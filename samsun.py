@@ -2442,9 +2442,9 @@ applyTheme(getPreferredTheme());
 let M={}, V=[], H=[], cur='hat', sK=null, liveT=null, userLoc=null, targetLoc=null;
 const K={dil:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>',n:'Tümü',c:'#333'},
 otobus:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#3b82f6"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg>',n:'Otobüs',c:'#3b82f6'},
-ekspres:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#8b5cf6"><path d="M3 12h13l4-4H3"/><path d="M3 16h13l4-4"/><circle cx="7" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/><path d="M20 8l-2-3"/><path d="M17 8h3"/></svg>',n:'Ekspres',c:'#8b5cf6'},
+ekspres:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#8b5cf6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',n:'Ekspres',c:'#8b5cf6'},
 tramvay:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#10b981"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 5V3M16 5V3"/><path d="M3 3h18"/><circle cx="8.5" cy="17" r="1.2"/><circle cx="15.5" cy="17" r="1.2"/><path d="M6 21l2-2.5M18 21l-2-2.5"/><path d="M8 10v5M12 10v5M16 10v5"/></svg>',n:'Tramvay',c:'#10b981'},
-ring:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#f59e0b"><path d="M3 12h13l4-4H3"/><path d="M3 16h13l4-4"/><circle cx="7" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/><path d="M20 8l-2-3"/><path d="M17 8h3"/></svg>',n:'Ring',c:'#f59e0b'},
+ring:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#f59e0b"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',n:'Ring',c:'#f59e0b'},
 tekne:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#0ea5e9"><path d="M3 17l1.5-7h15l1.5 7"/><path d="M2 20c1.5-2 3-2 4.5 0s3 2 4.5 0 3 2 4.5 0 3-2 4.5 0"/><rect x="7" y="7" width="10" height="3" rx="1"/><path d="M12 7V4M9 4h6"/><path d="M5 10h14"/></svg>',n:'Vapur',c:'#0ea5e9'},
 odak:{i:'<img src="/static/images/odak.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'transparent'},
 teleferik:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#ec4899"><path d="M2 6l20-2"/><path d="M7 6l-1 2h12l-1-2"/><rect x="6" y="8" width="12" height="8" rx="2"/><path d="M9 8v8M15 8v8"/><circle cx="12" cy="5.5" r="1"/></svg>',n:'Teleferik',c:'#ec4899'},
@@ -2473,8 +2473,14 @@ async function fetchWeather() {
             // Adjust for night icons
             if (isNight && iconName.includes('-day')) iconName = iconName.replace('-day', '-night');
             
+            let trTime = '';
+            if (data.zaman) {
+                const d = new Date(data.zaman); // Parses UTC correctly from MGM 'Z' format
+                trTime = d.toLocaleTimeString('tr-TR', {timeZone: 'Europe/Istanbul', hour: '2-digit', minute:'2-digit'});
+            }
+            
             wWidget.innerHTML = `<img src="/static/weather-icons/animated/${iconName}.svg" style="height:28px;width:28px;margin-right:2px;filter:drop-shadow(0px 2px 3px rgba(0,0,0,0.2))"> <span>${temp}°C</span>`;
-            wWidget.title = `Samsun Atakum\nGüncelleme: ${data.zaman ? data.zaman.split('T')[1].substring(0,5) : ''}`;
+            wWidget.title = `Samsun Atakum\nGüncelleme: ${trTime}`;
         } else {
             wWidget.style.display = 'none';
         }
