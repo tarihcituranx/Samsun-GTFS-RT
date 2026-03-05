@@ -1447,7 +1447,36 @@ class Collector:
             try:
                 lat, lon = parse_float(d.get('enlem')), parse_float(d.get('boylam'))
                 if 40 < lat < 43 and 34 < lon < 38:
-                    result.append({'plaka': d.get('plaka', '?'), 'lat': lat, 'lon': lon, 'hiz': int(float(d.get('hiz', 0))), 'yon': float(d.get('yon', 0)), 'yolcu': int(d.get('seferYolcu', 0))})
+                    # Tarih/saat parse
+                    tarih_raw = d.get('tarih') or d.get('editDate') or ''
+                    saat_str = ''
+                    if tarih_raw:
+                        try: saat_str = tarih_raw.split('T')[1][:5]
+                        except: pass
+                    
+                    # Renk → durum
+                    renk = str(d.get('renk', '')).upper()
+                    durum = 'normal'
+                    if renk == 'FF0000': durum = 'dikkat'
+                    elif renk == 'FFFF00': durum = 'uyari'
+                    
+                    # Mesafe → km
+                    mesafe_m = int(float(d.get('mesafe', 0)))
+                    mesafe_km = round(mesafe_m / 1000, 1)
+                    
+                    result.append({
+                        'plaka': d.get('plaka', '?'),
+                        'lat': lat, 'lon': lon,
+                        'hiz': int(float(d.get('hiz', 0))),
+                        'yon': float(d.get('yon', 0)),
+                        'yolcu': int(d.get('seferYolcu', 0)),
+                        'gunluk_yolcu': int(d.get('gunlukYolcu', 0)),
+                        'max_hiz': int(float(d.get('maxHiz', 0))),
+                        'mesafe_km': mesafe_km,
+                        'durum': durum,
+                        'saat': saat_str,
+                        'hasilat': round(float(d.get('toplamHasilat', 0)), 2),
+                    })
             except Exception as e:
                 log.debug(f"Canlı veri parse hatası ({code}): {e}")
         
@@ -2184,10 +2213,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 /* Top bar */
 .top-bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .brand{display:flex;align-items:center;gap:8px}
-.brand img{height:32px;width:auto;transition:transform .2s;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
+.brand img{height:42px;width:auto;transition:transform .2s;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
 .brand img:hover{transform:scale(1.05)}
 .top-actions{display:flex;gap:6px;align-items:center}
-.theme-btn{background:var(--bg3);border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;transition:all .2s;color:var(--text)}
+.theme-btn{background:var(--bg3);border:none;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:all .2s;color:var(--text)}
 .theme-btn:hover{background:var(--accent-bg);transform:scale(1.1)}
 
 /* Warning */
@@ -2312,11 +2341,16 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <div class="pnl-header">
     <div class="top-bar">
         <div class="brand">
-            <img src="/static/images/sbb_v2.png?v=2" title="SBB" style="height:28px">
-            <img src="/static/images/samulas.png?v=2" title="Samulaş" style="height:28px">
+            <img src="/static/images/sbb_v2.png?v=2" title="SBB" style="height:40px">
+            <img src="/static/images/samulas.png?v=2" title="Samulaş" style="height:40px">
         </div>
         <div class="top-actions">
+            <button class="theme-btn" id="settingsBtn" onclick="toggleSettings()" title="Ayarlar">⚙️</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" title="Tema Değiştir">🌙</button>
+        </div>
+        <div id="settingsPanel" style="display:none;position:absolute;top:60px;right:10px;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:12px;box-shadow:var(--shadow2);z-index:100;width:220px;font-size:.75rem">
+            <div style="font-weight:700;margin-bottom:8px;font-size:.8rem">⚙️ Ayarlar</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0"><input type="checkbox" id="chkHasilat" onchange="localStorage.setItem('showHasilat',this.checked?'1':'0')" style="width:16px;height:16px;accent-color:var(--accent)"> 💰 Günlük Hasılat Göster</label>
         </div>
     </div>
 </div>
@@ -2456,7 +2490,8 @@ window.selK=k=>{sK=sK===k?null:k;shH()};
 window.flt=q=>{q=q.toLowerCase();const bk={};H.forEach(h=>{const k=h.kat||'otobus';(bk[k]=bk[k]||[]).push(h)});const f=(sK&&sK!=='dil'?bk[sK]||[]:H).filter(h=>(h.code+h.name).toLowerCase().includes(q));document.getElementById('lst').innerHTML=f.map(h=>`<div class="it ${h.kat||'otobus'}" onclick="shL('${encodeURIComponent(h.code)}')">${h.name||h.code}</div>`).join('')};
 
 // ===== ARAÇ GÜNCELLEME =====
-async function upV(e,col){try{const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};let html='';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa)&&aa.length>0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';html+=`<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)"><div><div class="pl">${a.plaka}</div><div class="inf">${yak?'📍 '+yak:''}</div></div><div style="text-align:right"><div style="font-weight:700">${a.hiz} km/s</div><div class="inf">${a.yolcu} yolcu</div></div></div>`;if(yak){const rows=document.querySelectorAll('.drk');rows.forEach(r=>{if(r.innerText.includes(yak)){if(!r.querySelector('.vtg'))r.innerHTML+=`<span class="vtg">🚌 ${a.plaka}</span>`}})}});document.getElementById('vlist').innerHTML=html}else{document.getElementById('acnt').innerText='0';document.getElementById('vlist').innerHTML='<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'}}catch(e){}}
+function toggleSettings(){const p=document.getElementById('settingsPanel');p.style.display=p.style.display==='none'?'block':'none';document.getElementById('chkHasilat').checked=localStorage.getItem('showHasilat')==='1'}
+async function upV(e,col){try{const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};let html='';const showH=localStorage.getItem('showHasilat')==='1';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa)&&aa.length>0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';const durumIcon=a.durum==='dikkat'?'🔴':a.durum==='uyari'?'🟡':'🟢';html+=`<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)" style="flex-wrap:wrap"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><div><div class="pl">${durumIcon} ${a.plaka}</div><div class="inf" style="color:var(--text2)">${yak?'📍 '+yak:''}</div></div><div style="text-align:right"><div style="font-weight:700;font-size:.85rem">${a.hiz} km/s</div><div style="font-size:.6rem;color:var(--text3)">${a.saat?'⏱ '+a.saat:''}</div></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:6px;padding-top:6px;border-top:1px solid var(--card-border);font-size:.6rem;color:var(--text2)"><span>👥 ${a.yolcu} yolcu</span><span>📊 Gün: ${a.gunluk_yolcu||0}</span><span>🏎 Max: ${a.max_hiz||0}</span><span>📏 ${a.mesafe_km||0} km</span>${showH?`<span>💰 ₺${(a.hasilat||0).toFixed(0)}</span>`:''}</div></div>`;if(yak){const rows=document.querySelectorAll('.drk');rows.forEach(r=>{if(r.innerText.includes(yak)){if(!r.querySelector('.vtg'))r.innerHTML+=`<span class="vtg">🚌 ${a.plaka}</span>`}})}});document.getElementById('vlist').innerHTML=html}else{document.getElementById('acnt').innerText='0';document.getElementById('vlist').innerHTML='<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'}}catch(e){}}
 
 // ===== HAT DETAY (shL) =====
 async function shL(e,backToRoute=false){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI()">← Rotaya Dön</button>`:`<button class="bk" onclick="shH()">← Hatlar</button>`;x+=`<div class="hdr"><div style="font-weight:700;font-size:.9rem">${ki.i} ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
