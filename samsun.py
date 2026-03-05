@@ -2388,10 +2388,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 <div class="pnl-header">
     <div class="top-bar">
         <div class="brand">
-            <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi" style="height:40px">
-            <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş" style="height:40px">
+            <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi">
+            <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş">
         </div>
-        <div class="top-actions">
+        <div class="top-actions" style="justify-content:center">
             <div id="weatherWidget" style="font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--text);padding:4px 10px;background:var(--bg3);border-radius:20px;box-shadow:var(--shadow1)">⏳ --°C</div>
             <div class="right-btns">
                 <button class="theme-btn" id="settingsBtn" onclick="toggleSettings()" title="Ayarlar">⚙️</button>
