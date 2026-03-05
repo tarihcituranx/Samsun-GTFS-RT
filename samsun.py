@@ -3049,6 +3049,90 @@ def create_app(db, col):
             log.error(f"Proxy RealTimeData Hatası: {e}")
             return JSONResponse([])
 
+    @app.get("/api/proxy/stops_stations")
+    async def proxy_stops_stations(lineCode: str):
+        """Mobil uygulama için StopsStations proxy (Hat durakları)"""
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'StopsStations', lineCode=lineCode),
+                timeout=10
+            )
+            _api_stats['asis_calls'] += 1
+            # ASIS bazen {"data": [...]} bazen düz liste döner — ikisini de normalize et
+            if isinstance(data, dict):
+                data = data.get('data', data.get('result', []))
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy StopsStations Hatası: {e}")
+            return JSONResponse([])
+
+    @app.get("/api/proxy/line_directions")
+    async def proxy_line_directions(lineCode: str):
+        """Mobil uygulama için LineDirections proxy (Hat yönleri)"""
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'LineDirections', lineCode=lineCode),
+                timeout=10
+            )
+            _api_stats['asis_calls'] += 1
+            if isinstance(data, dict):
+                data = data.get('data', data.get('result', []))
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy LineDirections Hatası: {e}")
+            return JSONResponse([])
+
+    @app.get("/api/proxy/schedules")
+    async def proxy_schedules(lineCode: str, scheduleDate: str = None):
+        """Mobil uygulama için Schedules proxy (Hat saatleri / tarife)"""
+        if not scheduleDate:
+            scheduleDate = datetime.now().strftime("%Y-%m-%dT00:00:00")
+        try:
+            data = await asyncio.wait_for(
+                asyncio.to_thread(col.http.asis, 'Schedules', lineCode=lineCode, scheduleDate=scheduleDate),
+                timeout=10
+            )
+            _api_stats['asis_calls'] += 1
+            if isinstance(data, dict):
+                data = data.get('data', data.get('result', []))
+            return JSONResponse(data or [])
+        except Exception as e:
+            log.error(f"Proxy Schedules Hatası: {e}")
+            return JSONResponse([])
+
+    @app.get("/api")
+    async def api_root():
+        """API kök endpoint — sağlık ve mevcut endpoint listesi"""
+        return JSONResponse({
+            "status": "ok",
+            "version": "v25",
+            "uptime_seconds": int(time.time() - _START_TIME),
+            "endpoints": {
+                "proxy": [
+                    "/api/proxy/smart_stations?stationId=",
+                    "/api/proxy/realtime?lineCode=",
+                    "/api/proxy/stops_stations?lineCode=",
+                    "/api/proxy/line_directions?lineCode=",
+                    "/api/proxy/schedules?lineCode=&scheduleDate=",
+                ],
+                "hat": [
+                    "/api/hat",
+                    "/api/hat/arac/{code}",
+                    "/api/hat/durak/{code}",
+                    "/api/hat/sefer/{code}",
+                    "/api/hat/fiyat/{code}",
+                    "/api/hat/info/{code}",
+                ],
+                "diger": [
+                    "/api/health",
+                    "/api/yakin?lat=&lon=",
+                    "/api/rota",
+                    "/api/odak",
+                    "/api/samair",
+                ],
+            }
+        })
+
     # ==========================================
 
     @app.get("/api/rota")
