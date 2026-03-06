@@ -3457,20 +3457,11 @@ def create_app(db, col):
     async def api_durak_ara(q: str):
         if not q or len(q) < 2: return JSONResponse([])
         q_like = f"%{q.lower()}%"
-        # Önce tam eşleşme dene
+        # Sadece veritabanı eşleşmesi (CPU bloklamıyor)
         res = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE lower(ad) LIKE ? OR kod LIKE ? OR id LIKE ? LIMIT 20", (q_like, q_like, q_like))
-        # Eğer sonuç yoksa fuzzy arama yap
-        if not res:
-            all_stops = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE ad IS NOT NULL")
-            scored = []
-            for s in all_stops:
-                score = fuzzy_match(q, s['ad'])
-                if score >= 0.5:
-                    scored.append((score, s))
-            scored.sort(key=lambda x: -x[0])
-            res = [s for _, s in scored[:20]]
+        
         # Tram corrections
-        if hasattr(col.db, 'tram_corrections'):
+        if res and hasattr(col.db, 'tram_corrections'):
             for d in res:
                 for csv_name, coords in col.db.tram_corrections.items():
                     cv_low = csv_name.lower().replace(' i̇stasyonu', '').replace(' istasyonu', '')
@@ -3479,7 +3470,7 @@ def create_app(db, col):
                         d['lat'] = coords[0]
                         d['lon'] = coords[1]
                         break
-        return JSONResponse(res)
+        return JSONResponse(res or [])
 
     @app.get("/api/durak_panel/{kod}")
     async def api_durak_panel(kod: str):
