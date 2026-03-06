@@ -2584,6 +2584,64 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .timeline .line{position:absolute;left:61px;top:0;bottom:0;width:2px;background:var(--card-border);z-index:1}
 .route-badge{background:var(--bg2);padding:2px 8px;border-radius:4px;font-weight:700;font-size:.85rem;margin-right:5px;color:var(--text)}
 .rota-box{background:var(--bg2);padding:10px;border-left:4px solid #f59e0b;margin-bottom:8px;border-radius:6px;cursor:pointer}
+
+/* ===== RESPONSIVE SCALING ===== */
+html{font-size:clamp(13px, 1.2vw, 18px)}
+@media(min-width:768px) and (max-width:1199px){
+  .pnl{width:420px}
+  .brand img{height:clamp(50px,7vw,70px)}
+  .tab{font-size:clamp(.7rem,1vw,.85rem);padding:10px 6px}
+  .tab svg{width:clamp(20px,2.5vw,28px);height:clamp(20px,2.5vw,28px)}
+  .kb{font-size:clamp(.55rem,.8vw,.7rem);padding:10px;min-width:56px;max-width:80px}
+  .kb .i{font-size:clamp(1.1rem,1.5vw,1.4rem)}
+  .it{font-size:clamp(.78rem,1vw,.92rem);padding:12px 14px}
+  .bk{font-size:clamp(.78rem,1vw,.92rem);padding:12px}
+  .src{font-size:clamp(.8rem,1vw,.95rem);padding:12px 14px 12px 40px}
+  .sec{font-size:clamp(.75rem,1vw,.88rem);padding:10px 14px}
+  .drk{font-size:clamp(.75rem,.9vw,.88rem);padding:10px 12px}
+  .drk .no{width:28px;height:28px;font-size:clamp(.65rem,.8vw,.75rem)}
+  .ic .v{font-size:clamp(1.4rem,2vw,1.8rem)}
+  .ic .l{font-size:clamp(.7rem,.9vw,.82rem)}
+  .araclar .t,.saat .t{font-size:clamp(.8rem,1vw,.95rem)}
+  .sfr{font-size:clamp(.7rem,.9vw,.82rem)}
+  .sfr .st{font-size:clamp(.8rem,1vw,.92rem)}
+  .tel a{font-size:clamp(.85rem,1.1vw,1rem)}
+  .warn-bar{font-size:clamp(.6rem,.75vw,.72rem)}
+  .pnl-footer{font-size:clamp(.6rem,.75vw,.72rem)}
+}
+@media(min-width:1200px){
+  .pnl{width:clamp(400px,28vw,520px)}
+  .brand img{height:clamp(56px,4.5vw,80px)}
+  .tab{font-size:clamp(.75rem,.65vw,.95rem);padding:12px 8px}
+  .tab svg{width:clamp(22px,1.8vw,32px);height:clamp(22px,1.8vw,32px)}
+  .kb{font-size:clamp(.58rem,.5vw,.75rem);padding:10px 12px;min-width:60px;max-width:90px}
+  .kb .i{font-size:clamp(1.2rem,1.2vw,1.6rem)}
+  .it{font-size:clamp(.82rem,.7vw,1rem);padding:14px 16px}
+  .bk{font-size:clamp(.82rem,.7vw,1rem);padding:14px}
+  .src{font-size:clamp(.82rem,.7vw,1rem);padding:14px 16px 14px 44px}
+  .sec{font-size:clamp(.78rem,.65vw,.95rem);padding:10px 16px}
+  .drk{font-size:clamp(.78rem,.65vw,.92rem);padding:12px 14px}
+  .drk .no{width:clamp(26px,2vw,34px);height:clamp(26px,2vw,34px);font-size:clamp(.65rem,.55vw,.8rem)}
+  .ic .v{font-size:clamp(1.5rem,1.4vw,2.2rem)}
+  .ic .l{font-size:clamp(.72rem,.6vw,.92rem)}
+  .araclar .t,.saat .t{font-size:clamp(.85rem,.7vw,1.05rem)}
+  .arac{font-size:clamp(.78rem,.65vw,.95rem)}
+  .sfr{font-size:clamp(.72rem,.6vw,.88rem)}
+  .sfr .st{font-size:clamp(.82rem,.7vw,1rem)}
+  .tel a{font-size:clamp(.9rem,.8vw,1.15rem)}
+  .warn-bar{font-size:clamp(.62rem,.5vw,.78rem)}
+  .pnl-footer{font-size:clamp(.62rem,.5vw,.78rem)}
+  .fiyat .pv{font-size:clamp(1.8rem,1.8vw,2.8rem)}
+  .fiyat .t{font-size:clamp(.72rem,.6vw,.9rem)}
+  .toast{font-size:clamp(.8rem,.7vw,1rem);min-width:clamp(250px,20vw,400px)}
+  .theme-btn{width:clamp(40px,3vw,52px);height:clamp(40px,3vw,52px);font-size:clamp(1.2rem,1.1vw,1.6rem)}
+  .route-code{font-size:clamp(1.1em,1vw,1.4em)}
+  .route-info,.route-time{font-size:clamp(.85em,.7vw,1.05em)}
+  .route-details{font-size:clamp(.9em,.75vw,1.1em)}
+}
+@media(min-width:1600px){
+  .pnl{width:clamp(480px,26vw,600px)}
+}
 </style>
 </head>
 
