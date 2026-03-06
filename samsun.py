@@ -2427,7 +2427,6 @@ HTML = '''<!DOCTYPE html>
 <title>🇹🇷 🚌 Samsun Ulaşım Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/leaflet.css"/>
-<script src="/static/leaflet.js"></script>
 <style>
 :root{
   --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;--text:#0f172a;--text2:#334155;--text3:#64748b;
@@ -2655,8 +2654,8 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 <div class="pnl-header">
     <div class="top-bar">
         <div class="brand">
-            <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi">
-            <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş">
+            <img id="sbbLogo" src="/static/images/sbb_v2.png?v=2" title="Samsun Büyükşehir Belediyesi" width="160" height="54">
+            <img id="samulasLogo" src="/static/images/samulas.png?v=2" title="Samulaş" width="120" height="54">
         </div>
         <div class="top-actions" style="justify-content:center">
             <div id="weatherWidget" style="font-size:0.85rem;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--text);padding:4px 10px;background:var(--bg3);border-radius:20px;box-shadow:var(--shadow1)">⏳ --°C</div>
@@ -2679,8 +2678,8 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 <div class="tabs">
     <div class="tab on" data-t="hat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#3b82f6"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg> Hatlar</div>
     <div class="tab" data-t="yakin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Yakın</div>
-    <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:36px;width:auto;object-fit:contain;margin-bottom:0"> Odak</div>
-    <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:36px;width:auto;object-fit:contain;margin-bottom:0"> Samair</div>
+    <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:36px;width:36px;object-fit:contain;margin-bottom:0" width="36" height="36" loading="lazy"> Odak</div>
+    <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:36px;width:36px;object-fit:contain;margin-bottom:0" width="36" height="36" loading="lazy"> Samair</div>
     <div class="tab" data-t="kesfet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#9333ea"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Keşfet</div>
     <div class="tab" data-t="rota" onclick="shRotaUI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Git</div>
 </div>
@@ -2749,12 +2748,13 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
             📞 Samsun dışı: <a href="tel:03624311012" style="color:var(--accent)">0362 431 10 12</a>
         </p>
         <div style="display:flex;align-items:center;justify-content:space-between">
-            <label style="font-size:0.7rem;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chkGosterme"> Bir daha gösterme</label>
+            <label style="font-size:0.7rem;color:var(--text2);display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chkGosterme" onchange="if(this.checked) localStorage.setItem('hideInfoModal','true'); else localStorage.removeItem('hideInfoModal')"> Bir daha gösterme</label>
             <button onclick="closeInfoModal()" style="background:var(--accent);color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Anladım</button>
         </div>
     </div>
 </div>
 
+<script src="/static/leaflet.js"></script>
 <script>
 function closeInfoModal() {
     if(document.getElementById('chkGosterme').checked) {
@@ -2762,11 +2762,9 @@ function closeInfoModal() {
     }
     document.getElementById('infoModal').style.display='none';
 }
-window.addEventListener('DOMContentLoaded', () => {
-    if(localStorage.getItem('hideInfoModal') !== 'true') {
-        document.getElementById('infoModal').style.display='flex';
-    }
-});
+if(localStorage.getItem('hideInfoModal') !== 'true') {
+    document.getElementById('infoModal').style.display='flex';
+}
 // ===== THEME SYSTEM =====
 function getPreferredTheme(){
     const saved=localStorage.getItem('theme');
@@ -2869,7 +2867,9 @@ async function fetchWeather() {
 
 async function requestLocation(){
     const defLoc={lat:41.2925,lon:36.3315};
-    if(!navigator.geolocation){userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.");return}
+    const saved=localStorage.getItem('userLoc');
+    const lastLoc=saved?JSON.parse(saved):defLoc;
+    if(!navigator.geolocation){userLoc=lastLoc;map.setView([lastLoc.lat,lastLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.");return}
     // Remove locate button if exists
     const existBtn=document.getElementById('locateBtn');if(existBtn)existBtn.remove();
     navigator.geolocation.getCurrentPosition(async p=>{
@@ -2880,6 +2880,7 @@ async function requestLocation(){
             showToast("Samsun dışındasınız, varsayılan konuma gidildi.");
         }else{
             userLoc={lat,lon};map.setView([lat,lon],15);
+            localStorage.setItem('userLoc',JSON.stringify({lat,lon}));
             const userMarker=L.marker([lat,lon]).addTo(map).bindPopup("📍 Siz Buradasınız<br><small>Konum belirleniyor...</small>").openPopup();
             try{
                 const geoRes=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=tr`);
@@ -2894,17 +2895,17 @@ async function requestLocation(){
         const lb=document.getElementById('locateBtn');if(lb)lb.remove();
     },(err)=>{
         const reasons={1:'Konum izni reddedildi',2:'Konum bilgisi alınamadı',3:'Konum isteği zaman aşımına uğradı'};
-        userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();
-        showToast(reasons[err.code]||'Konum hatası: '+err.message);console.warn('Geolocation error:',err.code,err.message);
+        userLoc=lastLoc;map.setView([lastLoc.lat,lastLoc.lon],15);L.marker([lastLoc.lat,lastLoc.lon]).addTo(map).bindPopup(saved?"📍 Son Bilinen Konum":"Samsun Meydan").openPopup();loadHats();
+        showToast((reasons[err.code]||'Konum hatası: '+err.message) + (saved?" (Son konum)":""));console.warn('Geolocation error:',err.code,err.message);
         // Show locate button for retry (mobile needs user gesture)
-        if(!document.getElementById('locateBtn')){
+        if(!document.getElementById('locateBtn') && err.code!==1){
             const btn=document.createElement('button');btn.id='locateBtn';
             btn.innerHTML='📍 Konumumu Bul';
             btn.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;background:var(--accent,#3b82f6);color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.3);animation:pulse 2s infinite';
             btn.onclick=()=>requestLocation();
             document.body.appendChild(btn);
         }
-    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:300000}); // Artırılmış cache süresi (5 dk)
 }
 async function init(){
     applyTheme(localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
@@ -2965,10 +2966,10 @@ function drawRotaResults(res,query){Object.keys(M).filter(k=>k.startsWith('rota_
 
 async function shDurakDetay(kod){document.getElementById('ct').innerHTML='<div class="loading">Durak bilgileri alınıyor...</div>';try{const inf=await(await fetch(`/api/durak_panel/${kod}`)).json();let x=`<button class="bk" onclick="shYakin()">← Geri</button><div class="sec">🚏 Durak: ${kod}</div>`;Object.values(V).forEach(m=>map.removeLayer(m));V={};const activeBuses=[];if(inf.length){x+='<div style="display:flex;flex-direction:column;gap:2px">';x+='<div class="sec" style="font-size:.75rem;margin:4px 0">🚌 Geçen Hatlar</div><div class="lst" style="max-height:40vh;overflow-y:auto">';inf.forEach(h=>{x+=`<div class="it ${h.kat}" onclick="shL('${encodeURIComponent(h.hat)}')"><div><b>${h.hat}</b> - ${h.ad}</div>${h.gelen?(()=>{let vb='';if(h.gelen.verify){const v=h.gelen.verify;if(v.status==='OK')vb='<span style="color:#fff;background:var(--green);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">✅ Doğrulandı</span>';else if(v.status==='WARN')vb=`<span style="color:#fff;background:#f59e0b;padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">⚠️ ${v.msg}</span>`;else if(v.status==='ERR')vb=`<span style="color:#fff;background:var(--red);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">❌ ${v.msg}</span>`;else vb=`<span style="color:#fff;background:var(--accent);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">ℹ️ ${v.msg}</span>`}if(h.gelen.lat&&h.gelen.lon){const m=L.marker([h.gelen.lat,h.gelen.lon],{icon:bI(K[h.kat].c,h.gelen.plaka)}).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`);V['v'+h.gelen.plaka]=m;activeBuses.push([h.gelen.lat,h.gelen.lon])}return`<div class="live-badge">⏱️ ${h.gelen.tahmini_dk} dk (${h.gelen.durak_kaldi} durak)${vb}<br><span style="font-weight:400;font-size:0.6rem">Plaka: ${h.gelen.plaka} • Hız: ${h.gelen.hiz} km/s • ${h.gelen.doluluk} yolcu</span></div>`})():''}</div>`});x+='</div>';x+='<div class="sec" style="font-size:.75rem;margin:8px 0 4px">📍 Yaklaşan Araçlar</div><div class="lst">';const approaching=inf.filter(h=>h.gelen);if(approaching.length>0){approaching.forEach(h=>{const g=h.gelen;x+=`<div class="arac" onclick="map.setView([${g.lat},${g.lon}],16)" style="padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center;width:100%"><div><div style="font-weight:700;font-size:.8rem;color:var(--text)">${h.hat}</div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">🚌 ${g.plaka}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:1rem;color:var(--green)">${g.tahmini_dk} dk</div><div style="font-size:.6rem;color:var(--text3)">${g.durak_kaldi} durak • ${g.hiz} km/s</div></div></div></div>`})}else{x+='<div class="no-data" style="font-size:.7rem">Yaklaşan araç bulunamadı</div>'}x+='</div></div>';if(activeBuses.length>0){const group=L.featureGroup(Object.values(V));map.fitBounds(group.getBounds().pad(0.2))}}else x+='<div class="no-data">Hat bilgisi yok</div>';
 // Yakın mekanları getir
-const durak=await(await fetch(`/api/durak_ara?q=${encodeURIComponent(kod)}`)).json();const d0=durak[0];if(d0&&d0.lat&&d0.lon){try{const pois=await(await fetch(`/api/yakin_mekanlar?lat=${d0.lat}&lon=${d0.lon}&radius=1`)).json();if(pois.length){x+=`<div class="sec" style="margin-top:12px">🏛️ Yakındaki Turistik Mekanlar</div>`;pois.forEach(p=>{x+=`<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.mesafe_m}m • ${p.cat} • ${p.hours}</span></div></div>`})}}catch(e){}}
+const durak=await(await fetch(`/api/durak_ara?q=${encodeURIComponent(kod)}`)).json();const d0=durak[0];if(d0&&d0.lat&&d0.lon){try{const pois=await(await fetch(`/api/yakin_mekanlar?lat=${d0.lat}&lon=${d0.lon}&radius=1`)).json();if(pois.length){x+=`<div class="sec" style="margin-top:12px">🏛️ Yakındaki Turistik Mekanlar</div>`;pois.forEach(p=>{x+=`<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" width="48" height="48" loading="lazy"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.mesafe_m}m • ${p.cat} • ${p.hours}</span></div></div>`})}}catch(e){}}
 document.getElementById('ct').innerHTML=x}catch(e){console.error('DurakDetay hata:',e)}}
 
-async function shMekanDetay(id){try{const all=await(await fetch('/api/mekanlar')).json();const m=all.find(x=>x.id===id);if(!m)return;clr();map.setView([m.lat,m.lon],16);M['poi']=L.marker([m.lat,m.lon],{icon:L.divIcon({className:'',html:'<div style="background:#9333ea;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🏛</div>',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);let x=`<button class="bk" onclick="shYakin()">← Geri</button>`;x+=`<div style="border-radius:12px;overflow:hidden;margin-bottom:12px"><img src="${m.img}" style="width:100%;height:180px;object-fit:cover" onerror="this.src='/static/images/placeholder.png'"></div>`;x+=`<div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--text)">${m.title}</div>`;x+=`<div style="font-size:.7rem;color:var(--text2);margin-bottom:8px"><span style="background:var(--accent-bg);padding:2px 8px;border-radius:6px;color:var(--accent);font-weight:600">${m.cat}</span></div>`;x+=`<div style="font-size:.8rem;line-height:1.6;color:var(--text);margin-bottom:12px">${m.desc}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">🕐</div><div class="l">${m.hours}</div></div><div class="ic"><div class="v">${m.sections}</div><div class="l">Bölüm</div></div></div>`;if(m.audio&&m.audio.tr){x+=`<div class="sec">🔊 Sesli Anlatım</div><audio controls style="width:100%;margin:8px 0;border-radius:8px" preload="none"><source src="${m.audio.tr}" type="audio/mpeg">Tarayıcınız ses oynatmayı desteklemiyor.</audio>`}x+=`<button class="bk" style="margin-top:8px;background:var(--green);color:#fff" onclick="goRota(${m.lat},${m.lon},'${m.title}')">🗺️ İstikamet: Oraya Git</button>`;x+=`<a href="${m.url}" target="_blank" class="bk" style="display:block;text-align:center;text-decoration:none;margin-top:8px">🏛️ samsunkesfet.com'da Görüntüle</a>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
+async function shMekanDetay(id){try{const all=await(await fetch('/api/mekanlar')).json();const m=all.find(x=>x.id===id);if(!m)return;clr();map.setView([m.lat,m.lon],16);M['poi']=L.marker([m.lat,m.lon],{icon:L.divIcon({className:'',html:'<div style="background:#9333ea;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🏛</div>',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);let x=`<button class="bk" onclick="shYakin()">← Geri</button>`;x+=`<div style="border-radius:12px;overflow:hidden;margin-bottom:12px"><img src="${m.img}" style="width:100%;height:180px;object-fit:cover" onerror="this.src='/static/images/placeholder.png'" width="400" height="180" loading="lazy"></div>`;x+=`<div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--text)">${m.title}</div>`;x+=`<div style="font-size:.7rem;color:var(--text2);margin-bottom:8px"><span style="background:var(--accent-bg);padding:2px 8px;border-radius:6px;color:var(--accent);font-weight:600">${m.cat}</span></div>`;x+=`<div style="font-size:.8rem;line-height:1.6;color:var(--text);margin-bottom:12px">${m.desc}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">🕐</div><div class="l">${m.hours}</div></div><div class="ic"><div class="v">${m.sections}</div><div class="l">Bölüm</div></div></div>`;if(m.audio&&m.audio.tr){x+=`<div class="sec">🔊 Sesli Anlatım</div><audio controls style="width:100%;margin:8px 0;border-radius:8px" preload="none"><source src="${m.audio.tr}" type="audio/mpeg">Tarayıcınız ses oynatmayı desteklemiyor.</audio>`}x+=`<button class="bk" style="margin-top:8px;background:var(--green);color:#fff" onclick="goRota(${m.lat},${m.lon},'${m.title}')">🗺️ İstikamet: Oraya Git</button>`;x+=`<a href="${m.url}" target="_blank" class="bk" style="display:block;text-align:center;text-decoration:none;margin-top:8px">🏛️ samsunkesfet.com'da Görüntüle</a>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
 function goRota(lat,lon,name){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-t="rota"]').classList.add('on');cur='rota';clr();shRotaUI();setTimeout(()=>{document.getElementById('rTo').value=lat+','+lon;document.getElementById('rTo').dataset.name=name;showToast('Hedef seçildi: '+name)},200)}
 window.shMekanDetay=shMekanDetay;
 
@@ -2976,7 +2977,7 @@ window.shMekanDetay=shMekanDetay;
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');cur=t.dataset.t;clr();if(cur==='rota')shRotaUI();else if(cur==='hat')loadHats();else if(cur==='yakin')shYakin();else if(cur==='odak')shO();else if(cur==='kesfet')shKesfet();else if(cur==='samair')shS();else shS()});
 
 let poiData=[];
-async function shKesfet(filterCat=''){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{if(!poiData.length)poiData=await(await fetch('/api/mekanlar')).json();const cats=['Tümü','Müzeler','Anıtlar','Tarihi Mekanlar'];let x=`<style>.k-logo{width:140px;height:140px;object-fit:cover;border-radius:50%;box-shadow:var(--shadow2);border:3px solid var(--card-border);transition:transform 0.3s;margin:0 auto}</style>`;x+=`<div style="text-align:center;padding:16px 0 8px"><img src="/static/images/kesfet_light.jpg" class="k-logo" id="klL" style="display:${document.documentElement.getAttribute('data-theme')==='dark'?'none':'block'}" onerror="this.style.display='none'"><img src="/static/images/kesfet_dark.jpg" class="k-logo" id="klD" style="display:${document.documentElement.getAttribute('data-theme')==='dark'?'block':'none'}" onerror="this.style.display='none'"></div>`;x+=`<div class="sec" style="text-align:center;font-size:1.2rem;margin-top:0">🏛️ Samsun'u Keşfet</div>`;x+='<div class="kg">';cats.forEach(c=>{const active=(!filterCat&&c==='Tümü')||(filterCat===c);x+=`<div class="kb${active?' on':''}" onclick="shKesfet('${c==='Tümü'?'':c}')"><span class="i">${c==='Müzeler'?'🏛':c==='Anıtlar'?'🗽':c==='Tarihi Mekanlar'?'🏰':'🌍'}</span>${c}</div>`});x+='</div>';const filtered=filterCat?poiData.filter(p=>p.cat===filterCat):poiData;x+='<div class="lst" style="max-height:50vh">';filtered.forEach(p=>{x+=`<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px;cursor:pointer"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.cat} • ${p.hours}</span></div></div>`});x+='</div>';x+='<div style="text-align:center;margin-top:8px;font-size:.6rem;color:var(--text3)">Kaynak: <a href="https://samsunkesfet.com" target="_blank" style="color:var(--accent)">samsunkesfet.com</a></div>';document.getElementById('ct').innerHTML=x;
+async function shKesfet(filterCat=''){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{if(!poiData.length)poiData=await(await fetch('/api/mekanlar')).json();const cats=['Tümü','Müzeler','Anıtlar','Tarihi Mekanlar'];let x=`<style>.k-logo{width:140px;height:140px;object-fit:cover;border-radius:50%;box-shadow:var(--shadow2);border:3px solid var(--card-border);transition:transform 0.3s;margin:0 auto}</style>`;x+=`<div style="text-align:center;padding:16px 0 8px"><img src="/static/images/kesfet_light.jpg" class="k-logo" id="klL" style="display:${document.documentElement.getAttribute('data-theme')==='dark'?'none':'block'}" onerror="this.style.display='none'" width="140" height="140" loading="lazy"><img src="/static/images/kesfet_dark.jpg" class="k-logo" id="klD" style="display:${document.documentElement.getAttribute('data-theme')==='dark'?'block':'none'}" onerror="this.style.display='none'" width="140" height="140" loading="lazy"></div>`;x+=`<div class="sec" style="text-align:center;font-size:1.2rem;margin-top:0">🏛️ Samsun'u Keşfet</div>`;x+='<div class="kg">';cats.forEach(c=>{const active=(!filterCat&&c==='Tümü')||(filterCat===c);x+=`<div class="kb${active?' on':''}" onclick="shKesfet('${c==='Tümü'?'':c}')"><span class="i">${c==='Müzeler'?'🏛':c==='Anıtlar'?'🗽':c==='Tarihi Mekanlar'?'🏰':'🌍'}</span>${c}</div>`});x+='</div>';const filtered=filterCat?poiData.filter(p=>p.cat===filterCat):poiData;x+='<div class="lst" style="max-height:50vh">';filtered.forEach(p=>{x+=`<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px;cursor:pointer"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" width="48" height="48" loading="lazy"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.cat} • ${p.hours}</span></div></div>`});x+='</div>';x+='<div style="text-align:center;margin-top:8px;font-size:.6rem;color:var(--text3)">Kaynak: <a href="https://samsunkesfet.com" target="_blank" style="color:var(--accent)">samsunkesfet.com</a></div>';document.getElementById('ct').innerHTML=x;
 // Haritada marker'ları göster
 filtered.forEach((p,i)=>{const icon=L.divIcon({className:'',html:`<div style="position:relative"><div style="width:28px;height:28px;background:#9333ea;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">${p.cat==='Müzeler'?'🏛':p.cat==='Anıtlar'?'🗽':'🏰'}</div><div style="position:absolute;top:-4px;left:32px;white-space:nowrap;font-size:10px;font-weight:700;color:var(--text);background:var(--panel);padding:2px 6px;border-radius:4px;border:1px solid var(--card-border);pointer-events:none">${p.title}</div></div>`,iconSize:[28,28],iconAnchor:[14,28]});M['poi_'+i]=L.marker([p.lat,p.lon],{icon}).addTo(map).bindPopup(`<b>${p.title}</b><br><small>${p.cat}</small><br><img src="${p.img}" style="width:120px;border-radius:6px;margin:4px 0"><br><button onclick="shMekanDetay(${p.id})" style="padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`)});if(filtered.length){const bounds=filtered.map(p=>[p.lat,p.lon]);map.fitBounds(bounds,{padding:[40,40]})}}catch(e){console.error(e)}}
 
@@ -3224,14 +3225,16 @@ def create_app(db, col):
     app = FastAPI(title="Samsun Ulaşım Sistemi")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-    # Geolocation izni için Permissions-Policy header ekle
+    # Geolocation izni ve Static Cache için Headers Middleware
     from starlette.middleware.base import BaseHTTPMiddleware
-    class PermissionsPolicyMiddleware(BaseHTTPMiddleware):
+    class CustomHeadersMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
             response = await call_next(request)
             response.headers["Permissions-Policy"] = "geolocation=(self)"
+            if request.url.path.startswith("/static/"):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
             return response
-    app.add_middleware(PermissionsPolicyMiddleware)
+    app.add_middleware(CustomHeadersMiddleware)
 
     if os.path.exists("static"): app.mount("/static", StaticFiles(directory="static"), name="static")
 
