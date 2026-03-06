@@ -2493,8 +2493,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 
 /* Category Grid */
 .kg{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:8px;margin-bottom:10px;justify-content:center}
-.kb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 8px;border-radius:var(--radius2);cursor:pointer;font-size:.55rem;font-weight:600;color:var(--text2);transition:all .2s;white-space:nowrap;min-width:48px;max-width:70px;background:var(--bg2);border:1px solid transparent;flex:0 0 auto}
-.kb:hover{background:var(--bg3);border-color:var(--card-border)}
+.kb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 8px;border-radius:var(--radius2);cursor:pointer;font-size:.55rem;font-weight:600;color:var(--text);transition:all .2s;white-space:nowrap;min-width:48px;max-width:70px;background:var(--bg2);border:1px solid var(--card-border);flex:0 0 auto}
+.kb:hover{background:var(--bg3);border-color:var(--accent)}
 .kb.on{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
 .kb .i{font-size:1.1rem}
 
@@ -2586,7 +2586,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .rota-box{background:var(--bg2);padding:10px;border-left:4px solid #f59e0b;margin-bottom:8px;border-radius:6px;cursor:pointer}
 
 /* ===== RESPONSIVE SCALING ===== */
-html{font-size:clamp(13px, 1.2vw, 18px)}
+html{font-size:clamp(14px, 1.5vw, 22px)}
 @media(min-width:768px) and (max-width:1199px){
   .pnl{width:420px}
   .brand img{height:clamp(50px,7vw,70px)}
@@ -2679,7 +2679,7 @@ html{font-size:clamp(13px, 1.2vw, 18px)}
 <div class="tabs">
     <div class="tab on" data-t="hat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#3b82f6"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg> Hatlar</div>
     <div class="tab" data-t="yakin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Yakın</div>
-    <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"> Odak Samsun</div>
+    <div class="tab" data-t="odak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#16a34a"><path d="M12 2L2 22h20L12 2z"/><path d="M12 8v6M12 18h.01"/></svg> Odak</div>
     <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"> Samair</div>
     <div class="tab" data-t="rota" onclick="shRotaUI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Git</div>
 </div>
@@ -2690,7 +2690,10 @@ html{font-size:clamp(13px, 1.2vw, 18px)}
 <div class="pnl-footer">
     ⚠️ <b>YASAL UYARI:</b> Değerler anlık değişebilir. Resmi uygulama değildir.<br>
     📞 İletişim: Samsun içi <a href="tel:153">153</a>, dışı <a href="tel:03624311012">0362 431 10 12</a><br>
-    <a href="https://github.com/tarihcituranx" target="_blank" style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;color:var(--text3);text-decoration:none;font-size:.6rem"><svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>tarihcituranx</a>
+    <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:4px">
+    <a href="https://github.com/tarihcituranx" target="_blank" style="display:inline-flex;align-items:center;gap:4px;color:var(--text3);text-decoration:none;font-size:.6rem"><svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>tarihcituranx</a>
+    <a href="https://samsunkesfet.com" target="_blank" style="color:var(--text3);text-decoration:none;font-size:.6rem">🏛️ samsunkesfet.com</a>
+    </div>
 </div>
 </div>
 <!-- Aktarma Kuralları Modalı -->
@@ -2956,8 +2959,13 @@ async function calcRota(){if(!userLoc||!targetLoc)return alert("Konum alınamad�
 
 function drawRotaResults(res,query){Object.keys(M).filter(k=>k.startsWith('rota_')||k.startsWith('walk_')).forEach(k=>{map.removeLayer(M[k]);delete M[k]});let x=`<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Yeni Arama</button><div class="sec">🗺 Gezi Planı${query?' - '+query:''}</div><div class="lst">`;if(res.length){res.forEach((r,i)=>{x+=r.desc;if(r.polyline&&r.polyline.length>1){const color=r.type==='DIRECT'?'#d946ef':'#c2410c';const pl=L.polyline(r.polyline,{color:color,weight:6,opacity:0.85}).addTo(map);M['rota_'+i]=pl;if(i===0)map.fitBounds(pl.getBounds(),{padding:[40,40]})}if(r.walk_start&&r.walk_start.length>1){const wl=L.polyline(r.walk_start,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'8,6'}).addTo(map);M['walk_s'+i]=wl}if(r.walk_end&&r.walk_end.length>1){const wl=L.polyline(r.walk_end,{color:'#06b6d4',weight:4,opacity:0.9,dashArray:'8,6'}).addTo(map);M['walk_e'+i]=wl}})}else{x+=`<div class="no-data">Uygun toplu taşıma rotası bulunamadı.<br><small>Mesafeler çok uzak olabilir.</small></div>`}document.getElementById('ct').innerHTML=x+'</div>'}
 
-// ===== DURAK DETAY =====
-async function shDurakDetay(kod){document.getElementById('ct').innerHTML='<div class="loading">Durak bilgileri alınıyor...</div>';try{const inf=await(await fetch(`/api/durak_panel/${kod}`)).json();let x=`<button class="bk" onclick="shYakin()">← Geri</button><div class="sec">🚏 Durak: ${kod}</div>`;Object.values(V).forEach(m=>map.removeLayer(m));V={};const activeBuses=[];if(inf.length){x+='<div style="display:flex;flex-direction:column;gap:2px">';x+='<div class="sec" style="font-size:.75rem;margin:4px 0">🚌 Geçen Hatlar</div><div class="lst" style="max-height:40vh;overflow-y:auto">';inf.forEach(h=>{x+=`<div class="it ${h.kat}" onclick="shL('${encodeURIComponent(h.hat)}')"><div><b>${h.hat}</b> - ${h.ad}</div>${h.gelen?(()=>{let vb='';if(h.gelen.verify){const v=h.gelen.verify;if(v.status==='OK')vb='<span style="color:#fff;background:var(--green);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">✅ Doğrulandı</span>';else if(v.status==='WARN')vb=`<span style="color:#fff;background:#f59e0b;padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">⚠️ ${v.msg}</span>`;else if(v.status==='ERR')vb=`<span style="color:#fff;background:var(--red);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">❌ ${v.msg}</span>`;else vb=`<span style="color:#fff;background:var(--accent);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">ℹ️ ${v.msg}</span>`}if(h.gelen.lat&&h.gelen.lon){const m=L.marker([h.gelen.lat,h.gelen.lon],{icon:bI(K[h.kat].c,h.gelen.plaka)}).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`);V['v'+h.gelen.plaka]=m;activeBuses.push([h.gelen.lat,h.gelen.lon])}return`<div class="live-badge">⏱️ ${h.gelen.tahmini_dk} dk (${h.gelen.durak_kaldi} durak)${vb}<br><span style="font-weight:400;font-size:0.6rem">Plaka: ${h.gelen.plaka} • Hız: ${h.gelen.hiz} km/s • ${h.gelen.doluluk} yolcu</span></div>`})():''}</div>`});x+='</div>';x+='<div class="sec" style="font-size:.75rem;margin:8px 0 4px">📍 Yaklaşan Araçlar</div><div class="lst">';const approaching=inf.filter(h=>h.gelen);if(approaching.length>0){approaching.forEach(h=>{const g=h.gelen;x+=`<div class="arac" onclick="map.setView([${g.lat},${g.lon}],16)" style="padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center;width:100%"><div><div style="font-weight:700;font-size:.8rem;color:var(--text)">${h.hat}</div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">🚌 ${g.plaka}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:1rem;color:var(--green)">${g.tahmini_dk} dk</div><div style="font-size:.6rem;color:var(--text3)">${g.durak_kaldi} durak • ${g.hiz} km/s</div></div></div></div>`})}else{x+='<div class="no-data" style="font-size:.7rem">Yaklaşan araç bulunamadı</div>'}x+='</div></div>';if(activeBuses.length>0){const group=L.featureGroup(Object.values(V));map.fitBounds(group.getBounds().pad(0.2))}}else x+='<div class="no-data">Hat bilgisi yok</div>';document.getElementById('ct').innerHTML=x}catch(e){console.error('DurakDetay hata:',e)}}
+async function shDurakDetay(kod){document.getElementById('ct').innerHTML='<div class="loading">Durak bilgileri alınıyor...</div>';try{const inf=await(await fetch(`/api/durak_panel/${kod}`)).json();let x=`<button class="bk" onclick="shYakin()">← Geri</button><div class="sec">🚏 Durak: ${kod}</div>`;Object.values(V).forEach(m=>map.removeLayer(m));V={};const activeBuses=[];if(inf.length){x+='<div style="display:flex;flex-direction:column;gap:2px">';x+='<div class="sec" style="font-size:.75rem;margin:4px 0">🚌 Geçen Hatlar</div><div class="lst" style="max-height:40vh;overflow-y:auto">';inf.forEach(h=>{x+=`<div class="it ${h.kat}" onclick="shL('${encodeURIComponent(h.hat)}')"><div><b>${h.hat}</b> - ${h.ad}</div>${h.gelen?(()=>{let vb='';if(h.gelen.verify){const v=h.gelen.verify;if(v.status==='OK')vb='<span style="color:#fff;background:var(--green);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">✅ Doğrulandı</span>';else if(v.status==='WARN')vb=`<span style="color:#fff;background:#f59e0b;padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">⚠️ ${v.msg}</span>`;else if(v.status==='ERR')vb=`<span style="color:#fff;background:var(--red);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">❌ ${v.msg}</span>`;else vb=`<span style="color:#fff;background:var(--accent);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">ℹ️ ${v.msg}</span>`}if(h.gelen.lat&&h.gelen.lon){const m=L.marker([h.gelen.lat,h.gelen.lon],{icon:bI(K[h.kat].c,h.gelen.plaka)}).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`);V['v'+h.gelen.plaka]=m;activeBuses.push([h.gelen.lat,h.gelen.lon])}return`<div class="live-badge">⏱️ ${h.gelen.tahmini_dk} dk (${h.gelen.durak_kaldi} durak)${vb}<br><span style="font-weight:400;font-size:0.6rem">Plaka: ${h.gelen.plaka} • Hız: ${h.gelen.hiz} km/s • ${h.gelen.doluluk} yolcu</span></div>`})():''}</div>`});x+='</div>';x+='<div class="sec" style="font-size:.75rem;margin:8px 0 4px">📍 Yaklaşan Araçlar</div><div class="lst">';const approaching=inf.filter(h=>h.gelen);if(approaching.length>0){approaching.forEach(h=>{const g=h.gelen;x+=`<div class="arac" onclick="map.setView([${g.lat},${g.lon}],16)" style="padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center;width:100%"><div><div style="font-weight:700;font-size:.8rem;color:var(--text)">${h.hat}</div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">🚌 ${g.plaka}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:1rem;color:var(--green)">${g.tahmini_dk} dk</div><div style="font-size:.6rem;color:var(--text3)">${g.durak_kaldi} durak • ${g.hiz} km/s</div></div></div></div>`})}else{x+='<div class="no-data" style="font-size:.7rem">Yaklaşan araç bulunamadı</div>'}x+='</div></div>';if(activeBuses.length>0){const group=L.featureGroup(Object.values(V));map.fitBounds(group.getBounds().pad(0.2))}}else x+='<div class="no-data">Hat bilgisi yok</div>';
+// Yakın mekanları getir
+const durak=await(await fetch(`/api/durak_ara?q=${encodeURIComponent(kod)}`)).json();const d0=durak[0];if(d0&&d0.lat&&d0.lon){try{const pois=await(await fetch(`/api/yakin_mekanlar?lat=${d0.lat}&lon=${d0.lon}&radius=1`)).json();if(pois.length){x+=`<div class="sec" style="margin-top:12px">🏛️ Yakındaki Turistik Mekanlar</div>`;pois.forEach(p=>{x+=`<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.mesafe_m}m • ${p.cat} • ${p.hours}</span></div></div>`})}}catch(e){}}
+document.getElementById('ct').innerHTML=x}catch(e){console.error('DurakDetay hata:',e)}}
+
+async function shMekanDetay(id){try{const all=await(await fetch('/api/mekanlar')).json();const m=all.find(x=>x.id===id);if(!m)return;clr();map.setView([m.lat,m.lon],16);M['poi']=L.marker([m.lat,m.lon],{icon:L.divIcon({className:'',html:'<div style="background:#9333ea;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🏛</div>',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);let x=`<button class="bk" onclick="shYakin()">← Geri</button>`;x+=`<div style="border-radius:12px;overflow:hidden;margin-bottom:12px"><img src="${m.img}" style="width:100%;height:180px;object-fit:cover" onerror="this.src='/static/images/placeholder.png'"></div>`;x+=`<div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--text)">${m.title}</div>`;x+=`<div style="font-size:.7rem;color:var(--text2);margin-bottom:8px"><span style="background:var(--accent-bg);padding:2px 8px;border-radius:6px;color:var(--accent);font-weight:600">${m.cat}</span></div>`;x+=`<div style="font-size:.8rem;line-height:1.6;color:var(--text);margin-bottom:12px">${m.desc}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">🕐</div><div class="l">${m.hours}</div></div><div class="ic"><div class="v">${m.sections}</div><div class="l">Bölüm</div></div></div>`;if(m.audio&&m.audio.tr){x+=`<div class="sec">🔊 Sesli Anlatım</div><audio controls style="width:100%;margin:8px 0;border-radius:8px" preload="none"><source src="${m.audio.tr}" type="audio/mpeg">Tarayıcınız ses oynatmayı desteklemiyor.</audio>`}x+=`<a href="${m.url}" target="_blank" class="bk" style="display:block;text-align:center;text-decoration:none;margin-top:8px">🏛️ samsunkesfet.com'da Görüntüle</a>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
+window.shMekanDetay=shMekanDetay;
 
 // ===== TABS =====
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');cur=t.dataset.t;clr();if(cur==='rota')shRotaUI();else if(cur==='hat')loadHats();else if(cur==='yakin')shYakin();else if(cur==='odak')shO();else shS()});
@@ -3346,12 +3354,93 @@ def create_app(db, col):
     async def api_yakin(lat: float, lon: float):
         return JSONResponse(col.yakindaki_duraklar(lat, lon))
 
+    # ==========================================
+    # TURİSTİK MEKANLAR (POI)
+    # ==========================================
+    MEKANLAR = [
+        {"id":1,"title":"Kent Müzesi","desc":"Samsun'un tarihi ve kültürel mirasını sergileyen önemli bir müze.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/kent-muzesi-kapak.jpg","lat":41.28929,"lon":36.33769,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/km/101.mp3"},"code":"km","url":"https://samsunkesfet.com/muze/km/1","sections":30},
+        {"id":2,"title":"Onur Anıtı","desc":"Samsun'un bağımsızlık mücadelesinin simgesi anıt.","cat":"Anıtlar","img":"https://samsunkesfet.com/media/img/muze/muzekapak/onur-aniti.jpg","lat":41.29653,"lon":36.33262,"hours":"7/24 Açık","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/oa/onuraniti.mp3"},"code":"oa","url":"https://samsunkesfet.com/muze/oa/1","sections":1},
+        {"id":3,"title":"Tütün İskelesi","desc":"Osmanlı dönemi tütün ticaretinin önemli merkezi.","cat":"Tarihi Mekanlar","img":"https://samsunkesfet.com/media/img/muze/muzekapak/tutun-iskelesi.jpg","lat":41.29025,"lon":36.33514,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/ti/tutun2.mp3"},"code":"ti","url":"https://samsunkesfet.com/muze/ti/1","sections":1},
+        {"id":4,"title":"Alaçam Mübadele Müzesi","desc":"Türk-Yunan nüfus mübadelesini anlatan müze.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/0.jpg","lat":41.29221,"lon":36.34080,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/ac/3.mp3"},"code":"ac","url":"https://samsunkesfet.com/muze/ac/1","sections":11},
+        {"id":5,"title":"Amazon Köyü","desc":"Antik Amazon savaşçılarının izlerini taşıyan tarihi alan.","cat":"Tarihi Mekanlar","img":"https://samsunkesfet.com/media/img/muze/muzekapak/amazon-koyu.png","lat":41.29353,"lon":36.33917,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/az/1-amazon-g.mp3"},"code":"az","url":"https://samsunkesfet.com/muze/az/1","sections":11},
+        {"id":6,"title":"Samsun Müzesi","desc":"Bölgenin en kapsamlı arkeoloji ve etnografya müzesi.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/samsun-muzesi.jpg","lat":41.29145,"lon":36.33803,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/sm/sm.mp3"},"code":"sm","url":"https://samsunkesfet.com/muze/sm/1","sections":1},
+        {"id":7,"title":"Sadi Tekkesi","desc":"Osmanlı dönemi dervişlerinin yaşadığı tarihi tekke.","cat":"Tarihi Mekanlar","img":"https://samsunkesfet.com/media/img/muze/muzekapak/sadi-tekkesi.jpg","lat":41.28887,"lon":36.33802,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/st/saditekkesi.mp3"},"code":"st","url":"https://samsunkesfet.com/muze/st/1","sections":1},
+        {"id":8,"title":"İlkadım Anıtı","desc":"Atatürk'ün Samsun'a çıkışını simgeleyen anıt.","cat":"Anıtlar","img":"https://samsunkesfet.com/media/img/muze/muzekapak/ilkadim-aniti.jpg","lat":41.29048,"lon":36.33154,"hours":"7/24 Açık","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/ia/1.mp3"},"code":"ia","url":"https://samsunkesfet.com/muze/ia/1","sections":1},
+        {"id":9,"title":"Gazi Müzesi","desc":"Atatürk'ün Samsun'da kaldığı tarihi konak-müze.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/gazi-muzesi.jpg","lat":41.29027,"lon":36.33469,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/gz/gazimuzesi.mp3"},"code":"gz","url":"https://samsunkesfet.com/muze/gz/1","sections":1},
+        {"id":10,"title":"Havza Atatürk Evi","desc":"Atatürk'ün Havza'da kaplıca tedavisi gördüğü ev.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/havza-ataturk-evi.jpg","lat":41.29515,"lon":36.33554,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/hv/1.mp3"},"code":"hv","url":"https://samsunkesfet.com/muze/hv/1","sections":20},
+        {"id":11,"title":"Bandırma Vapuru","desc":"Atatürk'ün Samsun'a çıktığı tarihi gemi-müze.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/bandirma-gemisi.jpg","lat":41.29557,"lon":36.33787,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/bv/bandirma-1.mp3"},"code":"bv","url":"https://samsunkesfet.com/muze/bv/1","sections":31},
+        {"id":12,"title":"Bafra Tütün Müzesi","desc":"Bafra'nın tütün üretim tarihini anlatan müze.","cat":"Müzeler","img":"https://samsunkesfet.com/media/img/muze/muzekapak/bafra.jpg","lat":41.29735,"lon":36.33717,"hours":"09:00 - 17:30","audio":{"tr":"https://samsunkesfet.com/media/sound/tr/bf/101.mp3"},"code":"bf","url":"https://samsunkesfet.com/muze/bf/1","sections":18},
+    ]
+
+    @app.get("/api/mekanlar")
+    async def api_mekanlar():
+        return JSONResponse(MEKANLAR)
+
+    @app.get("/api/yakin_mekanlar")
+    async def api_yakin_mekanlar(lat: float, lon: float, radius: float = 1.0):
+        """Verilen koordinattan radius km içindeki mekanları döner"""
+        import math
+        results = []
+        for m in MEKANLAR:
+            dlat = math.radians(m['lat'] - lat)
+            dlon = math.radians(m['lon'] - lon)
+            a = math.sin(dlat/2)**2 + math.cos(math.radians(lat)) * math.cos(math.radians(m['lat'])) * math.sin(dlon/2)**2
+            dist_km = 6371 * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+            if dist_km <= radius:
+                results.append({**m, "mesafe_m": round(dist_km * 1000)})
+        results.sort(key=lambda x: x['mesafe_m'])
+        return JSONResponse(results)
+
+    # ==========================================
+    # FUZZY SEARCH HELPERS
+    # ==========================================
+    def normalize_tr(text):
+        """Türkçe karakter normalizasyonu + lowercase — fuzzy arama için"""
+        if not text: return ""
+        t = text.lower()
+        replacements = {'ı':'i','ğ':'g','ü':'u','ş':'s','ö':'o','ç':'c','İ':'i','Ğ':'g','Ü':'u','Ş':'s','Ö':'o','Ç':'c','â':'a','î':'i','û':'u'}
+        for old, new in replacements.items():
+            t = t.replace(old, new)
+        return t
+
+    def fuzzy_match(query, target, threshold=0.6):
+        """Basit benzerlik skoru (0-1 arası). Substring + karakter örtüşme."""
+        nq = normalize_tr(query)
+        nt = normalize_tr(target)
+        if nq in nt: return 1.0
+        if nt in nq: return 0.9
+        # Karakter örtüşme oranı
+        common = sum(1 for c in nq if c in nt)
+        score = common / max(len(nq), 1)
+        # Ardışık karakter bonus
+        max_seq = 0; seq = 0; ti = 0
+        for c in nq:
+            found = nt.find(c, ti)
+            if found >= 0:
+                seq += 1; ti = found + 1
+                max_seq = max(max_seq, seq)
+            else:
+                seq = 0
+        seq_bonus = max_seq / max(len(nq), 1) * 0.3
+        return min(score + seq_bonus, 1.0)
+
     @app.get("/api/durak_ara")
     async def api_durak_ara(q: str):
         if not q or len(q) < 2: return JSONResponse([])
         q_like = f"%{q.lower()}%"
+        # Önce tam eşleşme dene
         res = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE lower(ad) LIKE ? OR kod LIKE ? OR id LIKE ? LIMIT 20", (q_like, q_like, q_like))
-        # Override with tram correct coords if found
+        # Eğer sonuç yoksa fuzzy arama yap
+        if not res:
+            all_stops = col.db.get("SELECT id, kod, ad, lat, lon FROM durak WHERE ad IS NOT NULL")
+            scored = []
+            for s in all_stops:
+                score = fuzzy_match(q, s['ad'])
+                if score >= 0.5:
+                    scored.append((score, s))
+            scored.sort(key=lambda x: -x[0])
+            res = [s for _, s in scored[:20]]
+        # Tram corrections
         if hasattr(col.db, 'tram_corrections'):
             for d in res:
                 for csv_name, coords in col.db.tram_corrections.items():
