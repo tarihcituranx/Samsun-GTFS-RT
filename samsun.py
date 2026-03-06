@@ -2424,7 +2424,10 @@ HTML = '''<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🇹🇷 🚌 Samsun Ulaşım Sistemi</title>
+<title>Samsun Ulaşım Rehberi — Gayri Resmi | Turan KAYA</title>
+<meta name="description" content="Samsun toplu taşıma hatları, canlı araç takibi ve güzergah planlama. Gayri resmi, bağımsız vatandaş projesi. Geliştirici: Turan KAYA">
+<meta name="author" content="Turan KAYA">
+<meta name="robots" content="index, follow">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/leaflet.css"/>
 <style>
@@ -2649,7 +2652,7 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 <div id="map"></div>
 <div class="pnl">
 <div class="warn-bar">
-    ⚠️ <b>YASAL UYARI:</b> Resmi uygulama değildir. Veriler açık kaynaklardan sağlanmaktadır.
+    ⚠️ Bu uygulama Samsun Büyükşehir Belediyesi veya Samulaş'ın resmi uygulaması <strong>değildir</strong>. Turan KAYA tarafından bağımsız olarak geliştirilmiştir. Veriler açık kaynaklardan derlenmekte olup doğruluğu garanti edilmez.
 </div>
 <div class="pnl-header">
     <div class="top-bar">
@@ -2688,11 +2691,14 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 </div>
 <div class="pnl-body" id="ct"></div>
 <div class="pnl-footer">
-    ⚠️ <b>YASAL UYARI:</b> Değerler anlık değişebilir. Resmi uygulama değildir.<br>
-    📞 İletişim: Samsun içi <a href="tel:153">153</a>, dışı <a href="tel:03624311012">0362 431 10 12</a><br>
+    Bu uygulama <strong>gayri resmi</strong>, bağımsız bir vatandaş projesidir. Geliştirici: <strong>Turan KAYA</strong><br>
+    Veriler anlık değişebilir; kesin bilgi için lütfen resmi kanalları kullanın.<br>
+    📞 Samsun içi <a href="tel:153">153</a> &nbsp;|&nbsp; Samsun dışı <a href="tel:03624311012">0362 431 10 12</a><br>
     <div style="display:flex;gap:12px;justify-content:center;align-items:center;margin-top:4px">
-    <a href="https://github.com/tarihcituranx" target="_blank" style="display:inline-flex;align-items:center;gap:4px;color:var(--text3);text-decoration:none;font-size:.6rem"><svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>tarihcituranx</a>
-    <a href="https://samsunkesfet.com" target="_blank" style="color:var(--text3);text-decoration:none;font-size:.6rem">🏛️ samsunkesfet.com</a>
+    <a href="https://github.com/tarihcituranx" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;color:var(--text3);text-decoration:none;font-size:.6rem"><svg viewBox="0 0 16 16" fill="currentColor" style="width:14px;height:14px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>tarihcituranx</a>
+    <a href="https://samsunkesfet.com" target="_blank" rel="noopener noreferrer" style="color:var(--text3);text-decoration:none;font-size:.6rem">🏛️ samsunkesfet.com</a>
+    <a href="#" onclick="showKvkk();return false" style="color:var(--text3);font-size:.6rem;text-decoration:none">🔒 KVKK</a>
+    <a href="#" onclick="showCerez();return false" style="color:var(--text3);font-size:.6rem;text-decoration:none">🍪 Çerez Politikası</a>
     </div>
 </div>
 </div>
@@ -2738,12 +2744,15 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 <div id="infoModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
     <div style="background:var(--card);padding:24px;border-radius:16px;width:85%;max-width:400px;text-align:center;border:1px solid var(--card-border)">
         <h3 style="color:var(--orange);margin-bottom:10px">⚠️ Önemli Bilgilendirme</h3>
-        <p style="font-size:0.85rem;color:var(--text);margin-bottom:15px">
-            Görüntülenen fiyatlar ve sefer bilgileri tahmini olabilir. 
-            Özellikle <b>Odak (Turistik)</b> hatlarında fiyatlar farklılık gösterebilir.
+        <p style="font-size:0.85rem;color:var(--text);margin-bottom:10px">
+            Bu uygulama <strong>Turan KAYA</strong> tarafından geliştirilen, <strong>Samsun Büyükşehir Belediyesi veya Samulaş ile hiçbir resmi bağlantısı bulunmayan</strong> bağımsız bir vatandaş projesidir.
         </p>
-        <p style="font-size:0.75rem;color:var(--text2);margin-bottom:20px">
-            Kesin bilgi için lütfen araç kaptanlarına danışınız.<br>
+        <p style="font-size:0.75rem;color:var(--text2);margin-bottom:10px">
+            Gösterilen fiyatlar, sefer saatleri ve araç konumları tahmini veya gecikmiş olabilir.
+            Özellikle <strong>Odak (Turistik)</strong> ve tekne hatlarında fiyatlar farklılık gösterebilir. Kesin bilgi için lütfen araç kaptanlarına veya resmi hatta danışın.
+        </p>
+        <p style="font-size:0.75rem;color:var(--text2);margin-bottom:15px">
+            Bu uygulamayı kullanmaya devam ederek <a href="#" onclick="showKvkk();return false" style="color:var(--accent)">KVKK Aydınlatma Metni</a>'ni ve <a href="#" onclick="showCerez();return false" style="color:var(--accent)">Çerez Politikası</a>'nı okuduğunuzu kabul etmiş sayılırsınız.<br><br>
             📞 Samsun içi: <a href="tel:153" style="color:var(--accent)">153</a><br>
             📞 Samsun dışı: <a href="tel:03624311012" style="color:var(--accent)">0362 431 10 12</a>
         </p>
@@ -2754,8 +2763,65 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
     </div>
 </div>
 
+<!-- KVKK Aydınlatma Metni Modalı -->
+<div id="kvkkModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:var(--panel);width:100%;max-width:480px;border-radius:16px;padding:24px;box-shadow:var(--shadow2);border:1px solid var(--card-border);max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:12px;color:var(--text)">🔒 KVKK Aydınlatma Metni</h3>
+    <p style="font-size:0.7rem;color:var(--text2);margin-bottom:8px"><strong>Veri Sorumlusu:</strong> Turan KAYA (Bireysel Geliştirici)<br><strong>İletişim:</strong> github.com/tarihcituranx<br><strong>Son Güncelleme:</strong> Mart 2026</p>
+    <h4 style="color:var(--accent);margin:12px 0 4px">İşlenen Veriler</h4>
+    <ul style="font-size:0.72rem;color:var(--text2);margin-left:20px;line-height:1.6">
+      <li><strong>Konum verisi:</strong> Yakınımdaki duraklar ve rota hesaplama için yalnızca oturum süresince tarayıcı belleğinde tutulur, sunucuya <em>gönderilmez</em>.</li>
+      <li><strong>localStorage anahtarları:</strong> Tema tercihi, bildirim gizleme tercihi ve uygulama ayarları yalnızca kendi cihazınızda saklanır.</li>
+      <li><strong>Üçüncü taraf hizmetler:</strong>
+        <ul style="margin-left:15px;margin-top:4px">
+          <li>OpenStreetMap / CartoDB — harita kutucukları (anonim istekler)</li>
+          <li>Nominatim (OSM) — tersine adres çözümleme (konum koordinatı gönderilir)</li>
+          <li>OSRM — rota hesaplama (koordinatlar gönderilir)</li>
+          <li>Google Fonts — font yükleme (IP adresi Google'a iletilir)</li>
+        </ul>
+      </li>
+    </ul>
+    <h4 style="color:var(--accent);margin:12px 0 4px">Haklarınız (KVKK Md. 11)</h4>
+    <p style="font-size:0.72rem;color:var(--text2);line-height:1.6">Kişisel verilerinize ilişkin bilgi alma, düzeltme ve silme haklarınız mevcuttur. Uygulama sunucu tarafında kişisel veri <strong>depolamadığından</strong>, cihazınızdaki localStorage verilerini tarayıcı ayarlarından silebilirsiniz.</p>
+    <h4 style="color:var(--accent);margin:12px 0 4px">Yasal Dayanak</h4>
+    <p style="font-size:0.72rem;color:var(--text2)">6698 sayılı Kişisel Verilerin Korunması Kanunu ve ilgili ikincil mevzuat.</p>
+    <button onclick="document.getElementById('kvkkModal').style.display='none'" style="margin-top:16px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Anladım, Kapat</button>
+  </div>
+</div>
+
+<!-- Çerez Politikası Modalı -->
+<div id="cerezModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:var(--panel);width:100%;max-width:480px;border-radius:16px;padding:24px;box-shadow:var(--shadow2);border:1px solid var(--card-border);max-height:85vh;overflow-y:auto">
+    <h3 style="margin-bottom:12px;color:var(--text)">🍪 Çerez ve Yerel Depolama Politikası</h3>
+    <p style="font-size:0.7rem;color:var(--text2);margin-bottom:8px"><strong>Son Güncelleme:</strong> Mart 2026</p>
+    <p style="font-size:0.72rem;color:var(--text2);line-height:1.6;margin-bottom:10px">Bu uygulama HTTP çerezi (cookie) <strong>kullanmamaktadır.</strong> Bunun yerine yalnızca tarayıcınızın <code>localStorage</code> alanı kullanılır.</p>
+    <h4 style="color:var(--accent);margin:10px 0 4px">Saklanan Veriler</h4>
+    <table style="width:100%;font-size:0.65rem;border-collapse:collapse;color:var(--text2)"><thead><tr style="background:var(--bg3);text-align:left"><th style="padding:6px;border:1px solid var(--card-border)">Anahtar</th><th style="padding:6px;border:1px solid var(--card-border)">Amaç</th><th style="padding:6px;border:1px solid var(--card-border)">Süre</th></tr></thead><tbody><tr><td style="padding:5px;border:1px solid var(--card-border)">theme</td><td style="padding:5px;border:1px solid var(--card-border)">Aydınlık/Karanlık tema tercihi</td><td style="padding:5px;border:1px solid var(--card-border)">Süresiz</td></tr><tr><td style="padding:5px;border:1px solid var(--card-border)">hideInfoModal</td><td style="padding:5px;border:1px solid var(--card-border)">Açılış bildirimini gizle</td><td style="padding:5px;border:1px solid var(--card-border)">Süresiz</td></tr><tr><td style="padding:5px;border:1px solid var(--card-border)">userLoc</td><td style="padding:5px;border:1px solid var(--card-border)">Son bilinen konum</td><td style="padding:5px;border:1px solid var(--card-border)">Süresiz</td></tr><tr><td style="padding:5px;border:1px solid var(--card-border)">cerezOnay</td><td style="padding:5px;border:1px solid var(--card-border)">Çerez onay durumu</td><td style="padding:5px;border:1px solid var(--card-border)">Süresiz</td></tr></tbody></table>
+    <h4 style="color:var(--orange);margin:12px 0 4px">Üçüncü Taraf Veri Transferleri</h4>
+    <ul style="font-size:0.68rem;color:var(--text2);margin-left:18px;line-height:1.7"><li><strong>CartoDB / OpenStreetMap:</strong> Harita görüntüleme — IP + koordinat paylaşımı</li><li><strong>Nominatim (OSM):</strong> Adres çözümleme — GPS koordinatı paylaşımı</li><li><strong>OSRM:</strong> Rota hesaplama — rota koordinatları paylaşımı</li><li><strong>Google Fonts:</strong> Font yükleme — IP adresi paylaşımı</li></ul>
+    <p style="font-size:0.65rem;color:var(--text3);margin-top:8px">Bu hizmetlerin GDPR/KVKK uyumluluğu kendi gizlilik politikalarına tabidir.</p>
+    <h4 style="color:var(--green);margin:12px 0 4px">Verileri Nasıl Silersiniz?</h4>
+    <p style="font-size:0.72rem;color:var(--text2)">Ayarlar (⚙️) → "Varsayılana Çevir" butonu tüm localStorage tercihlerini siler.<br>Veya tarayıcı ayarları → Site Verileri → Bu siteyi temizle.</p>
+    <button onclick="document.getElementById('cerezModal').style.display='none'" style="margin-top:16px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit">Anladım, Kapat</button>
+  </div>
+</div>
+
+<!-- Çerez/localStorage Onay Banner -->
+<div id="cerezBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--panel);border-top:1px solid var(--card-border);padding:14px 20px;box-shadow:0 -4px 24px rgba(0,0,0,0.15);backdrop-filter:blur(12px);flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px">
+  <div style="font-size:0.72rem;color:var(--text);flex:1;min-width:200px">🍪 Bu uygulama yalnızca işlevsellik için <strong>localStorage</strong> kullanır. Kişisel veriniz sunucuya aktarılmaz. <a href="#" onclick="showCerez();return false" style="color:var(--accent)">Çerez Politikası</a> · <a href="#" onclick="showKvkk();return false" style="color:var(--accent)">KVKK</a></div>
+  <div style="display:flex;gap:8px">
+    <button onclick="cerezReddet()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--card-border);border-radius:8px;cursor:pointer;font-size:0.72rem;font-weight:600;color:var(--text);font-family:inherit">Yalnızca Zorunlu</button>
+    <button onclick="cerezKabul()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.72rem;font-weight:600;font-family:inherit">Tamam, Anladım</button>
+  </div>
+</div>
+
 <script src="/static/leaflet.js"></script>
 <script>
+function showKvkk(){document.getElementById('kvkkModal').style.display='flex';return false}
+function showCerez(){document.getElementById('cerezModal').style.display='flex';return false}
+function cerezKabul(){localStorage.setItem('cerezOnay','1');document.getElementById('cerezBanner').style.display='none'}
+function cerezReddet(){localStorage.setItem('cerezOnay','zorunlu');document.getElementById('cerezBanner').style.display='none'}
+function checkCerezOnay(){if(!localStorage.getItem('cerezOnay'))document.getElementById('cerezBanner').style.display='flex'}
 function closeInfoModal() {
     if(document.getElementById('chkGosterme').checked) {
         localStorage.setItem('hideInfoModal', 'true');
@@ -2820,9 +2886,9 @@ ekspres:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 tramvay:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#10b981"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 5V3M16 5V3"/><path d="M3 3h18"/><circle cx="8.5" cy="17" r="1.2"/><circle cx="15.5" cy="17" r="1.2"/><path d="M6 21l2-2.5M18 21l-2-2.5"/><path d="M8 10v5M12 10v5M16 10v5"/></svg>',n:'Tramvay',c:'#10b981'},
 ring:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#f59e0b"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg>',n:'Ring',c:'#f59e0b'},
 tekne:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#0ea5e9"><path d="M3 17l1.5-7h15l1.5 7"/><path d="M2 20c1.5-2 3-2 4.5 0s3 2 4.5 0 3 2 4.5 0 3-2 4.5 0"/><rect x="7" y="7" width="10" height="3" rx="1"/><path d="M12 7V4M9 4h6"/><path d="M5 10h14"/></svg>',n:'Vapur',c:'#0ea5e9'},
-odak:{i:'<img src="/static/images/odak.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'transparent'},
+odak:{i:'<img src="/static/images/odak.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'#16a34a'},
 teleferik:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#ec4899"><path d="M2 6l20-2"/><path d="M7 6l-1 2h12l-1-2"/><rect x="6" y="8" width="12" height="8" rx="2"/><path d="M9 8v8M15 8v8"/><circle cx="12" cy="5.5" r="1"/></svg>',n:'Teleferik',c:'#ec4899'},
-havalimani:{i:'<img src="/static/images/samair.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'transparent'},
+havalimani:{i:'<img src="/static/images/samair.png" style="width:100%;height:100%;object-fit:contain">',n:'',c:'#dc2626'},
 ilce:{i:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#ef4444"><path d="M1 10l2-5h14l4 5v6H1z"/><path d="M1 10h19"/><circle cx="6" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/><path d="M6 16.5V19M16 16.5V19"/><rect x="4" y="11" width="4" height="3" rx="0.5"/><rect x="10" y="11" width="4" height="3" rx="0.5"/></svg>',n:'İlçe',c:'#ef4444'}};
 
 const busIcon=(c,p)=>L.divIcon({className:'',html:`<div style="position:relative"><div style="width:30px;height:30px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:14px">🚌</div><div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:1px 5px;border-radius:3px;font-size:9px;white-space:nowrap;z-index:99">${p}</div></div>`,iconSize:[30,30],iconAnchor:[15,15]});
@@ -2834,7 +2900,7 @@ const clr=()=>{if(liveT)clearInterval(liveT);Object.values(M).forEach(m=>map.rem
 function showToast(msg){const x=document.getElementById("toast");x.innerText=msg;x.className="toast show";setTimeout(()=>{x.className=x.className.replace("show","")},3000)}
 
 // ===== INIT =====
-const weaI={'-9999':'cloudy','A':'clear-day','AB':'cloudy-1-day','PB':'cloudy-2-day','CB':'cloudy-3-day','HY':'rainy-1','Y':'rainy-2','KY':'rainy-3','KKY':'rain-and-snow-mix','HK':'snowy-1','K':'snowy-2','YY':'snowy-3','S':'fog','D':'haze','P':'haze','GSY':'thunderstorms','KGY':'thunderstorms','SY':'thunderstorms','MSY':'thunderstorms','DY':'thunderstorms','R':'wind','GKR':'wind','GG':'thunderstorms','GKR':'wind'};
+const weaI={'-9999':'cloudy','A':'clear-day','AB':'cloudy-1-day','PB':'cloudy-2-day','CB':'cloudy-3-day','HY':'rainy-1','Y':'rainy-2','KY':'rainy-3','KKY':'rain-and-snow-mix','HK':'snowy-1','K':'snowy-2','YY':'snowy-3','S':'fog','D':'haze','P':'haze','GSY':'thunderstorms','KGY':'thunderstorms','SY':'thunderstorms','MSY':'thunderstorms','DY':'thunderstorms','R':'wind','GKR':'wind','GG':'thunderstorms'};
 const hadiseAd={'-9999':'Bilinmiyor','A':'Açık','AB':'Az Bulutlu','PB':'Parçalı Bulutlu','CB':'Çok Bulutlu','HY':'Hafif Yağmurlu','Y':'Yağmurlu','KY':'Kuvvetli Yağmur','KKY':'Karla Karışık Yağmur','HK':'Hafif Kar','K':'Kar Yağışlı','YY':'Yoğun Kar','S':'Sisli','D':'Dumanlı','P':'Puslu','GSY':'Gök Gürültülü Sağanak','KGY':'Kuvvetli Sağanak','SY':'Sağanak Yağışlı','MSY':'Mevzii Sağanak','DY':'Dolu','R':'Rüzgarlı','GKR':'Kum Fırtınası','GG':'Gök Gürültülü'};
 async function fetchWeather() {
     try {
@@ -2970,7 +3036,7 @@ const durak=await(await fetch(`/api/durak_ara?q=${encodeURIComponent(kod)}`)).js
 document.getElementById('ct').innerHTML=x}catch(e){console.error('DurakDetay hata:',e)}}
 
 async function shMekanDetay(id){try{const all=await(await fetch('/api/mekanlar')).json();const m=all.find(x=>x.id===id);if(!m)return;clr();map.setView([m.lat,m.lon],16);M['poi']=L.marker([m.lat,m.lon],{icon:L.divIcon({className:'',html:'<div style="background:#9333ea;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🏛</div>',iconSize:[32,32],iconAnchor:[16,32]})}).addTo(map);let x=`<button class="bk" onclick="shYakin()">← Geri</button>`;x+=`<div style="border-radius:12px;overflow:hidden;margin-bottom:12px"><img src="${m.img}" style="width:100%;height:180px;object-fit:cover" onerror="this.src='/static/images/placeholder.png'" width="400" height="180" loading="lazy"></div>`;x+=`<div style="font-weight:700;font-size:1.1rem;margin-bottom:4px;color:var(--text)">${m.title}</div>`;x+=`<div style="font-size:.7rem;color:var(--text2);margin-bottom:8px"><span style="background:var(--accent-bg);padding:2px 8px;border-radius:6px;color:var(--accent);font-weight:600">${m.cat}</span></div>`;x+=`<div style="font-size:.8rem;line-height:1.6;color:var(--text);margin-bottom:12px">${m.desc}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">🕐</div><div class="l">${m.hours}</div></div><div class="ic"><div class="v">${m.sections}</div><div class="l">Bölüm</div></div></div>`;if(m.audio&&m.audio.tr){x+=`<div class="sec">🔊 Sesli Anlatım</div><audio controls style="width:100%;margin:8px 0;border-radius:8px" preload="none"><source src="${m.audio.tr}" type="audio/mpeg">Tarayıcınız ses oynatmayı desteklemiyor.</audio>`}x+=`<button class="bk" style="margin-top:8px;background:var(--green);color:#fff" onclick="goRota(${m.lat},${m.lon},'${m.title}')">🗺️ İstikamet: Oraya Git</button>`;x+=`<a href="${m.url}" target="_blank" class="bk" style="display:block;text-align:center;text-decoration:none;margin-top:8px">🏛️ samsunkesfet.com'da Görüntüle</a>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
-function goRota(lat,lon,name){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-t="rota"]').classList.add('on');cur='rota';clr();shRotaUI();setTimeout(()=>{document.getElementById('rTo').value=lat+','+lon;document.getElementById('rTo').dataset.name=name;showToast('Hedef seçildi: '+name)},200)}
+function goRota(lat,lon,name){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));document.querySelector('.tab[data-t="rota"]').classList.add('on');cur='rota';clr();shRotaUI();setTimeout(()=>{const ri=document.getElementById('rotaInput');if(ri){ri.value=name;ri.dataset.lat=lat;ri.dataset.lon=lon}showToast('Hedef seçildi: '+name)},200)}
 window.shMekanDetay=shMekanDetay;
 
 // ===== TABS =====
@@ -3001,7 +3067,7 @@ function toggleSettings(){const p=document.getElementById('settingsPanel');if(p.
 function closeSettings(){document.getElementById('settingsPanel').style.display='none';document.removeEventListener('click',closeSettingsOutside)}
 function closeSettingsOutside(e){const p=document.getElementById('settingsPanel');const b=document.getElementById('settingsBtn');if(!p.contains(e.target)&&e.target!==b){closeSettings()}}
 function loadSettingsUI(){document.getElementById('chkHasilat').checked=getSetting('showHasilat',false);document.getElementById('chkLabels').checked=getSetting('showLabels',true);document.getElementById('chkRoute').checked=getSetting('showRoute',true);document.getElementById('chkAutoRefresh').checked=getSetting('autoRefresh',true);document.getElementById('chkAllStops').checked=getSetting('showAllStops',false)}
-function resetSettings(){localStorage.removeItem('showHasilat');localStorage.removeItem('showLabels');localStorage.removeItem('showRoute');localStorage.removeItem('autoRefresh');localStorage.removeItem('showAllStops');localStorage.removeItem('theme');applyTheme(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');loadSettingsUI();toggleAllStops(false);showToast('Ayarlar varsayılana çevrildi')}
+function resetSettings(){localStorage.removeItem('showHasilat');localStorage.removeItem('showLabels');localStorage.removeItem('showRoute');localStorage.removeItem('autoRefresh');localStorage.removeItem('showAllStops');localStorage.removeItem('theme');localStorage.removeItem('cerezOnay');localStorage.removeItem('userLoc');localStorage.removeItem('hideInfoModal');applyTheme(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');loadSettingsUI();toggleAllStops(false);showToast('Ayarlar varsayılana çevrildi')}
 let allStopMarkers=[];
 async function toggleAllStops(show){
     allStopMarkers.forEach(m=>map.removeLayer(m));
@@ -3081,7 +3147,7 @@ function positionToggle(){
     }
 }
 window.addEventListener('resize', positionToggle);
-setInterval(positionToggle, 500);
+// setInterval kaldırıldı (BUG-5 performans). Sadece resize event yeterli.
 
 // ===== HAT DETAY (shL) =====
 async function shL(e,backToRoute=false){if(window.innerWidth<=480)togglePnl(true);clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[inf,dr,sf,ar,pr,fy]=await Promise.all([fetch('/api/hat/info/'+e),fetch('/api/hat/durak/'+e),fetch('/api/hat/sefer/'+e),fetch('/api/hat/arac/'+e),fetch('/api/hat/esles/'+e),fetch('/api/hat/fiyat/'+e)].map(p=>p.then(r=>r.json())));const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||20).toFixed(2),indF=(fy.indirimli_fiyat||14).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>`:`<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`;x+=`<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş ➝':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
@@ -3198,13 +3264,11 @@ async function upOdakV(hatid){try{const r=await(await fetch('/api/proxy_odak_ara
 // ===== SAMAIR =====
 async function shS(){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const d=await(await fetch('/api/samair')).json();if(!d||!d.length){document.getElementById('ct').innerHTML='<div class="no-data">✈️ Veri yok</div>';return}let x=`<div style="text-align:center;padding:16px 0"><img src="/static/images/samair.png" style="height:80px;border-radius:12px;box-shadow:var(--shadow2)"></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)">⚠️ Test verileridir. Veriler her saat başı güncellenir.</div><div class="lst">${d.map(h=>`<div class="it" style="border-left-color:var(--red)" onclick="shSD(${h.id},'${h.kod}')">${h.ad}</div>`).join('')}</div>`;document.getElementById('ct').innerHTML=x}catch(e){console.error(e)}}
 
-async function shSD(id,kod){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[hl,dr,sf]=await Promise.all([fetch('/api/samair').then(r=>r.json()),fetch('/api/samair/'+id+'/durak').then(r=>r.json()),fetch('/api/samair/'+id+'/sefer').then(r=>r.json())]);const h=(hl||[]).find(x=>x.id==id)||{},da=Array.isArray(dr)?dr:[],seferler=sf.data||[],last_up=sf.last_update||'';let x=`<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">✈️ ${h.ad||''}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`;x+=`<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`;x+=`<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`;if(seferler.length){x+=`<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up?`<div style="text-align:center;font-size:0.6rem;color:var(--text3);margin-bottom:5px">Son Güncelleme: ${last_up}</div>`:''}`;let cDay="";seferler.forEach(s=>{if(s.gun_format!==cDay){x+=`<div class="dhead">${s.gun_format}</div>`;cDay=s.gun_format}x+=`<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>`})}else{x+=`<div class="no-data">✈️ Uçuş bilgisi bekleniyor...</div>`}if(da.length){x+=`<div class="sec">📍 Duraklar (${da.length})</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--purple)">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat||'?'}</span></span></div>`;if(d.lat>0&&d.lon>0){co.push([d.lat,d.lon]);M['s'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,'#9333ea')}).addTo(map)}});if(co.length>1){const pl=L.polyline(co,{color:'#9333ea',weight:4,opacity:0.7,dashArray:'8,6'}).addTo(map);M['samair_route']=pl;map.fitBounds(pl.getBounds().pad(0.2))}else if(co.length)map.fitBounds(co,{padding:[40,40]})}document.getElementById('ct').innerHTML=x;upV(kod,'#9333ea');liveT=setInterval(()=>upV(kod,'#9333ea'),5000)}catch(e){console.error(e)}}
+async function shSD(id,kod){clr();document.getElementById('ct').innerHTML='<div class="loading">⏳</div>';try{const[hl,dr,sf]=await Promise.all([fetch('/api/samair').then(r=>r.json()),fetch('/api/samair/'+id+'/durak').then(r=>r.json()),fetch('/api/samair/'+id+'/sefer').then(r=>r.json())]);const h=(hl||[]).find(x=>x.id==id)||{},da=Array.isArray(dr)?dr:[],seferler=sf.data||[],last_up=sf.last_update||'';let x=`<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">✈️ ${h.ad||''}</div>`;x+=`<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`;x+=`<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`;x+=`<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`;if(seferler.length){x+=`<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up?`<div style="text-align:center;font-size:0.6rem;color:var(--text3);margin-bottom:5px">Son Güncelleme: ${last_up}</div>`:''}`;let cDay="";seferler.forEach(s=>{if(s.gun_format!==cDay){x+=`<div class="dhead">${s.gun_format}</div>`;cDay=s.gun_format}x+=`<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>`})}else{x+=`<div class="no-data">✈️ Uçuş bilgisi bekleniyor...</div>`}if(da.length){x+=`<div class="sec">📍 Duraklar (${da.length})</div>`;const co=[];da.forEach((d,i)=>{x+=`<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--purple)">${i+1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat||'?'}</span></span></div>`;if(d.lat>0&&d.lon>0){co.push([d.lat,d.lon]);M['s'+i]=L.marker([d.lat,d.lon],{icon:dI(i+1,'#9333ea')}).addTo(map)}});if(co.length>1){const pl=L.polyline(co,{color:'#9333ea',weight:4,opacity:0.7,dashArray:'8,6'}).addTo(map);M['samair_route']=pl;map.fitBounds(pl.getBounds().pad(0.2))}else if(co.length)map.fitBounds(co,{padding:[40,40]})}document.getElementById('ct').innerHTML=x;if(kod){upV(kod,'#9333ea');liveT=setInterval(()=>upV(kod,'#9333ea'),5000)}}catch(e){console.error(e)}}
 window.shSD=shSD;
 
-function showDisclaimer(){if(!localStorage.getItem('disclaimerShown')){document.getElementById('infoModal').style.display='flex';localStorage.setItem('disclaimerShown','true')}}
-
 init();
-showDisclaimer();
+checkCerezOnay();
 </script>
 </body>
 </html>'''
