@@ -3426,21 +3426,31 @@ def create_app(db, col):
         """Basit benzerlik skoru (0-1 arası). Substring + karakter örtüşme."""
         nq = normalize_tr(query)
         nt = normalize_tr(target)
+        if not nq or not nt: return 0.0
         if nq in nt: return 1.0
         if nt in nq: return 0.9
-        # Karakter örtüşme oranı
-        common = sum(1 for c in nq if c in nt)
-        score = common / max(len(nq), 1)
-        # Ardışık karakter bonus
-        max_seq = 0; seq = 0; ti = 0
+        
+        # Karakter örtüşme oranı (hızlı set intersection)
+        q_chars = set(nq)
+        t_chars = set(nt)
+        common = len(q_chars.intersection(t_chars))
+        score = common / max(len(q_chars), 1)
+        
+        # Ardışık karakter bonus (güvenli döngü)
+        max_seq = 0
+        seq = 0
+        ti = 0
         for c in nq:
+            if ti >= len(nt): break
             found = nt.find(c, ti)
             if found >= 0:
-                seq += 1; ti = found + 1
-                max_seq = max(max_seq, seq)
+                seq += 1
+                ti = found + 1
+                if seq > max_seq: max_seq = seq
             else:
                 seq = 0
-        seq_bonus = max_seq / max(len(nq), 1) * 0.3
+        
+        seq_bonus = (max_seq / max(len(nq), 1)) * 0.3
         return min(score + seq_bonus, 1.0)
 
     @app.get("/api/durak_ara")
@@ -3953,6 +3963,7 @@ def create_app(db, col):
 
     # --- Health Check ---
     @app.get("/api/health")
+    @app.get("/sağlık")
     async def health_check():
         """Sistem durum kontrolü"""
         with _gtfs_feed_lock:
