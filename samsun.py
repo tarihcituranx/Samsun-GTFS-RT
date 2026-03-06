@@ -2424,7 +2424,7 @@ HTML = '''<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🚌 Samsun Ulaşım Sistemi</title>
+<title>🇹🇷 🚌 Samsun Ulaşım Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/leaflet.css"/>
 <script src="/static/leaflet.js"></script>
@@ -2566,6 +2566,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg)
 .toast.show{visibility:visible;animation:fadein .4s,fadeout .4s 2.6s}
 @keyframes fadein{from{bottom:0;opacity:0}to{bottom:30px;opacity:1}}
 @keyframes fadeout{from{bottom:30px;opacity:1}to{bottom:0;opacity:0}}
+@keyframes pulse{0%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}100%{transform:translateX(-50%) scale(1)}}
 
 /* Route cards */
 .route-card{background:var(--card);border-radius:12px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;transition:transform .2s;border-left:5px solid var(--accent);border:1px solid var(--card-border);border-left:5px solid var(--accent)}
@@ -2801,37 +2802,50 @@ async function fetchWeather() {
     }
 }
 
+async function requestLocation(){
+    const defLoc={lat:41.2925,lon:36.3315};
+    if(!navigator.geolocation){userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.");return}
+    // Remove locate button if exists
+    const existBtn=document.getElementById('locateBtn');if(existBtn)existBtn.remove();
+    navigator.geolocation.getCurrentPosition(async p=>{
+        const lat=p.coords.latitude,lon=p.coords.longitude;
+        if(lat<41.0||lat>41.6||lon<35.0||lon>37.0){
+            userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);
+            L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Varsayılan Konum (Samsun)").openPopup();
+            showToast("Samsun dışındasınız, varsayılan konuma gidildi.");
+        }else{
+            userLoc={lat,lon};map.setView([lat,lon],15);
+            const userMarker=L.marker([lat,lon]).addTo(map).bindPopup("📍 Siz Buradasınız<br><small>Konum belirleniyor...</small>").openPopup();
+            try{
+                const geoRes=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=tr`);
+                const geo=await geoRes.json();
+                const addr=geo.address||{};
+                const locName=addr.road||addr.neighbourhood||addr.suburb||addr.town||addr.city||geo.display_name||'';
+                const district=addr.suburb||addr.neighbourhood||addr.town||'';
+                userMarker.setPopupContent(`📍 <b>Siz Buradasınız</b><br><span style="font-size:.75rem;color:#666">${locName}${district&&district!==locName?', '+district:''}</span>`).openPopup();
+            }catch(e){userMarker.setPopupContent("📍 Siz Buradasınız").openPopup();}
+        }
+        loadHats();
+        const lb=document.getElementById('locateBtn');if(lb)lb.remove();
+    },(err)=>{
+        const reasons={1:'Konum izni reddedildi',2:'Konum bilgisi alınamadı',3:'Konum isteği zaman aşımına uğradı'};
+        userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();
+        showToast(reasons[err.code]||'Konum hatası: '+err.message);console.warn('Geolocation error:',err.code,err.message);
+        // Show locate button for retry (mobile needs user gesture)
+        if(!document.getElementById('locateBtn')){
+            const btn=document.createElement('button');btn.id='locateBtn';
+            btn.innerHTML='📍 Konumumu Bul';
+            btn.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;background:var(--accent,#3b82f6);color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.3);animation:pulse 2s infinite';
+            btn.onclick=()=>requestLocation();
+            document.body.appendChild(btn);
+        }
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+}
 async function init(){
     applyTheme(localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'));
     fetchWeather();
-    setInterval(fetchWeather, 900000); // 15 dakikada bir hava durumu güncelle
-    const defLoc={lat:41.2925,lon:36.3315};
-    if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(async p=>{
-            const lat=p.coords.latitude,lon=p.coords.longitude;
-            if(lat<41.0||lat>41.6||lon<35.0||lon>37.0){
-                userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);
-                L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Varsayılan Konum (Samsun)").openPopup();
-                showToast("Samsun dışındasınız, varsayılan konuma gidildi.");
-            }else{
-                userLoc={lat,lon};map.setView([lat,lon],15);
-                const userMarker=L.marker([lat,lon]).addTo(map).bindPopup("📍 Siz Buradasınız<br><small>Konum belirleniyor...</small>").openPopup();
-                try{
-                    const geoRes=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=tr`);
-                    const geo=await geoRes.json();
-                    const addr=geo.address||{};
-                    const locName=addr.road||addr.neighbourhood||addr.suburb||addr.town||addr.city||geo.display_name||'';
-                    const district=addr.suburb||addr.neighbourhood||addr.town||'';
-                    userMarker.setPopupContent(`📍 <b>Siz Buradasınız</b><br><span style="font-size:.75rem;color:#666">${locName}${district&&district!==locName?', '+district:''}</span>`).openPopup();
-                }catch(e){userMarker.setPopupContent("📍 Siz Buradasınız").openPopup();}
-            }
-            loadHats(); // Always default to lines (hatlar) list
-        },(err)=>{
-            const reasons={1:'Konum izni reddedildi',2:'Konum bilgisi alınamadı',3:'Konum isteği zaman aşımına uğradı'};
-            userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();
-            showToast(reasons[err.code]||'Konum hatası: '+err.message);console.warn('Geolocation error:',err.code,err.message);
-        },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
-    }else{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.")}
+    setInterval(fetchWeather, 900000);
+    requestLocation();
     map.on('contextmenu',function(e){targetLoc=e.latlng;L.popup().setLatLng(e.latlng).setContent('<button onclick="calcRota()">Buraya Nasıl Giderim?</button>').openOn(map)});
 }
 
