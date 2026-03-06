@@ -2826,7 +2826,11 @@ async function init(){
                 }catch(e){userMarker.setPopupContent("📍 Siz Buradasınız").openPopup();}
             }
             loadHats(); // Always default to lines (hatlar) list
-        },()=>{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();showToast("Konum izni alınamadı, varsayılan konum yüklendi.")},{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+        },(err)=>{
+            const reasons={1:'Konum izni reddedildi',2:'Konum bilgisi alınamadı',3:'Konum isteği zaman aşımına uğradı'};
+            userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);L.marker([defLoc.lat,defLoc.lon]).addTo(map).bindPopup("Samsun Meydan").openPopup();loadHats();
+            showToast(reasons[err.code]||'Konum hatası: '+err.message);console.warn('Geolocation error:',err.code,err.message);
+        },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
     }else{userLoc=defLoc;map.setView([defLoc.lat,defLoc.lon],15);loadHats();showToast("Tarayıcınız konum servisini desteklemiyor.")}
     map.on('contextmenu',function(e){targetLoc=e.latlng;L.popup().setLatLng(e.latlng).setContent('<button onclick="calcRota()">Buraya Nasıl Giderim?</button>').openOn(map)});
 }
@@ -3120,6 +3124,16 @@ def create_app(db, col):
 
     app = FastAPI(title="Samsun Ulaşım Sistemi")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+    # Geolocation izni için Permissions-Policy header ekle
+    from starlette.middleware.base import BaseHTTPMiddleware
+    class PermissionsPolicyMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            response = await call_next(request)
+            response.headers["Permissions-Policy"] = "geolocation=(self)"
+            return response
+    app.add_middleware(PermissionsPolicyMiddleware)
+
     if os.path.exists("static"): app.mount("/static", StaticFiles(directory="static"), name="static")
 
     @app.on_event("startup")
