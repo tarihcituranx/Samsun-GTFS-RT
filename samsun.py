@@ -2430,9 +2430,9 @@ HTML = '''<!DOCTYPE html>
 <script src="/static/leaflet.js"></script>
 <style>
 :root{
-  --bg:#ffffff;--bg2:#f8fafc;--bg3:#f1f5f9;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;
-  --panel:rgba(255,255,255,0.92);--panel-border:rgba(0,0,0,0.08);
-  --card:#ffffff;--card-border:#e2e8f0;--card-hover:#f8fafc;
+  --bg:#f8fafc;--bg2:#f1f5f9;--bg3:#e2e8f0;--text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --panel:rgba(255,255,255,0.95);--panel-border:rgba(0,0,0,0.06);
+  --card:#ffffff;--card-border:#cbd5e1;--card-hover:#f1f5f9;
   --accent:#2563eb;--accent2:#3b82f6;--accent-bg:rgba(37,99,235,0.08);
   --green:#16a34a;--red:#dc2626;--orange:#ea580c;--purple:#9333ea;--pink:#ec4899;--teal:#0d9488;
   --shadow:0 4px 24px rgba(0,0,0,0.06);--shadow2:0 8px 32px rgba(0,0,0,0.1);
@@ -2440,9 +2440,9 @@ HTML = '''<!DOCTYPE html>
   --tile-url:https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png;
 }
 [data-theme="dark"]{
-  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
-  --panel:rgba(15,23,42,0.92);--panel-border:rgba(255,255,255,0.08);
-  --card:#1e293b;--card-border:#334155;--card-hover:#334155;
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--text:#f1f5f9;--text2:#cbd5e1;--text3:#94a3b8;
+  --panel:rgba(15,23,42,0.95);--panel-border:rgba(255,255,255,0.1);
+  --card:#1e293b;--card-border:#475569;--card-hover:#334155;
   --accent:#3b82f6;--accent2:#60a5fa;--accent-bg:rgba(59,130,246,0.15);
   --shadow:0 4px 24px rgba(0,0,0,0.3);--shadow2:0 8px 32px rgba(0,0,0,0.4);
   --tile-url:https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png;
@@ -2679,8 +2679,8 @@ html{font-size:clamp(14px, 1.5vw, 22px)}
 <div class="tabs">
     <div class="tab on" data-t="hat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#3b82f6"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg> Hatlar</div>
     <div class="tab" data-t="yakin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Yakın</div>
-    <div class="tab" data-t="odak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px;color:#16a34a"><path d="M12 2L2 22h20L12 2z"/><path d="M12 8v6M12 18h.01"/></svg> Odak</div>
-    <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:28px;width:auto;object-fit:contain;margin-bottom:0"> Samair</div>
+    <div class="tab" data-t="odak" style="justify-content:center"><img src="/static/images/odak.png" style="height:36px;width:auto;object-fit:contain;margin-bottom:0"> Odak</div>
+    <div class="tab" data-t="samair" style="justify-content:center"><img src="/static/images/samair.png" style="height:36px;width:auto;object-fit:contain;margin-bottom:0"> Samair</div>
     <div class="tab" data-t="rota" onclick="shRotaUI()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;margin-bottom:2px"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Git</div>
 </div>
 <div class="pnl-toggle" id="pnlToggle" onclick="togglePnl()" title="Paneli Küçült/Büyüt">
@@ -2990,9 +2990,11 @@ async function toggleAllStops(show){
     if(!show) return;
     try{
         const stops=await(await fetch('/api/tum_duraklar')).json();
-        const sIcon=L.divIcon({className:'',html:'<div style="width:8px;height:8px;background:#6366f1;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>',iconSize:[12,12],iconAnchor:[6,6]});
+        const showLabels=localStorage.getItem('showLabels')!=='0';
         stops.forEach(s=>{
-            const m=L.marker([s.lat,s.lon],{icon:sIcon}).addTo(map)
+            const sIcon=L.divIcon({className:'',html:`<div style="position:relative"><div style="width:12px;height:12px;background:#6366f1;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>${showLabels?`<div style="position:absolute;top:-2px;left:16px;white-space:nowrap;font-size:10px;font-weight:600;color:var(--text);background:var(--panel);padding:1px 4px;border-radius:3px;border:1px solid var(--card-border);pointer-events:none;opacity:.85">${s.ad}</div>`:''}</div>`,iconSize:[12,12],iconAnchor:[6,6]});
+            const m=L.marker([s.lat,s.lon],{icon:sIcon})
+                .addTo(map)
                 .bindPopup(`<b>${s.ad}</b><br><small>${s.kod?'Kod: '+s.kod:'ID: '+s.id}</small><br><button onclick="shDurakDetay('${s.id||s.kod}');if(window.innerWidth<=480)togglePnl(true)" style="margin-top:4px;padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`);
             allStopMarkers.push(m);
         });
