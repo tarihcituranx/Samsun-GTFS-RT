@@ -32,6 +32,7 @@ const BottomNav = () => {
       <div className="flex h-[60px] items-start">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          const isImageOnly = tab.id === "odak" || tab.id === "samair";
           return (
             <button
               key={tab.id}
@@ -49,25 +50,26 @@ const BottomNav = () => {
               {isActive && (
                 <div className="absolute top-1 h-0.5 w-4 rounded-full bg-primary" />
               )}
-              <div className={`transition-transform duration-200 ${isActive ? "scale-110" : "scale-100"}`}>
+              <div className={`transition-transform duration-200 ${isActive ? "scale-110" : "scale-100"} ${isImageOnly ? "mt-1" : ""}`}>
                 {tab.icon ? (
                   <tab.icon className={`h-[18px] w-[18px] ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                 ) : (
                   <img
                     src={tab.imgSrc}
                     alt={tab.label}
-                    className="h-[18px] w-[18px] object-contain"
+                    className={`object-contain ${isImageOnly ? "h-6 w-auto" : "h-[18px] w-[18px]"}`}
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                   />
                 )}
               </div>
-              <span
-                className={`max-w-full truncate text-[8px] font-medium leading-tight ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {tab.label}
-              </span>
+              {!isImageOnly && (
+                <span
+                  className={`max-w-full truncate text-[8px] font-medium leading-tight ${isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                >
+                  {tab.label}
+                </span>
+              )}
             </button>
           );
         })}

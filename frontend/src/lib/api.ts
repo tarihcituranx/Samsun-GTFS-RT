@@ -164,3 +164,53 @@ export const fetchAllStops = async (): Promise<TransitStop[]> => {
         return [];
     }
 };
+
+export const fetchPlaces = async (): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/mekanlar`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (error) {
+        console.error("Failed to fetch places:", error);
+        return [];
+    }
+};
+
+export interface RouteEndpointParams {
+    start?: string;
+    lat1?: number;
+    lon1?: number;
+    end?: string;
+    lat2?: number;
+    lon2?: number;
+}
+
+export const fetchRoute = async (params: RouteEndpointParams): Promise<any[]> => {
+    try {
+        const queryParams = new URLSearchParams();
+        if (params.start) queryParams.append("start", params.start);
+        if (params.lat1) queryParams.append("lat1", params.lat1.toString());
+        if (params.lon1) queryParams.append("lon1", params.lon1.toString());
+        if (params.end) queryParams.append("end", params.end);
+        if (params.lat2) queryParams.append("lat2", params.lat2.toString());
+        if (params.lon2) queryParams.append("lon2", params.lon2.toString());
+
+        const res = await fetch(`${API_BASE}/api/rota?${queryParams.toString()}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (error) {
+        console.error("Failed to fetch route:", error);
+        return [];
+    }
+};
+
+export const fetchAppVersion = async (): Promise<any> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/app_version`);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (error) {
+        console.error("Failed to fetch app version:", error);
+        return null;
+    }
+};

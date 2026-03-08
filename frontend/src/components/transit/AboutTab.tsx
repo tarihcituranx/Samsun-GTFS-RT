@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { useTransit } from "@/contexts/TransitContext";
 import { APP_CONFIG } from "@/contexts/TransitContext";
+import { fetchAppVersion } from "@/lib/api";
 
 const GitHubIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -16,6 +18,13 @@ const GitHubIcon = ({ className }: { className?: string }) => (
 
 const AboutTab = () => {
   const { setShowKVKK, setShowCookie } = useTransit();
+  const [appData, setAppData] = useState<any>(null);
+
+  useEffect(() => {
+    fetchAppVersion().then(data => {
+      if (data) setAppData(data);
+    });
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -28,11 +37,25 @@ const AboutTab = () => {
         </span>
       </div>
 
+      {appData && (
+        <section className="rounded-2xl border border-border/30 bg-accent/50 p-4 space-y-2">
+          <h3 className="font-sora text-sm font-bold text-foreground">✨ Yenilikler (v{appData.latest_version})</h3>
+          <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            {appData.release_notes}
+          </div>
+          {appData.latest_version !== APP_CONFIG.version && (
+            <a href={appData.download_url} target="_blank" className="mt-2 block w-full rounded-lg bg-primary/20 p-2 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/30">
+              Güncelleme Mevcut İndir
+            </a>
+          )}
+        </section>
+      )}
+
       {/* Uygulama Hakkında */}
       <section className="rounded-2xl border border-border/30 bg-accent/50 p-4 space-y-2">
         <h3 className="font-sora text-sm font-bold text-foreground">📱 Uygulama Hakkında</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          {APP_CONFIG.name}, {APP_CONFIG.activeCity.name} şehrinin toplu taşıma sistemini daha erişilebilir 
+          {APP_CONFIG.name}, {APP_CONFIG.activeCity.name} şehrinin toplu taşıma sistemini daha erişilebilir
           hale getirmek amacıyla geliştirilmiş bağımsız bir vatandaş projesidir.
         </p>
         <p className="text-xs text-muted-foreground/70 italic">
@@ -83,14 +106,6 @@ const AboutTab = () => {
             📞 0362 431 10 12
           </a>
         </div>
-        <a
-          href="https://samsunkesfet.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block text-xs text-primary hover:underline mt-1"
-        >
-          🏛️ samsunkesfet.com
-        </a>
       </section>
 
       {/* Yasal */}
@@ -119,7 +134,7 @@ const AboutTab = () => {
           </button>
         </div>
         <p className="text-xs text-muted-foreground/60 leading-relaxed">
-          Gösterilen fiyatlar, sefer saatleri ve araç konumları tahmini veya gecikmiş olabilir. 
+          Gösterilen fiyatlar, sefer saatleri ve araç konumları tahmini veya gecikmiş olabilir.
           Kesin bilgi için lütfen Samulaş resmi kanallarını kullanın.
         </p>
       </section>

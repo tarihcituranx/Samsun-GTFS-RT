@@ -2,45 +2,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDownUp, Clock, Leaf } from "lucide-react";
 import { useTransit } from "@/contexts/TransitContext";
-
-const mockRoutes = [
-  {
-    label: "En Hızlı", duration: 35, fare: 24, transfers: 2, co2: 1.2,
-    departure: "09:45", arrival: "10:20",
-    steps: [
-      { type: "walk", duration: 3, label: "Yürü", color: "" },
-      { type: "bus", duration: 18, label: "E1", color: "#f97316" },
-      { type: "walk", duration: 5, label: "Yürü", color: "" },
-      { type: "bus", duration: 8, label: "19", color: "#0ea5e9" },
-      { type: "walk", duration: 1, label: "Yürü", color: "" },
-    ],
-  },
-  {
-    label: "En Az Aktarma", duration: 42, fare: 24, transfers: 1, co2: 1.5,
-    departure: "09:48", arrival: "10:30",
-    steps: [
-      { type: "walk", duration: 5, label: "Yürü", color: "" },
-      { type: "bus", duration: 32, label: "19", color: "#0ea5e9" },
-      { type: "walk", duration: 5, label: "Yürü", color: "" },
-    ],
-  },
-  {
-    label: "En Ucuz", duration: 50, fare: 18, transfers: 1, co2: 0.8,
-    departure: "09:50", arrival: "10:40",
-    steps: [
-      { type: "walk", duration: 8, label: "Yürü", color: "" },
-      { type: "tram", duration: 35, label: "T1", color: "#22c55e" },
-      { type: "walk", duration: 7, label: "Yürü", color: "" },
-    ],
-  },
-];
+import { fetchRoute } from "@/lib/api";
 
 const RoutePlannerTab = () => {
   const { routeDestination, setRouteDestination, targetLocation, setTargetLocation } = useTransit();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [planned, setPlanned] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [swapped, setSwapped] = useState(false);
+  const [routes, setRoutes] = useState<any[]>([]);
 
   // Auto-fill destination from Discover tab
   useEffect(() => {
@@ -64,8 +35,31 @@ const RoutePlannerTab = () => {
     setSwapped(!swapped);
   };
 
-  const handlePlan = () => {
-    if (from && to) setPlanned(true);
+  const handlePlan = async () => {
+    if (!from && !to) return;
+    setLoading(true);
+    setPlanned(true);
+    setRoutes([]);
+
+    // Parse coordinates if they are in "lat, lon" format
+    let params: any = {};
+    if (from.includes(',')) {
+      const [lat, lon] = from.split(',').map(s => parseFloat(s.trim()));
+      params.lat1 = lat; params.lon1 = lon;
+    } else {
+      params.start = from;
+    }
+
+    if (to.includes(',')) {
+      const [lat, lon] = to.split(',').map(s => parseFloat(s.trim()));
+      params.lat2 = lat; params.lon2 = lon;
+    } else {
+      params.end = to;
+    }
+
+    const fetchedRoutes = await fetchRoute(params);
+    setRoutes(fetchedRoutes);
+    setLoading(false);
   };
 
   return (
@@ -79,6 +73,7 @@ const RoutePlannerTab = () => {
           value={from}
           onChange={(e) => setFrom(e.target.value)}
           className="glass-panel rounded-2xl px-4 py-3 text-sm font-dm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30"
+          onKeyDown={(e) => e.key === 'Enter' && handlePlan()}
         />
         <motion.button
           onClick={handleSwap}
@@ -95,12 +90,17 @@ const RoutePlannerTab = () => {
           value={to}
           onChange={(e) => setTo(e.target.value)}
           className="glass-panel rounded-2xl px-4 py-3 text-sm font-dm text-foreground outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30"
+          onKeyDown={(e) => e.key === 'Enter' && handlePlan()}
         />
       </div>
 
       <div className="mt-3 flex gap-2">
-        <button className="flex-1 rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground" onClick={handlePlan}>
-          Şimdi Hareket Et
+        <button
+          className="flex-1 rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          onClick={handlePlan}
+          disabled={loading || (!from && !to)}
+        >
+          {loading ? "Planlanıyor..." : "Şimdi Hareket Et"}
         </button>
         <button className="flex items-center gap-1 rounded-full bg-accent px-4 py-2.5 text-sm font-medium text-foreground">
           <Clock className="h-4 w-4" /> Saat Seç
@@ -108,30 +108,47 @@ const RoutePlannerTab = () => {
       </div>
 
       <AnimatePresence>
-        {planned && (
+        {planned && !loading && routes.length === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-center text-sm text-muted-foreground">
+            Uygun rota bulunamadı. Lütfen varış noktalarını kontrol edin.
+          </motion.div>
+        )}
+
+        {planned && loading && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-8 flex justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </motion.div>
+        )}
+
+        {planned && !loading && routes.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 flex flex-col gap-3"
+            className="mt-4 flex flex-col gap-3 pb-24"
           >
-            {mockRoutes.map((route, i) => (
+            {routes.map((route, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="glass-panel rounded-2xl p-4"
+                className="glass-panel rounded-2xl p-4 overflow-hidden relative group"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-sora text-sm font-bold text-foreground">{route.label}</span>
+                {/* Glow effect on best route */}
+                {i === 0 && <div className="absolute inset-0 bg-primary/5 shadow-[inset_0_0_20px_0_hsl(var(--primary)/20)] pointer-events-none" />}
+
+                <div className="flex items-center justify-between mb-2 relative z-10">
+                  <span className="font-sora text-sm font-bold text-foreground">
+                    {route.label || (route.type === "DIRECT" ? "Direkt" : "Aktarmalı")} {i === 0 && '✨'}
+                  </span>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-mono font-bold text-primary">{route.duration} dk</span>
                     <span className="text-muted-foreground">₺{route.fare}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {route.steps.map((step, j) => (
+                <div className="flex items-center gap-1 overflow-x-auto pb-2 scrollbar-hide relative z-10">
+                  {route.steps?.map((step: any, j: number) => (
                     <div key={j} className="flex shrink-0 items-center gap-1">
                       {j > 0 && <span className="text-muted-foreground/50">→</span>}
                       {step.type === "walk" ? (
@@ -140,7 +157,7 @@ const RoutePlannerTab = () => {
                         </span>
                       ) : (
                         <span
-                          className="rounded-lg px-2 py-1 text-xs font-mono font-bold text-primary-foreground"
+                          className="rounded-lg px-2 py-1 text-xs font-mono font-bold text-white whitespace-nowrap"
                           style={{ backgroundColor: step.color }}
                         >
                           {step.label}: {step.duration}dk
@@ -148,12 +165,16 @@ const RoutePlannerTab = () => {
                       )}
                     </div>
                   ))}
+
+                  {(!route.steps || route.steps.length === 0) && (
+                    <span className="rounded-lg bg-accent px-2 py-1 text-xs text-muted-foreground">Rota Detayı Yok</span>
+                  )}
                 </div>
 
-                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground relative z-10">
                   <span>Kalkış: {route.departure} | Varış: {route.arrival} | {route.transfers} aktarma</span>
-                  <span className="flex items-center gap-1 text-transit-green">
-                    <Leaf className="h-3 w-3" /> -{route.co2}kg CO₂
+                  <span className="flex items-center gap-[2px] text-transit-green font-medium">
+                    <Leaf className="h-[10px] w-[10px]" /> -{route.co2}kg CO₂
                   </span>
                 </div>
               </motion.div>

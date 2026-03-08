@@ -34,15 +34,15 @@ const DesktopSidebar = () => {
 
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
+        const isImageOnly = tab.id === "odak" || tab.id === "samair";
         return (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`relative flex w-full items-center gap-3 rounded-xl px-5 py-3 transition-all ${
-              isActive
-                ? "text-primary"
+            className={`relative flex w-full items-center gap-3 rounded-xl px-5 py-3 transition-all ${isActive
+                ? "text-primary bg-accent/30"
                 : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            }`}
+              } ${isImageOnly ? "justify-center xl:justify-start" : ""}`}
             aria-label={tab.label}
           >
             {isActive && (
@@ -55,9 +55,14 @@ const DesktopSidebar = () => {
             {tab.icon ? (
               <tab.icon className="h-5 w-5 shrink-0" />
             ) : (
-              <img src={tab.imgSrc} alt={tab.label} className="h-5 w-5 shrink-0 object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              <img
+                src={tab.imgSrc}
+                alt={tab.label}
+                className={`shrink-0 object-contain transition-all ${isActive ? "scale-110" : ""} ${isImageOnly ? "h-6 sm:h-8" : "h-5 w-5"}`}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
             )}
-            <span className="hidden text-sm font-medium xl:block">{tab.label}</span>
+            {!isImageOnly && <span className="hidden text-sm font-medium xl:block">{tab.label}</span>}
           </button>
         );
       })}
