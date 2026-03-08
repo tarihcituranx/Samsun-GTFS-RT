@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Samsun Ulaşım Sistemi</title>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Leaflet CSS -->
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#1876f2',
+            bus: '#1877f2',
+            express: '#9b59b6',
+            tram: '#e67e22',
+            boat: '#3498db',
+            warning: '#f1c40f'
+          },
+          borderRadius: {
+            'custom': '12px',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="layout">
+    body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
+    #map { height: 100vh; width: 100vw; z-index: 1; }
+    
+    /* Panel responsiveness */
+    #side-panel {
+      z-index: 50;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    @media (min-width: 768px) {
+      #side-panel {
+        width: 380px;
+        height: calc(100vh - 40px);
+        top: 20px;
+        right: 20px;
+        position: fixed;
+      }
+    }
+
+    @media (max-width: 767px) {
+      #side-panel {
+        width: 100%;
+        height: 60vh;
+        bottom: 0;
+        left: 0;
+        position: fixed;
+        border-radius: 20px 20px 0 0;
+      }
+      #map { height: 45vh; }
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+    .tab-active { border-bottom: 3px solid #1876f2; color: #1876f2; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-gray-100">
+<!-- BEGIN: MapContainer -->
+<div id="map"></div>
+<!-- END: MapContainer -->
+<!-- BEGIN: FloatingPanel -->
+<aside class="bg-white shadow-2xl flex flex-col overflow-hidden rounded-custom md:rounded-custom border border-gray-100" id="side-panel">
+<!-- BEGIN: HeaderSection -->
+<header class="flex-shrink-0" data-purpose="panel-header">
+<!-- Legal Warning -->
+<div class="bg-warning text-[10px] font-bold py-1 px-4 text-center uppercase tracking-wider">
+        ⚠️ YASAL UYARI: Veriler bilgilendirme amaçlıdır.
+      </div>
+<!-- Logo Bar -->
+<div class="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+<div class="flex gap-3">
+<img alt="SBB" class="h-[35px] object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa3VdkPIpzHz2KSBjl46H_es6F1pTcBsjKsu7-TaAOQAK6ECWvlwq2vIPQxj-eEEZCAYKJrvsQjn_aBMPiOyzUsds6r_Ls9Eo9hFatcy7k6C0ny1e4SXrJxTH_pkd0UogUY9yypd6wP76LR5mX9YHlt8lg-xmLLvGMngKgNIg3E5L4-s14FF5p-3rGTb3TQ_GsNF28dgcgncaCGdAGb9EY72bNHuq85k37trpiL6-YOb_sH_V0kGkc2LsTjfDAT9bdgjENzyP_oq0e"/>
+<img alt="Samulaş" class="h-[35px] object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBH-Y_VIincxcvJJAnTr0pCP4xsJGGNiVfWMCnbnUQEBgJTyeroH41mJT7ULdZ_THQVva0p36Kfjvql5utMWbjx0E-rCIb7DFXeFKCfiLuyzPY2n9xDPtPT8Y_8Egcd6zsB1Z8mx_KRcw3I8KeejyhO-l_Q3QJASECBf3nPpYasylNz2J_1dhL7uZy0Jkrld3q-0cU3QRvrAJvTkQF1p1tjqofFO19-0AHVuw_R50wgzOn8wGLsT0ymJqIQ1rph1J4oJfuMk68BmnjF"/>
+</div>
+<button class="p-2 hover:bg-gray-100 rounded-full">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex border-b border-gray-100 overflow-x-auto text-sm no-scrollbar">
+<button class="flex-1 py-3 px-2 text-center whitespace-nowrap tab-active" id="tab-hatlar" onclick="switchTab('hatlar')">Hatlar</button>
+<button class="flex-1 py-3 px-2 text-center whitespace-nowrap text-gray-500" id="tab-yakin" onclick="switchTab('yakin')">Yakın</button>
+<button class="flex-1 py-3 px-2 text-center whitespace-nowrap text-gray-500" id="tab-odak" onclick="switchTab('odak')">Odak</button>
+<button class="flex-1 py-3 px-2 text-center whitespace-nowrap text-gray-500" id="tab-samair" onclick="switchTab('samair')">Samair</button>
+<button class="flex-1 py-3 px-2 text-center whitespace-nowrap text-gray-500" id="tab-git" onclick="switchTab('git')">Git</button>
+</nav>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: MainContentScrollArea -->
+<main class="flex-1 overflow-y-auto custom-scrollbar p-4" id="tab-content">
+<!-- BEGIN: Tab1_Hatlar -->
+<section class="space-y-4" id="content-hatlar">
+<div class="relative">
+<input class="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-brand outline-none transition-all" placeholder="Hat no veya isim ara..." type="text"/>
+<svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<!-- Categories Grid -->
+<div class="grid grid-cols-5 gap-2" data-purpose="category-filter">
+<button class="flex flex-col items-center p-2 rounded-lg hover:bg-blue-50 border border-transparent hover:border-blue-100">
+<span class="text-xl">🚌</span>
+<span class="text-[10px] mt-1 font-medium">Otobüs</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg hover:bg-purple-50">
+<span class="text-xl">🚀</span>
+<span class="text-[10px] mt-1 font-medium">Ekspres</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg hover:bg-orange-50">
+<span class="text-xl">🚋</span>
+<span class="text-[10px] mt-1 font-medium">Tramvay</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg hover:bg-cyan-50">
+<span class="text-xl">⛴️</span>
+<span class="text-[10px] mt-1 font-medium">Vapur</span>
+</button>
+<button class="flex flex-col items-center p-2 rounded-lg hover:bg-gray-50">
+<span class="text-xl">⭐</span>
+<span class="text-[10px] mt-1 font-medium">Favori</span>
+</button>
+</div>
+<!-- Line Cards -->
+<div class="space-y-3">
+<div class="group cursor-pointer border-l-4 border-express bg-white p-3 rounded-r-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow" onclick="showDetail('E1')">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-bold text-lg text-gray-800">E1 Ekspres</h3>
+<p class="text-xs text-gray-500">Üniversite - Belediye Evleri</p>
+</div>
+<span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded font-bold">EKSPRES</span>
+</div>
+<div class="mt-2 flex gap-2">
+<span class="text-green-500 text-xs flex items-center gap-1">● 4 Araç Yayında</span>
+</div>
+</div>
+<div class="border-l-4 border-tram bg-white p-3 rounded-r-lg shadow-sm border border-gray-100 opacity-90">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-bold text-lg text-gray-800">T1 Tramvay</h3>
+<p class="text-xs text-gray-500">Üniversite - Stadyum</p>
+</div>
+<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-1 rounded font-bold">RAYLI</span>
+</div>
+</div>
+<div class="border-l-4 border-bus bg-white p-3 rounded-r-lg shadow-sm border border-gray-100 opacity-90">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-bold text-lg text-gray-800">19 Belediye Evleri</h3>
+<p class="text-xs text-gray-500">Meydan - Belediye Evleri</p>
+</div>
+<span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-1 rounded font-bold">OTOBÜS</span>
+</div>
+</div>
+</div>
+</section><section class="hidden space-y-6" id="content-samair">
+<!-- Header with Logo and Disclaimer -->
+<div class="space-y-4">
+<div class="flex justify-center py-2">
+<img alt="Samair Logo" class="h-[80px] object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBH-Y_VIincxcvJJAnTr0pCP4xsJGGNiVfWMCnbnUQEBgJTyeroH41mJT7ULdZ_THQVva0p36Kfjvql5utMWbjx0E-rCIb7DFXeFKCfiLuyzPY2n9xDPtPT8Y_8Egcd6zsB1Z8mx_KRcw3I8KeejyhO-l_Q3QJASECBf3nPpYasylNz2J_1dhL7uZy0Jkrld3q-0cU3QRvrAJvTkQF1p1tjqofFO19-0AHVuw_R50wgzOn8wGLsT0ymJqIQ1rph1J4oJfuMk68BmnjF"/>
+</div>
+<div class="bg-warning text-[10px] font-bold py-2 px-4 text-center uppercase tracking-wider rounded-lg shadow-sm">
+      ⚠️ YASAL UYARI: VERİLER BİLGİLENDİRME AMAÇLIDIR.
+    </div>
+</div>
+<!-- Route List -->
+<div class="space-y-3">
+<h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">Havalimanı Hatları</h4>
+<div class="bg-white border border-gray-100 rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+<div>
+<p class="font-bold text-gray-800">H1: Şehir Merkezi - Çarşamba Havalimanı</p>
+<p class="text-xs text-gray-500">Meydan - Atatürk Bulvarı - Havalimanı</p>
+</div>
+<span class="text-brand font-bold text-xl">›</span>
+</div>
+<div class="bg-white border border-gray-100 rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+<div>
+<p class="font-bold text-gray-800">H2: Atakum - Çarşamba Havalimanı</p>
+<p class="text-xs text-gray-500">OMÜ - Türkiş - Havalimanı</p>
+</div>
+<span class="text-brand font-bold text-xl">›</span>
+</div>
+</div>
+<!-- Flight Schedule Detail -->
+<div class="space-y-4">
+<div class="flex justify-between items-center px-1">
+<h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Uçuş Sefer Saatleri</h4>
+<span class="text-[10px] text-gray-500">Güncel Liste</span>
+</div>
+<!-- Day Group: Monday -->
+<div class="space-y-2">
+<div class="bg-[#34495e] text-white text-[10px] font-bold py-1.5 px-3 rounded-t-lg tracking-widest">
+        PAZARTESİ
+      </div>
+<div class="space-y-1">
+<div class="bg-[#f0f8ff] border-l-[3px] border-[#8e44ad] p-3 text-xs shadow-sm">
+<span class="font-bold text-gray-700">06:30 → İstanbul (IST)</span>
+<span class="text-gray-400 mx-1">|</span>
+<span class="text-gray-500">Turkish Airlines - 07:15</span>
+</div>
+<div class="bg-[#f0f8ff] border-l-[3px] border-[#8e44ad] p-3 text-xs shadow-sm">
+<span class="font-bold text-gray-700">08:15 → İstanbul (SAW)</span>
+<span class="text-gray-400 mx-1">|</span>
+<span class="text-gray-500">Pegasus - 09:05</span>
+</div>
+</div>
+</div>
+<!-- Day Group: Tuesday -->
+<div class="space-y-2">
+<div class="bg-[#34495e] text-white text-[10px] font-bold py-1.5 px-3 rounded-t-lg tracking-widest">
+        SALI
+      </div>
+<div class="space-y-1">
+<div class="bg-[#f0f8ff] border-l-[3px] border-[#8e44ad] p-3 text-xs shadow-sm">
+<span class="font-bold text-gray-700">09:45 → Ankara (ESB)</span>
+<span class="text-gray-400 mx-1">|</span>
+<span class="text-gray-500">AnadoluJet - 10:30</span>
+</div>
+<div class="bg-[#f0f8ff] border-l-[3px] border-[#8e44ad] p-3 text-xs shadow-sm">
+<span class="font-bold text-gray-700">13:20 → İstanbul (IST)</span>
+<span class="text-gray-400 mx-1">|</span>
+<span class="text-gray-500">Turkish Airlines - 14:10</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Tab1_Hatlar -->
+<!-- BEGIN: Tab5_Git -->
+<section class="hidden space-y-6" id="content-git">
+<div class="bg-gray-50 p-4 rounded-xl space-y-3">
+<div class="relative">
+<div class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-brand bg-white"></div>
+<input class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg text-sm" readonly="" type="text" value="Konumum"/>
+</div>
+<div class="relative">
+<div class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-sm"></div>
+<input class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand outline-none" placeholder="Nereye gitmek istersiniz?" type="text"/>
+</div>
+<button class="w-full bg-brand text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">Rota Oluştur</button>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Önerilen Rota</h4>
+<!-- Timeline Result -->
+<div class="relative pl-8 space-y-6">
+<div class="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-200 dashed"></div>
+<div class="relative">
+<div class="absolute -left-[25px] top-1 p-1 bg-white border-2 border-gray-300 rounded-full">🚶</div>
+<div>
+<p class="text-sm font-bold">Yürüme</p>
+<p class="text-xs text-gray-500">Meydan durağına (250m)</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[25px] top-1 p-1 bg-blue-500 text-white rounded-full text-[10px]">🚌</div>
+<div>
+<p class="text-sm font-bold">E1 Ekspres - Bin</p>
+<p class="text-xs text-gray-500">8 durak (14 dk)</p>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[25px] top-1 p-1 bg-white border-2 border-red-500 rounded-full">📍</div>
+<div>
+<p class="text-sm font-bold">Varış</p>
+<p class="text-xs text-gray-500">Üniversite Kapısı</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: Tab5_Git -->
+<!-- BEGIN: LineDetailView (Hidden by default) -->
+<section class="hidden space-y-6" id="line-detail">
+<button class="flex items-center text-brand text-sm font-medium mb-4" onclick="hideDetail()">
+<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg> Geri Dön
+        </button>
+<div class="flex justify-between items-center">
+<h2 class="text-2xl font-bold" id="detail-title">E1 Ekspres</h2>
+<span class="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full font-bold">AKTİF</span>
+</div>
+<!-- Detail Stats -->
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-gray-50 p-3 rounded-lg text-center">
+<p class="text-[10px] text-gray-500 uppercase">Durak Sayısı</p>
+<p class="text-xl font-bold">24</p>
+</div>
+<div class="bg-gray-50 p-3 rounded-lg text-center">
+<p class="text-[10px] text-gray-500 uppercase">Aktif Araç</p>
+<p class="text-xl font-bold">6</p>
+</div>
+</div>
+<!-- Direction Toggle -->
+<div class="flex bg-gray-100 p-1 rounded-lg">
+<button class="flex-1 py-1.5 text-xs font-semibold bg-white shadow-sm rounded-md">Gidiş</button>
+<button class="flex-1 py-1.5 text-xs font-medium text-gray-500">Dönüş</button>
+</div>
+<!-- Price Card -->
+<div class="bg-brand text-white p-4 rounded-xl flex justify-between items-center">
+<div>
+<p class="text-[10px] opacity-80 uppercase">Tam Ücret</p>
+<p class="text-xl font-bold">₺14.50</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] opacity-80 uppercase">Öğrenci</p>
+<p class="text-xl font-bold">₺9.00</p>
+</div>
+</div>
+<!-- Stop List -->
+<div class="space-y-4">
+<h4 class="font-bold text-sm">Durak Listesi</h4>
+<div class="space-y-0 relative">
+<div class="absolute left-2.5 top-2 bottom-2 w-0.5 bg-gray-200"></div>
+<div class="relative pl-8 pb-4">
+<div class="absolute left-1.5 top-1.5 w-2.5 h-2.5 rounded-full bg-brand ring-4 ring-white"></div>
+<p class="text-sm font-semibold">Belediye Evleri</p>
+<p class="text-[10px] text-gray-400">Aktarma: 19, 24, T1</p>
+</div>
+<div class="relative pl-8 pb-4">
+<div class="absolute left-1.5 top-1.5 w-2.5 h-2.5 rounded-full bg-gray-300 ring-4 ring-white"></div>
+<p class="text-sm">Mert Irmağı</p>
+</div>
+<div class="relative pl-8 pb-4">
+<div class="absolute left-1.5 top-1.5 w-2.5 h-2.5 rounded-full bg-gray-300 ring-4 ring-white"></div>
+<p class="text-sm">Kılıçdede</p>
+</div>
+</div>
+</div>
+</section>
+<!-- END: LineDetailView -->
+</main>
+<!-- END: MainContentScrollArea -->
+<!-- BEGIN: PanelFooter -->
+<footer class="flex-shrink-0 p-4 border-t border-gray-100 bg-gray-50">
+<div class="flex justify-between items-center text-[11px] text-gray-400 mb-2">
+<span>© 2024 SBB Samulaş A.Ş.</span>
+<div class="flex gap-3">
+<a class="text-brand font-bold hover:underline" href="tel:153">Alo 153</a>
+<a class="hover:underline" href="#">Yardım</a>
+</div>
+</div>
+<p class="text-[9px] leading-tight text-gray-400 italic">Samsun Büyükşehir Belediyesi iştirakidir. Tüm hakları saklıdır.</p>
+</footer>
+<!-- END: PanelFooter -->
+</aside>
+<!-- END: FloatingPanel -->
+<!-- Scripts -->
+<script crossorigin="" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script data-purpose="map-initialization">
+    // Initialize Map
+    const map = L.map('map', {
+      zoomControl: false // Move zoom control later
+    }).setView([41.2925, 36.3315], 13);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
+
+    // Mock Data: Vehicles & Stops
+    const vehicles = [
+      { id: 1, pos: [41.2850, 36.3400], plate: '55 ABC 12', type: 'E1' },
+      { id: 2, pos: [41.3000, 36.3200], plate: '55 XYZ 34', type: '19' }
+    ];
+
+    const stops = [
+      { id: 101, pos: [41.2925, 36.3315], name: 'Cumhuriyet Meydanı' },
+      { id: 102, pos: [41.2800, 36.3500], name: 'Belediye Evleri' }
+    ];
+
+    // Add Stops
+    stops.forEach(stop => {
+      L.circleMarker(stop.pos, {
+        radius: 6,
+        fillColor: "#fff",
+        color: "#1876f2",
+        weight: 2,
+        fillOpacity: 1
+      }).addTo(map).bindPopup(`<b>${stop.name}</b>`);
+    });
+
+    // Add Vehicles
+    vehicles.forEach(v => {
+      const icon = L.divIcon({
+        html: `<div class="flex flex-col items-center">
+                 <div class="bg-white border-2 border-brand rounded-full w-8 h-8 flex items-center justify-center shadow-lg text-lg">🚌</div>
+                 <div class="bg-brand text-white text-[9px] px-1 rounded mt-0.5 whitespace-nowrap">${v.plate}</div>
+               </div>`,
+        className: 'custom-vehicle-icon',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      });
+      L.marker(v.pos, { icon }).addTo(map);
+    });
+  </script>
+<script data-purpose="tab-logic">function switchTab(tabId) {
+      // Hide all contents
+      document.getElementById('content-hatlar').classList.add('hidden');
+      document.getElementById('content-git').classList.add('hidden');
+      if(document.getElementById('content-samair')) document.getElementById('content-samair').classList.add('hidden');
+      document.getElementById('line-detail').classList.add('hidden');
+      
+      // Reset tabs style
+      ['hatlar', 'yakin', 'odak', 'samair', 'git'].forEach(t => {
+        const tabElem = document.getElementById(`tab-${t}`);
+        if(tabElem) {
+          tabElem.classList.remove('tab-active');
+          tabElem.classList.add('text-gray-500');
+        }
+      });
+
+      // Show selected
+      const target = document.getElementById(`content-${tabId}`);
+      if (target) target.classList.remove('hidden');
+      
+      const tabBtn = document.getElementById(`tab-${tabId}`);
+      if(tabBtn) {
+        tabBtn.classList.add('tab-active');
+        tabBtn.classList.remove('text-gray-500');
+      }
+    }
+
+    function showDetail(lineCode) {
+      document.getElementById('content-hatlar').classList.add('hidden');
+      if(document.getElementById('content-samair')) document.getElementById('content-samair').classList.add('hidden');
+      document.getElementById('line-detail').classList.remove('hidden');
+      document.getElementById('detail-title').innerText = lineCode === 'E1' ? 'E1 Ekspres' : lineCode;
+    }
+
+    function hideDetail() {
+      document.getElementById('line-detail').classList.add('hidden');
+      document.getElementById('content-hatlar').classList.remove('hidden');
+    }</script>
+</body></html>

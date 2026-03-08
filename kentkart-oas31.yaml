@@ -1,0 +1,3766 @@
+openapi: "3.1.0"
+info:
+  title: Kentkart Universal API by Turan KAYA (tarihcituranx)
+  description: >
+    Kentkart altyapısını kullanan şehirler (Ordu, Adana, Kocaeli, Antalya vb.)
+    için tersine mühendislikle çıkarılmış, **gerçek yanıtlarla doğrulanmış**
+    tam kapsamlı gayriresmi API şeması.
+
+    **Test:** 103 istek — 2026-02-26 tarihinde Ordu (031) ve Sivas (005) bölgeleriyle doğrulandı.
+    12 endpoint canlı API ile 2026-02-27 tarihinde tekrar doğrulandı.
+
+    ---
+
+    ## Mimari
+
+    ```
+    service.kentkart.com/rl1/   → Veri API'si (tüm /web/ ve /api/ endpoint'leri)
+    auth.kentkart.com/rl1/      → OAuth kimlik doğrulama sunucusu (ayrı subdomain)
+    ```
+
+    - `rl2`, `rl3` path'leri var ama HTTP 403 döner (internal/yük dengeleme)
+    - `/api/` prefix'i `/web/`'in eski sürümü **değildir**; paralel endpoint seti
+    - `version` parametresi sunucu tarafında loglama içindir, yanıtı etkilemez
+
+    ---
+
+    ## Kimlik Doğrulama
+
+    Tüm `/web/` endpoint'leri `authType=4` query parametresi ve aşağıdaki
+    HTTP başlıklarını gerektirir. Bearer Token veya kullanıcı girişi **gerekmez**.
+
+    ```
+    Origin:       https://m.kentkart.com
+    Referer:      https://m.kentkart.com/
+    Content-Type: application/json
+    Accept:       application/json, text/plain, */*
+    ```
+
+    `/api/info/`, `/api/search/`, `/api/route/` endpoint'leri `authType` **olmadan** da çalışır.
+    `/api/v2.0/city` endpoint'i hiçbir auth parametresi gerektirmez.
+
+    Kişisel kart ve hesap endpoint'leri için `auth.kentkart.com` üzerinden
+    OAuth akışı gerekir (bkz. `/oauth/otp`, `/oauth/authorize`).
+
+    ---
+
+    ## Bölge Kodları (region)
+
+    Kaynak: `/api/v2.0/city` — 2026-02-27 tarihinde doğrulandı (24 aktif şehir).
+
+    | Kod | Şehir       | Lat       | Lon       | NFC | Trip | Online Şarj |
+    |-----|-------------|-----------|-----------|:---:|:----:|:-----------:|
+    | 003 | Adana       | 37.000805 | 35.313063 | —   | —    | ✅          |
+    | 004 | Kocaeli     | 40.759190 | 29.943218 | —   | ✅   | ✅          |
+    | 005 | Sivas       | 39.750984 | 37.017016 | —   | —    | ✅          |
+    | 007 | Çanakkale   | 40.146601 | 26.408558 | —   | ✅   | ✅          |
+    | 010 | Muğla       | 37.219427 | 28.365798 | ✅  | ✅   | ✅          |
+    | 011 | Yozgat      | 39.818081 | 34.814689 | —   | ✅   | ✅          |
+    | 013 | Edirne      | 41.674963 | 26.560650 | —   | —    | ✅          |
+    | 017 | Burdur      | 37.726075 | 30.288427 | —   | —    | ✅          |
+    | 019 | Alanya      | 36.558601 | 32.010126 | —   | —    | ✅          |
+    | 020 | Ereğli      | 41.292641 | 31.410942 | —   | —    | ✅          |
+    | 023 | Niğde       | 37.968180 | 34.686030 | ✅  | —    | ✅          |
+    | 024 | Lüleburgaz  | 40.83889  | 31.16389  | —   | ✅   | ✅          |
+    | 025 | Kastamonu   | 41.40258  | 33.788334 | —   | ✅   | ✅          |
+    | 026 | Antalya     | 36.912500 | 30.689722 | ✅  | ✅   | ✅          |
+    | 027 | Kırklareli  | 41.730428 | 27.216754 | —   | ✅   | ✅          |
+    | 028 | Gaziantep   | —         | —         | ✅  | —    | ✅          |
+    | 029 | Alaplı      | 41.181523 | 31.385391 | —   | —    | ✅          |
+    | 031 | Ordu        | 40.983962 | 37.875054 | ✅  | —    | ✅          |
+    | 032 | Mardin      | 37.312900 | 40.734000 | —   | —    | ✅          |
+    | 033 | Osmaniye    | 37.074600 | 36.246400 | —   | —    | ✅          |
+    | 036 | Düzce       | 40.83889  | 31.16389  | —   | ✅   | ✅          |
+    | 037 | Safranbolu  | 41.249481 | 32.683709 | —   | —    | ✅          |
+    | 038 | Erzurum     | 39.915030 | 41.227120 | —   | ✅   | ✅          |
+    | 039 | Tokat       | 40.333809 | 36.552039 | —   | ✅   | ✅          |
+
+    **NFC**: Kart okutma desteği | **Trip**: Rota planlayıcı (`/web/tour`) aktif |
+    **Online Şarj**: Kart bakiyesi online yükleme (`oCharge=1`)
+
+    ---
+
+    ## Genel Sonuç Nesnesi
+
+    Her yanıtta `result` bloğu bulunur. `result.code = 0` başarıyı ifade eder.
+
+    | code | Anlam                                          |
+    |------|------------------------------------------------|
+    | 0    | Başarılı                                       |
+    | 33   | Giriş yapılması gerekiyor                      |
+    | 34   | Geçersiz/süresi dolmuş token (tahmin)          |
+    | 404  | Endpoint bulunamadı                            |
+
+    ---
+
+    ## pathInfo Bit Maskesi (resultType)
+
+    ```
+    Karakter: [0]       [1]     [2]         [3]            [4]          [5]
+    Alan:     pointList busList busStopList timeTableList  scheduleList ???
+    ```
+
+    | resultType | Dönen veri                   |
+    |------------|------------------------------|
+    | `010000`   | Canlı araçlar (polling)      |
+    | `001000`   | Güzergah durakları           |
+    | `011000`   | Araçlar + Duraklar ⭐ standart|
+    | `100000`   | Polyline koordinatları       |
+    | `111000`   | Polyline + Araçlar + Duraklar|
+    | `000100`   | Bugünün sefer tarifesi       |
+    | `000010`   | Haftalık tarife              |
+    | `111110`   | Tüm veriler (ilk açılış)     |
+    | `000001`   | Bilinmiyor — boş döner       |
+
+  version: "2.0.0"
+  contact:
+    name: Turan KAYA (tarihcituranx) — Gayriresmi şema
+    url: https://github.com/tarihcituranx
+  license:
+    name: Tersine mühendislik — gayriresmi, ticari kullanım için uygun değildir
+
+$self: https://example.com/kentkart-openapi.yaml
+
+servers:
+  - url: https://service.kentkart.com/rl1
+    name: service
+    description: Ana veri API sunucusu (tüm /web/ ve /api/ endpoint'leri)
+  - url: https://auth.kentkart.com/rl1
+    name: auth
+    description: OAuth kimlik doğrulama sunucusu (/oauth/ endpoint'leri)
+
+# ─────────────────────────────────────────────────────────────
+#  ORTAK BİLEŞENLER
+# ─────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+
+    OriginHeader:
+      name: Origin
+      in: header
+      required: true
+      description: >
+        ⚠️ **ZORUNLU - TEST EDİLDİ.** Bu header olmadan tüm `/web/` istekleri
+        reddedilir (HTTP 403/400). Sabit değer: `https://m.kentkart.com`
+
+        **Test Sonucu (2026-02-28):** Eksik Origin header → istek başarısız
+        **Geçerli Değer:** `https://m.kentkart.com` (slash olmadan)
+      schema:
+        type: string
+        enum:
+          - "https://m.kentkart.com"
+        examples:
+          - "https://m.kentkart.com"
+
+    RefererHeader:
+      name: Referer
+      in: header
+      required: true
+      description: >
+        ⚠️ **ZORUNLU - TEST EDİLDİ.** Tüm `/web/` endpoint'leri için bu header
+        olmadan istek başarısız olur. Origin header ile birlikte gönderilmelidir.
+        Sabit değer: `https://m.kentkart.com/`
+
+        **Test Sonucu (2026-02-28):** Eksik header → HTTP 403/400
+      schema:
+        type: string
+        enum:
+          - "https://m.kentkart.com/"
+        examples:
+          - "https://m.kentkart.com/"
+
+    RegionParam:
+      name: region
+      in: query
+      description: >
+        Şehir/Bölge kodu. Tüm aktif kodlar için `/api/v2.0/city` endpoint'ini kullanın.
+
+        Bilinen kodlar (2026-02-27, 24 şehir):
+        `003`=Adana, `004`=Kocaeli, `005`=Sivas, `007`=Çanakkale, `010`=Muğla,
+        `011`=Yozgat, `013`=Edirne, `017`=Burdur, `019`=Alanya, `020`=Ereğli,
+        `023`=Niğde, `024`=Lüleburgaz, `025`=Kastamonu, `026`=Antalya, `027`=Kırklareli,
+        `028`=Gaziantep, `029`=Alaplı, `031`=Ordu, `032`=Mardin, `033`=Osmaniye,
+        `036`=Düzce, `037`=Safranbolu, `038`=Erzurum, `039`=Tokat
+      required: true
+      schema:
+        type: string
+        examples:
+          - "031"
+
+    LangParam:
+      name: lang
+      in: query
+      description: Dil kodu
+      required: true
+      schema:
+        type: string
+        enum: [tr, en]
+        default: tr
+
+    AuthTypeParam:
+      name: authType
+      in: query
+      description: >
+        İstemci tipi doğrulama kodu. `/web/` endpoint'leri için ZORUNLUDUR.
+        Sabit değer `4` olmalıdır.
+
+        **Test Sonucu (2026-02-28):** Eksik authType → HTTP 403/400
+        **Geçerli Değer:** `4`
+      required: true
+      schema:
+        type: string
+        default: "4"
+        enum: ["4"]
+
+    AccuracyParam:
+      name: accuracy
+      in: query
+      description: >
+        GPS hassasiyet modu. `0` = standart, `1` = yüksek hassasiyet.
+        Test sonuçlarına göre iki değer arasında çıktı farkı gözlemlenmedi;
+        parametre opsiyoneldir.
+      required: false
+      schema:
+        type: string
+        enum: ["0", "1"]
+        default: "0"
+
+    VersionParam:
+      name: version
+      in: query
+      description: >
+        İstemci uygulama versiyonu. **Tamamen opsiyoneldir** — sunucu tarafında
+        loglama/analytics amaçlıdır, yanıt içeriğini etkilemez.
+
+        Gözlemlenen format: `Web_{appVer}_{sdkVer}_{platform}_{appId}`
+      required: false
+      schema:
+        type: string
+        examples:
+          - "Web_1.9.6_1.0_ANDROID_kentkart.web.mkentkart"
+
+  schemas:
+
+    ResultObject:
+      type: object
+      description: Her yanıtta dönen standart sonuç bloğu.
+      properties:
+        cmd:
+          type: string
+          description: İstek yapılan endpoint yolu
+          examples:
+            - "/web/pathInfo"
+        code:
+          type: integer
+          description: >
+            0=başarılı, 33=login gerekli,
+            34=geçersiz/süresi dolmuş token (tahmin),
+            404=endpoint bulunamadı
+          examples:
+            - 0
+        message:
+          type: string
+          examples:
+            - "OK"
+        dateTime:
+          type: string
+          description: Sunucu zaman damgası (YYYYMMDDHHmmss)
+          examples:
+            - "20260226194500"
+        debugTimeDiff:
+          type: string
+          examples:
+            - ""
+        authType:
+          type: string
+          examples:
+            - ""
+
+    CityItem:
+      type: object
+      description: Kentkart altyapısını kullanan bir şehrin tam bilgisi (`/api/v2.0/city`).
+      properties:
+        id:
+          type: string
+          description: Bölge/şehir kodu (`region` ile aynı değer)
+          examples:
+            - "031"
+        name:
+          type: string
+          examples:
+            - "Ordu"
+        lat:
+          type: string
+          description: Şehir merkezi enlemi (WGS84, string float)
+          examples:
+            - "40.98"
+        lon:
+          type: string
+          description: "⚠️ `lon` (NOT `lng`) — Şehir merkezi boylamı (WGS84, string float)"
+          examples:
+            - "37.88"
+        initialRegion:
+          type: object
+          description: Harita başlangıç görünümü koordinatları
+          properties:
+            lat:
+              type: string
+              examples:
+                - "40.98"
+            lng:
+              type: string
+              examples:
+                - "37.88"
+        radius:
+          type: string
+          description: Şehir yarıçapı (km, string integer)
+          examples:
+            - "10"
+        timezone:
+          type: string
+          description: IANA zaman dilimi
+          examples:
+            - "Europe/Moscow"
+        visible:
+          type: integer
+          description: "1=Görünür, 0=Gizli"
+          examples:
+            - 1
+        mCharge:
+          type: string
+          description: Mobil şarj desteği (tam anlamı belirsiz)
+          examples:
+            - "3"
+        supportEmail:
+          type: string
+          examples:
+            - "mobile@kentkart.com.tr"
+        paymentTypes:
+          type: object
+          description: Desteklenen ödeme yöntemleri
+          properties:
+            creditCard:
+              type: boolean
+            bkmExpress:
+              type: boolean
+            masterPass:
+              type: boolean
+            sadad:
+              type: boolean
+        order:
+          type: integer
+          description: Listede sıralama önceliği
+          examples:
+            - 50
+        panic:
+          type: string
+          description: Panik butonu desteği (0=yok)
+          examples:
+            - "0"
+        trip:
+          type: string
+          description: Trip planlama desteği (0=yok, 1=var)
+          examples:
+            - "0"
+        nfc:
+          type: string
+          description: NFC ile ödeme desteği (0=yok, 1=var)
+          examples:
+            - "0"
+        oCharge:
+          type: string
+          description: Online şarj desteği (0=yok, 1=var)
+          examples:
+            - "1"
+
+    RouteItem:
+      type: object
+      description: >
+        Bir otobüs hattının özet bilgisi.
+        `/web/nearest/find` ve `/api/search` `routeList` içinde kullanılır.
+      properties:
+        routeCode:
+          type: string
+          description: >
+            Dahili hat kodu kalıbı: `00{hatNo*100 + direction}`.
+            Örn. Hat 52 gidiş=`00520`, Hat 52A=`00521`.
+          examples:
+            - "00520"
+        displayRouteCode:
+          type: string
+          examples:
+            - "52"
+        name:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        headSign:
+          type: string
+          description: Hat levhası (nearest/find'da mevcut, route/list'te yok)
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        routeColor:
+          type: string
+          description: Hat rengi (6 haneli HEX, '#' olmadan). nearest/find'da var, route/list'te yok.
+          examples:
+            - "FF9918"
+        routeTextColor:
+          type: string
+          examples:
+            - "FFFFFF"
+        routeType:
+          type: string
+          description: "GTFS araç tipi. 3=Otobüs"
+          examples:
+            - "3"
+        direction:
+          type: string
+          description: "Yön — 0=Gidiş, 1=Dönüş. nearest/find'da var."
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        agencyId:
+          type: string
+          description: İşletmeci ID'si
+          examples:
+            - "2"
+        agencyName:
+          type: string
+          description: İşletmeci adı
+          examples:
+            - "Ordu Özel Halk Otobüsleri"
+
+    StopItem:
+      type: object
+      description: >
+        Durak özeti. `/web/nearest/find` ve `/web/nearest/place` `stopList` içinde kullanılır.
+        ⚠️ Alan adı `name` (NOT `stopName`) — `/api/search` ile aynı şema.
+      properties:
+        stopId:
+          type: string
+          examples:
+            - "10514"
+        name:
+          type: string
+          description: "⚠️ Alan adı `name` (NOT `stopName`)"
+          examples:
+            - "ORDU ÜNİVERSİTESİ DURAĞI 2"
+        lat:
+          type: string
+          examples:
+            - "40.976826"
+        lng:
+          type: string
+          examples:
+            - "37.970486"
+        routeType:
+          type: string
+          description: "GTFS araç tipi. 3=Otobüs"
+          examples:
+            - "3"
+
+    PathItem:
+      type: object
+      description: >
+        `/web/pathInfo` yanıtındaki `pathList[0]` nesnesi.
+
+        ⚠️ **Kritik**: `busList`, `busStopList`, `timeTableList`, `scheduleList`
+        üst seviyede değil — hepsi `pathList[0]` içinde gömülü gelir.
+        Yanıt yapısı: `{ pathList: [{ ...meta, busList: [], busStopList: [], ... }] }`
+      properties:
+        headSign:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        displayRouteCode:
+          type: string
+          examples:
+            - "52"
+        direction:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        tripShortName:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        direction_name:
+          type: string
+          examples:
+            - ""
+        path_code:
+          type: string
+          description: >
+            Güzergah kodu. Kalıp: `00{hatNo}direction`.
+            Hat 52 gidiş → `005200`, Hat 52 dönüş → `005201`.
+          examples:
+            - "005200"
+        pointList:
+          type: array
+          description: Polyline koordinatları (`resultType[0]='1'` gerektirir)
+          items:
+            $ref: '#/components/schemas/PointItem'
+        busList:
+          type: array
+          description: Canlı araç konumları (`resultType[1]='1'` gerektirir)
+          items:
+            $ref: '#/components/schemas/BusItemPathInfo'
+        busStopList:
+          type: array
+          description: Güzergah durakları (`resultType[2]='1'` gerektirir)
+          items:
+            $ref: '#/components/schemas/BusStopItemPathInfo'
+        timeTableList:
+          type: array
+          description: Bugünün sefer tarifesi (`resultType[3]='1'` gerektirir)
+          items:
+            $ref: '#/components/schemas/TimeTableItem'
+        stopTimeList:
+          type: array
+          description: Durak bazlı sefer saatleri (tam yapı bilinmiyor)
+          items:
+            type: object
+        scheduleList:
+          type: array
+          description: Haftalık tarife grupları (`resultType[4]='1'` gerektirir)
+          items:
+            $ref: '#/components/schemas/ScheduleListItem'
+
+    PointItem:
+      type: object
+      description: Hat güzergahını çizen polyline koordinat noktası (`resultType[0]='1'`).
+      properties:
+        seq:
+          type: string
+          description: Sıra numarası (1'den başlar, string integer)
+          examples:
+            - "1"
+        lat:
+          type: string
+          examples:
+            - "40.977155"
+        lng:
+          type: string
+          examples:
+            - "37.97373"
+
+    BusItemPathInfo:
+      type: object
+      description: >
+        Canlı araç verisi — **pathInfo endpoint'inden** (`resultType[1]='1'`).
+        ⚠️ Plaka alanı burada `plateNumber`'dır (nearest/bus'tan farklı).
+      properties:
+        busId:
+          type: string
+          examples:
+            - "52175"
+        lat:
+          type: string
+          examples:
+            - "40.985516"
+        lng:
+          type: string
+          examples:
+            - "37.87845"
+        plateNumber:
+          type: string
+          description: "⚠️ pathInfo'da `plateNumber` (nearest/bus'ta `plate`)"
+          examples:
+            - "52 J 0175"
+        stopId:
+          type: string
+          examples:
+            - "10172"
+        bearing:
+          type: string
+          description: "Yön açısı 0–360°"
+          examples:
+            - "215.52"
+        vehicleType:
+          type: string
+          examples:
+            - "3"
+        tripId:
+          type: string
+          description: "Sefer ID formatı: `{gtfsTripId}-{serviceId}` (tahmin)"
+          examples:
+            - "0-0"
+        busLabel:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        timeDiff:
+          type: string
+          examples:
+            - ""
+        ac:
+          type: string
+          description: "0=Klimasız, 1=Klimali"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        bike:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        disabledPerson:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "1"
+        pickMeUp:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "1"
+        couple:
+          type: string
+          description: Körüklü araç durumu (boş = körüklü değil)
+          examples:
+            - ""
+
+    BusItemNearestBus:
+      type: object
+      description: >
+        Canlı araç verisi — **nearest/bus endpoint'inden**.
+        ⚠️ Plaka alanı burada `plate`'dir (pathInfo'dan farklı).
+      properties:
+        busId:
+          type: string
+          examples:
+            - "52201"
+        plate:
+          type: string
+          description: "⚠️ nearest/bus'ta `plate` (pathInfo'da `plateNumber`)"
+          examples:
+            - "52 J 0074"
+        displayRouteCode:
+          type: string
+          examples:
+            - "52A"
+        displayName:
+          type: string
+          examples:
+            - "DEVLET HAST.-YENİ MAHALLE-ADLİYE-ÜNİVERSİTE"
+        headSign:
+          type: string
+          examples:
+            - "DEVLET HAST.-YENİ MAHALLE-ADLİYE-ÜNİVERSİTE"
+        routeCode:
+          type: string
+          examples:
+            - "00521"
+        shapeId:
+          type: string
+          examples:
+            - "005211"
+        direction:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "1"
+        stopDiff:
+          type: string
+          description: "⭐ Araç kaç durak uzakta (string integer)"
+          examples:
+            - "1"
+        timeDiff:
+          type: string
+          description: "⭐ Tahmini geliş dakikası (string integer)"
+          examples:
+            - "1"
+        lat:
+          type: string
+          examples:
+            - "40.97419"
+        lng:
+          type: string
+          examples:
+            - "37.97402"
+        bearing:
+          type: string
+          examples:
+            - ""
+        vehicleType:
+          type: string
+          examples:
+            - "3"
+        routeColor:
+          type: string
+          examples:
+            - "F0FF06"
+        routeType:
+          type: string
+          examples:
+            - "3"
+        routeTextColor:
+          type: string
+          examples:
+            - "FFFFFF"
+        ac:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        bike:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        disabledPerson:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "1"
+        couple:
+          type: string
+          examples:
+            - ""
+        dropoffType:
+          type: string
+          examples:
+            - ""
+        pickupType:
+          type: string
+          examples:
+            - ""
+
+    BusStopItemPathInfo:
+      type: object
+      description: Güzergah durağı — **pathInfo** `busStopList` içinden (`resultType[2]='1'`).
+      properties:
+        seq:
+          type: string
+          description: Güzergahtaki sıra numarası (1'den başlar)
+          examples:
+            - "1"
+        lat:
+          type: string
+          examples:
+            - "40.976759"
+        lng:
+          type: string
+          examples:
+            - "37.973872"
+        stopId:
+          type: string
+          examples:
+            - "13000"
+        stopName:
+          type: string
+          examples:
+            - "ÜNİVERSİTE (SON DURAK)"
+        arrival_offset:
+          type: string
+          description: Sefer başından bu durağa geliş (saniye)
+          examples:
+            - "0"
+        departure_offset:
+          type: string
+          description: Sefer başından bu duraktan kalkış (saniye)
+          examples:
+            - "0"
+        routes:
+          type: string
+          description: Bu durağa uğrayan hatlar (virgülle ayrılmış CSV)
+          examples:
+            - "52,52A,53A,57"
+        routeColor:
+          type: string
+          description: Hat renkleri (virgülle ayrılmış HEX CSV)
+          examples:
+            - "FF9918,F0FF06,12FF8F,AD23FF"
+        routeType:
+          type: string
+          examples:
+            - "3,3,3,3"
+        routeTextColor:
+          type: string
+          examples:
+            - "FFFFFF,FFFFFF,FFFFFF,FFFFFF"
+        busOnStop:
+          type: string
+          description: "⭐ 0=Araç henüz gelmedi, 1=Araç şu an bu durağa ulaştı"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        timeTable:
+          type: string
+          description: "Tarife bilgisi (çoğunlukla '-')"
+          examples:
+            - "-"
+        dropoffType:
+          type: string
+          examples:
+            - ""
+        pickupType:
+          type: string
+          examples:
+            - ""
+
+    BusStopItemNearestStop:
+      type: object
+      description: Konuma yakın durak — **nearest/stop** endpoint'inden.
+      properties:
+        lat:
+          type: string
+          examples:
+            - "40.9787"
+        lng:
+          type: string
+          examples:
+            - "37.90685"
+        stopId:
+          type: string
+          examples:
+            - "10569"
+        stopName:
+          type: string
+          examples:
+            - "FEN LİSESİ DURAĞI 1"
+        distance:
+          type: string
+          description: Kullanıcıya uzaklık (km, string float)
+          examples:
+            - "0.06093"
+        routes:
+          type: string
+          examples:
+            - "57,61,63"
+        type:
+          type: string
+          description: "Durak tipi (şimdiye kadar hep 'A')"
+          examples:
+            - "A"
+        route_color:
+          type: string
+          examples:
+            - "AD23FF,FF224F,FF979B"
+        route_type:
+          type: string
+          examples:
+            - "3,3,3"
+        route_text_color:
+          type: string
+          examples:
+            - "FFFFFF,FFFFFF,FFFFFF"
+        wheelchair_boarding:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+
+    TimeTableItem:
+      type: object
+      description: >
+        Bugünün sefer tarifesinden tek bir kayıt (`resultType[3]='1'`).
+
+        **Frekans bloğu mantığı:**
+        - `patternColor` ve `tripHeadSign` **dolu** → frekans bloğu başlangıcı.
+        - `patternColor` ve `tripHeadSign` **boş** → tekil sefer.
+      properties:
+        departureTime:
+          type: string
+          description: Kalkış saati (HH:MM:SS)
+          examples:
+            - "06:30:00"
+        tripId:
+          type: string
+          examples:
+            - "88700-0"
+        wheelChairId:
+          type: string
+          description: Tekerlekli sandalye bilgisi (şimdiye kadar hep boş)
+          examples:
+            - ""
+        patternColor:
+          type: string
+          description: >
+            ⭐ Frekans bloğu rengi (HEX, '#' olmadan). Boşsa tekil sefer.
+          examples:
+            - "bb00ff"
+        tripHeadSign:
+          type: string
+          description: >
+            ⭐ Frekans açıklaması. Boşsa tekil sefer.
+          examples:
+            - "07:30-09:30 ARASI 5 DAKİKADA BİR ARAÇ KALKAR"
+
+    ScheduleListItem:
+      type: object
+      description: >
+        Haftalık tarife grubu (`resultType[4]='1'`).
+
+        **`description` alanı (MTWTFss) çözümü:**
+        ```
+        [0]=Pzt [1]=Sal [2]=Çar [3]=Per [4]=Cum [5]=Cmt [6]=Paz
+        Büyük harf = o gün bu tarife geçerlidir.
+        "MTWTFss" → Hafta içi
+        "mtwtfSs" → Cumartesi
+        "mtwtfsS" → Pazar
+        ```
+      properties:
+        description:
+          type: string
+          description: "⭐ Gün kodu — 7 karakterlik MTWTFss formatı."
+          examples:
+            - "MTWTFss"
+        serviceId:
+          type: string
+          description: "0=Hafta içi, 1=Cumartesi, 2=Pazar"
+          enum: ["0", "1", "2"]
+          examples:
+            - "0"
+        timeList:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeTableItem'
+
+    StopInfo:
+      type: object
+      description: nearest/bus endpoint'inin sorgulandığı durağın özet bilgisi.
+      properties:
+        busStopid:
+          type: string
+          description: "⚠️ Alan adı `busStopid` — küçük 'i' (API tutarsızlığı)"
+          examples:
+            - "13000"
+        busStopName:
+          type: string
+          examples:
+            - "ÜNİVERSİTE (SON DURAK)"
+        lat:
+          type: string
+          examples:
+            - "40.976759"
+        lng:
+          type: string
+          examples:
+            - "37.973872"
+
+    RouteWithScheduleItem:
+      type: object
+      description: nearest/bus `routeList` içindeki hat kaydı (sefer saatleri dahil).
+      properties:
+        routeCode:
+          type: string
+          examples:
+            - "00520"
+        displayRouteCode:
+          type: string
+          examples:
+            - "52"
+        name:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        headSign:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        routeColor:
+          type: string
+          examples:
+            - "FF9918"
+        routeType:
+          type: string
+          examples:
+            - "3"
+        routeTextColor:
+          type: string
+          examples:
+            - "FFFFFF"
+        direction:
+          type: string
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        stopArrivalTime:
+          type: string
+          description: O seferin bu durağa geliş saati (HH:MM veya boş)
+          examples:
+            - ""
+        nextTripArrivalTime:
+          type: string
+          description: "⭐ Sonraki programlı seferin bu durağa geliş saati (HH:MM)"
+          examples:
+            - "20:00"
+
+    SearchStopItem:
+      type: object
+      description: >
+        `/api/search` durak kaydı. `/web/nearest/find`'dan daha sade.
+        Alan adı `stopName` değil `name`'dir.
+      properties:
+        stopId:
+          type: string
+          examples:
+            - "361"
+        name:
+          type: string
+          description: "⚠️ /api/search'te `name` (web/nearest/find'da `stopName`)"
+          examples:
+            - "ŞEHİRLER ARASI OTOBÜS TERMİNALİ LUNA PARK DÖNÜŞ"
+        lat:
+          type: string
+          examples:
+            - "39.7347002"
+        lng:
+          type: string
+          examples:
+            - "37.015163"
+        routeType:
+          type: string
+          examples:
+            - "3"
+
+    RouteListItem:
+      type: object
+      description: >
+        `/api/route/list` hat kaydı. Ordu (031) bölgesinde 91 hat döndü (doğrulandı).
+        `RouteItem`'dan daha sadedir — `routeColor`, `direction`, `headSign` yok.
+      properties:
+        routeCode:
+          type: string
+          examples:
+            - "00520"
+        displayRouteCode:
+          type: string
+          examples:
+            - "52"
+        name:
+          type: string
+          examples:
+            - "ÜNİVERSİTE-MERKEZ"
+        type:
+          type: string
+          description: Kayıt tipi — her zaman `"route"`
+          examples:
+            - "route"
+        agencyId:
+          type: string
+          examples:
+            - "2"
+        agencyName:
+          type: string
+          examples:
+            - "Ordu Özel Halk Otobüsleri"
+
+    KioskItem:
+      type: object
+      description: Kentkart dolum bayisi veya kiosku (`/web/nearest/place` → `kioskList`).
+      properties:
+        owner:
+          type: string
+          description: Bayi sahibinin adı
+          examples:
+            - "{{KIOSK_OWNER}}"
+        lat:
+          type: string
+          examples:
+            - "40.978927"
+        lng:
+          type: string
+          examples:
+            - "37.904871"
+        district:
+          type: string
+          description: İlçe adı
+          examples:
+            - "Ordu"
+        distance:
+          type: string
+          description: Kullanıcıya uzaklık (km, string float)
+          examples:
+            - "0.13787853331996164"
+        address:
+          type: string
+          examples:
+            - "Akyazı mah.Ahmet Cemal Mağden cad.No:35/B"
+        title:
+          type: string
+          description: İşyeri adı
+          examples:
+            - "{{KIOSK_TITLE}}"
+        termType:
+          type: string
+          description: Terminal tipi (tam anlamı belirsiz, hep '0' gözlemlendi)
+          examples:
+            - "0"
+        type:
+          type: string
+          description: "`kiosk` = dolum noktası"
+          examples:
+            - "kiosk"
+
+    TariffItem:
+      type: object
+      description: Bir ücret tarifesi kaydı (`/api/info/tariff` → `tariffList`).
+      properties:
+        id:
+          type: integer
+          examples:
+            - 44
+        description:
+          type: string
+          description: Tarife açıklaması (kullanıcıya gösterilir)
+          examples:
+            - "7/24 PARALI BİNİŞ ÜCRET : 42,50"
+        image:
+          type: string
+          description: Tarife görseli URL'si (CDN)
+          examples:
+            - "https://cdn.kentkart.com/mobile/mob/031/tariff/20211012143158.png"
+        button_label:
+          type: string
+          description: Buton etiketi metni
+          examples:
+            - "7/24 PARALI BİNİŞ ÜCRET : 42,50"
+        anchor:
+          type: string
+          description: Tarife detay sayfası URL'si
+          examples:
+            - "https://service.kentkart.com/rl1//api/info/independentFiles/031/20211012142805"
+        background_color:
+          type: string
+          description: Arkaplan rengi (6 haneli HEX, '#' olmadan)
+          examples:
+            - "ba4646"
+        order_id:
+          type: integer
+          description: Listede sıralama önceliği
+          examples:
+            - 9
+        valid_from:
+          type: string
+          description: Geçerlilik başlangıcı (YYYYMMDDHHmmss)
+          examples:
+            - "20211012142823"
+        valid_to:
+          type: string
+          description: Geçerlilik bitişi (YYYYMMDDHHmmss)
+          examples:
+            - "21001231000000"
+        region:
+          type: string
+          examples:
+            - "031"
+
+    # ── Tour (Rota Planlayıcı) ────────────────────────────────
+
+    TourPlace:
+      type: object
+      description: >
+        Rota planlayıcıda bir nokta (başlangıç, bitiş veya durak).
+        `vertexType`: `NORMAL` = serbest nokta, `TRANSIT` = durak.
+      properties:
+        name:
+          type: string
+          examples:
+            - "Origin"
+            - "1013 SOKAK DURAĞI 1"
+        lon:
+          type: number
+          format: double
+          examples:
+            - 37.90323
+        lat:
+          type: number
+          format: double
+          examples:
+            - 40.960276
+        orig:
+          type: string
+          examples:
+            - ""
+        vertexType:
+          type: string
+          description: "NORMAL = serbest nokta, TRANSIT = toplu taşıma durağı"
+          enum: [NORMAL, TRANSIT]
+          examples:
+            - "NORMAL"
+        stopId:
+          type: string
+          description: "GTFS durak ID'si. Format: `{agencyId}:{stopId}`. Sadece TRANSIT noktalarda."
+          examples:
+            - "5:10150"
+        stopIndex:
+          type: integer
+          description: Hat güzergahındaki 0-tabanlı durak sırası. Sadece TRANSIT.
+          examples:
+            - 5
+        stopSequence:
+          type: integer
+          description: GTFS trip içindeki durak sırası (1-tabanlı). Sadece TRANSIT.
+          examples:
+            - 6
+        arrival:
+          type: integer
+          description: Unix timestamp (ms). Varış zamanı. Sadece `to` nesnesinde.
+          examples:
+            - 1772193179000
+        departure:
+          type: integer
+          description: Unix timestamp (ms). Kalkış zamanı.
+          examples:
+            - 1772192454000
+
+    LegGeometry:
+      type: object
+      description: Bacağın harita üzerindeki güzergahı.
+      properties:
+        points:
+          type: string
+          description: >
+            ⭐ Google Encoded Polyline formatında sıkıştırılmış koordinat dizisi.
+            Decode için: https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+          examples:
+            - "}`_yF{}ifF?AYg@kAaBiAuA"
+        length:
+          type: integer
+          description: Polyline içindeki nokta sayısı
+          examples:
+            - 29
+
+    WalkStep:
+      type: object
+      description: >
+        Yürüyüş bacağındaki tek bir yön talimatı.
+        Sadece `mode=WALK` olan leg'lerde `steps[]` içinde bulunur.
+        `mode=BUS` leg'lerinde `steps` boş array döner.
+      properties:
+        distance:
+          type: number
+          format: double
+          description: Bu adımın mesafesi (metre)
+          examples:
+            - 757.23
+        relativeDirection:
+          type: string
+          description: Önceki adıma göre yön
+          enum:
+            - DEPART
+            - CONTINUE
+            - SLIGHTLY_LEFT
+            - SLIGHTLY_RIGHT
+            - LEFT
+            - RIGHT
+            - HARD_LEFT
+            - HARD_RIGHT
+            - UTURN_LEFT
+            - UTURN_RIGHT
+            - CIRCLE_CLOCKWISE
+            - CIRCLE_COUNTERCLOCKWISE
+          examples:
+            - "DEPART"
+        streetName:
+          type: string
+          description: Cadde/sokak adı. `bogusName=true` ise isimsiz yol.
+          examples:
+            - "Arif Hikmet Onat Cd."
+        absoluteDirection:
+          type: string
+          description: Pusula yönü
+          enum: [NORTH, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST]
+          examples:
+            - "NORTHEAST"
+        stayOn:
+          type: boolean
+          description: Aynı cadde/sokakta devam ediliyor mu
+          examples:
+            - false
+        area:
+          type: boolean
+          examples:
+            - false
+        bogusName:
+          type: boolean
+          description: "`true` ise cadde adı gerçek değil (isimsiz yol)"
+          examples:
+            - true
+        lon:
+          type: number
+          format: double
+          examples:
+            - 37.90318874041884
+        lat:
+          type: number
+          format: double
+          examples:
+            - 40.96031229813711
+        elevation:
+          type: array
+          description: Yükseklik profili (çoğunlukla boş array)
+          items:
+            type: number
+        exit:
+          type: string
+          description: Döner kavşak çıkış numarası (sadece CIRCLE_* yönlerde)
+          examples:
+            - "3"
+
+    LegItem:
+      type: object
+      description: >
+        Bir yolculuk bacağı. `transitLeg=false` → yürüyüş (WALK),
+        `transitLeg=true` → toplu taşıma (BUS vb.).
+
+        **Alan farklılıkları:**
+
+        | Alan               | WALK leg | BUS leg |
+        |--------------------|:--------:|:-------:|
+        | route              | `""` (boş) | hat kodu (örn. `"61A"`) |
+        | agencyName         | yok      | ✅ |
+        | routeColor         | yok      | ✅ |
+        | routeShortName     | yok      | ✅ |
+        | routeLongName      | yok      | ✅ |
+        | tripId / tripShortName | yok  | ✅ |
+        | serviceDate        | yok      | ✅ |
+        | legFare            | yok      | ✅ (32.5 = ₺32.50) |
+        | steps[]            | ✅ dolu  | boş array |
+        | headsign           | yok      | ✅ |
+      properties:
+        startTime:
+          type: integer
+          description: Bacağın başlangıç zamanı (Unix timestamp ms)
+          examples:
+            - 1772192454000
+        endTime:
+          type: integer
+          description: Bacağın bitiş zamanı (Unix timestamp ms)
+          examples:
+            - 1772193179000
+        departureDelay:
+          type: integer
+          description: Kalkış gecikmesi (saniye, gerçek zamanlı)
+          examples:
+            - 0
+        arrivalDelay:
+          type: integer
+          examples:
+            - 0
+        realTime:
+          type: boolean
+          description: Gerçek zamanlı veri mi yoksa tarifeli mi
+          examples:
+            - false
+        distance:
+          type: number
+          format: double
+          description: Bacağın toplam mesafesi (metre)
+          examples:
+            - 931.495
+        pathway:
+          type: boolean
+          examples:
+            - false
+        mode:
+          type: string
+          description: "Ulaşım modu. WALK veya BUS (diğer modlar gözlemlenmedi)"
+          enum: [WALK, BUS, RAIL, SUBWAY, TRAM, FERRY, CABLE_CAR, GONDOLA, FUNICULAR]
+          examples:
+            - "WALK"
+        route:
+          type: string
+          description: "Hat kodu. WALK leg'lerde `\"\"` (boş string)"
+          examples:
+            - "61A"
+        agencyTimeZoneOffset:
+          type: integer
+          description: Ajans saat dilimi ofseti (ms). TR = 10800000 (UTC+3)
+          examples:
+            - 10800000
+        interlineWithPreviousLeg:
+          type: boolean
+          examples:
+            - false
+        from:
+          $ref: '#/components/schemas/TourPlace'
+        to:
+          $ref: '#/components/schemas/TourPlace'
+        legGeometry:
+          $ref: '#/components/schemas/LegGeometry'
+        rentedBike:
+          type: boolean
+          examples:
+            - false
+        transitLeg:
+          type: boolean
+          description: "`true` = toplu taşıma bacağı, `false` = yürüyüş bacağı"
+          examples:
+            - false
+        duration:
+          type: integer
+          description: Bacağın süresi (saniye)
+          examples:
+            - 725
+        steps:
+          type: array
+          description: "Yürüyüş yön talimatları. BUS leg'lerde boş array döner."
+          items:
+            $ref: '#/components/schemas/WalkStep'
+        # ── Sadece BUS leg'lerde bulunan alanlar ─────────────
+        agencyName:
+          type: string
+          description: Otobüs işletmeci adı (sadece BUS)
+          examples:
+            - "Ordu Özel Halk Otobüsleri (Uzun)"
+        agencyUrl:
+          type: string
+          examples:
+            - "http://www.kentkart.com"
+        agencyId:
+          type: string
+          examples:
+            - "3"
+        routeColor:
+          type: string
+          description: Hat rengi (6 haneli HEX, '#' olmadan). Sadece BUS.
+          examples:
+            - "FF0000"
+        routeTextColor:
+          type: string
+          description: Yazı rengi (6 haneli HEX). Sadece BUS.
+          examples:
+            - "FFFFFF"
+        routeType:
+          type: integer
+          description: "GTFS araç tipi. 3=Otobüs. Sadece BUS."
+          examples:
+            - 3
+        routeId:
+          type: string
+          description: "GTFS rota ID'si. Format: `{agencyId}:{routeCode}`. Sadece BUS."
+          examples:
+            - "5:00611"
+        routeShortName:
+          type: string
+          description: "Kısa hat adı (Örn. '61A'). Sadece BUS."
+          examples:
+            - "61A"
+        routeLongName:
+          type: string
+          description: "Uzun hat adı. Sadece BUS."
+          examples:
+            - "ATASANAYİ-GÖZÜKAN MEVKİİ"
+        headsign:
+          type: string
+          description: Araç levhası. Sadece BUS.
+          examples:
+            - "OKSM-ORDU LİS.-KEMER KÖPRÜ-EĞİTİM ARAŞ. HAST.-GÖZÜKAN MEVKİİ"
+        tripShortName:
+          type: string
+          description: >
+            Sefer kısa adı. Sadece BUS.
+            ⚠️ Bazen `#` ile biten veya renk kodu içeren değerler görüldü
+            (`"KUYU SAPAĞINDAN KALKAR...#1ab8e0"` gibi — muhtemelen UI amaçlı).
+          examples:
+            - "OKSM-ORDU LİS.-KEMER KÖPRÜ-EĞİTİM ARAŞ. HAST.-GÖZÜKAN MEVKİİ#"
+        tripId:
+          type: string
+          description: "GTFS trip ID'si. Format: `{agencyId}:{gtfsTripId}`. Sadece BUS."
+          examples:
+            - "5:86116"
+        serviceDate:
+          type: string
+          description: "Sefer tarihi (YYYYMMDD). Sadece BUS."
+          examples:
+            - "20260227"
+        legFare:
+          type: number
+          format: double
+          description: >
+            ⭐ Bu bacağın bilet ücreti (TL). Sadece BUS.
+            Transfers=0 yolculuklarda tek ücret, transfers>0'da her bacak için ayrı.
+          examples:
+            - 32.5
+
+    Itinerary:
+      type: object
+      description: >
+        Tek bir rota alternatifi. `legs` dizisi yolculuğun tüm bacaklarını içerir
+        (WALK + BUS + WALK gibi). `totalFare` tüm bacakların ücret toplamıdır.
+      properties:
+        duration:
+          type: integer
+          description: Toplam yolculuk süresi (saniye)
+          examples:
+            - 1445
+        startTime:
+          type: integer
+          description: Yolculuk başlangıç zamanı (Unix timestamp ms)
+          examples:
+            - 1772192454000
+        endTime:
+          type: integer
+          description: Yolculuk bitiş zamanı (Unix timestamp ms)
+          examples:
+            - 1772193899000
+        walkTime:
+          type: integer
+          description: Toplam yürüyüş süresi (saniye)
+          examples:
+            - 963
+        transitTime:
+          type: integer
+          description: Toplam araçta geçen süre (saniye)
+          examples:
+            - 480
+        waitingTime:
+          type: integer
+          description: Toplam bekleme süresi (saniye)
+          examples:
+            - 2
+        walkDistance:
+          type: number
+          format: double
+          description: Toplam yürüyüş mesafesi (metre)
+          examples:
+            - 1235.758255634185
+        walkLimitExceeded:
+          type: boolean
+          description: Yürüyüş limiti aşıldı mı
+          examples:
+            - false
+        elevationLost:
+          type: number
+          examples:
+            - 0
+        elevationGained:
+          type: number
+          examples:
+            - 0
+        transfers:
+          type: integer
+          description: "⭐ Aktarma sayısı. 0 = aktarmasız, 1 = bir aktarma"
+          examples:
+            - 0
+        legs:
+          type: array
+          description: Yolculuk bacakları (WALK + BUS + WALK gibi sıralanır)
+          items:
+            $ref: '#/components/schemas/LegItem'
+        tooSloped:
+          type: boolean
+          examples:
+            - false
+        totalFare:
+          type: number
+          format: double
+          description: >
+            ⭐ Toplam bilet ücreti (TL).
+            Aktarmasız = 32.5, tek aktarmalı = 65.0 (her bacak 32.5).
+          examples:
+            - 32.5
+
+    TourPlan:
+      type: object
+      description: Rota planlama sonucunun ana bloğu.
+      properties:
+        date:
+          type: integer
+          description: Sorgu zamanı (Unix timestamp ms)
+          examples:
+            - 1772192160000
+        from:
+          $ref: '#/components/schemas/TourPlace'
+        to:
+          $ref: '#/components/schemas/TourPlace'
+        itineraries:
+          type: array
+          description: Rota alternatifleri listesi (en fazla `numItineraries` adet)
+          items:
+            $ref: '#/components/schemas/Itinerary'
+
+    TourRequestParameters:
+      type: object
+      description: Sunucunun aldığı sorgu parametrelerinin yansıması.
+      properties:
+        date:
+          type: string
+          examples:
+            - "02-27-2026"
+        arriveBy:
+          type: string
+          enum: ["true", "false"]
+          examples:
+            - "false"
+        fromPlace:
+          type: string
+          description: "Başlangıç koordinatı. Format: `{lat},{lng}`"
+          examples:
+            - "40.960276,37.90323"
+        toPlace:
+          type: string
+          description: "Bitiş koordinatı. Format: `{lat},{lng}`"
+          examples:
+            - "40.985348,37.881527"
+        time:
+          type: string
+          examples:
+            - "14:36"
+        numItineraries:
+          type: string
+          description: İstenen maksimum rota alternatifi sayısı
+          examples:
+            - "10"
+
+    TourDebugOutput:
+      type: object
+      description: OTP (OpenTripPlanner) motor performans metrikleri.
+      properties:
+        precalculationTime:
+          type: integer
+          description: Ön hesaplama süresi (ms)
+          examples:
+            - 7
+        pathCalculationTime:
+          type: integer
+          examples:
+            - 16
+        pathTimes:
+          type: array
+          items:
+            type: integer
+          examples:
+            - [4, 1, 1, 1, 1, 1, 2, 2, 2, 1]
+        renderingTime:
+          type: integer
+          examples:
+            - 1
+        totalTime:
+          type: integer
+          description: Toplam işlem süresi (ms)
+          examples:
+            - 24
+        timedOut:
+          type: boolean
+          examples:
+            - false
+
+    TripListObject:
+      type: object
+      description: >
+        `/web/tour` yanıtındaki `tripList` bloğu.
+
+        ⚠️ **`tripList` bir array değil, object'tir.**
+        Rota alternatifleri `tripList.plan.itineraries[]` içindedir.
+      properties:
+        requestParameters:
+          $ref: '#/components/schemas/TourRequestParameters'
+        plan:
+          $ref: '#/components/schemas/TourPlan'
+        debugOutput:
+          $ref: '#/components/schemas/TourDebugOutput'
+
+    # ── Kart Bakiye ───────────────────────────────────────────
+
+    CardUsageItem:
+      type: object
+      description: >
+        Tek bir biniş veya yükleme işlemi.
+        `type=0` = biniş (para çıkışı), `type=1` = yükleme (para girişi).
+      properties:
+        amt:
+          type: string
+          description: İşlem tutarı (₺, string float)
+          examples:
+            - "12.00"
+        type:
+          type: integer
+          description: "0=Biniş (harcama), 1=Yükleme"
+          enum: [0, 1]
+          examples:
+            - 0
+        date:
+          type: string
+          description: İşlem tarihi ve saati (DD/MM/YYYY HH:MM)
+          examples:
+            - "20/02/2026 15:58"
+        unixtime:
+          type: integer
+          description: İşlem zamanı (Unix timestamp, saniye)
+          examples:
+            - 1771592309
+
+    CardBalanceItem:
+      type: object
+      description: >
+        `/api/card/balance → cardlist[0]` — kart bakiyesi ve son işlemler.
+        Doğrulandı (2026-02-27, Sivas 005, alias={{CARD_ALIAS_FULL}}).
+      properties:
+        aliasNo:
+          type: string
+          description: Kart alias numarası (kısa format)
+          examples:
+            - "{{CARD_ALIAS_SHORT}}"
+        balance:
+          type: string
+          description: "⭐ Güncel bakiye (₺, string float)"
+          examples:
+            - "16.10"
+        cardNo:
+          type: string
+          description: Tam kart numarası (16 hane)
+          examples:
+            - "{{CARD_NO_16}}"
+        systemId:
+          type: string
+          description: Karta ait şehir kodu
+          examples:
+            - "005"
+        message:
+          type: string
+          examples:
+            - ""
+        expiredDate:
+          type: string
+          examples:
+            - ""
+        expiryDate:
+          type: string
+          examples:
+            - ""
+        usage:
+          type: array
+          description: Son biniş ve yükleme işlemleri (en yeni önce)
+          items:
+            $ref: '#/components/schemas/CardUsageItem'
+        expiredStatus:
+          type: string
+          description: "0=Geçerli, 1=Süresi dolmuş"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        blacklistStatus:
+          type: string
+          description: "0=Normal, 1=Kara listede"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        product_code:
+          type: string
+          description: Ürün kodu (`/api/products`'taki `product_code` ile eşleşir)
+          examples:
+            - "10-1"
+        virtualCard:
+          type: string
+          description: "0=Fiziksel, 1=Sanal"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        userCard:
+          type: string
+          description: "0=Anonim kart, 1=Kişisel kart"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        isPersonalized:
+          type: boolean
+          examples:
+            - false
+        creditCard:
+          type: string
+          description: "0=Kentkart, 1=Kredi kartı"
+          enum: ["0", "1"]
+          examples:
+            - "0"
+        isActive:
+          type: string
+          description: "1=Aktif"
+          enum: ["0", "1"]
+          examples:
+            - "1"
+        isTicket:
+          type: string
+          examples:
+            - "0"
+        isWallet:
+          type: string
+          examples:
+            - "0"
+        notificationLimit:
+          type: string
+          description: Bildirim limiti (boş olabilir)
+          examples:
+            - ""
+        cardType:
+          type: string
+          description: "00=RF kart, 09=NFC"
+          examples:
+            - "00"
+
+    # ── Hesap ─────────────────────────────────────────────────
+
+    AccountInfo:
+      type: object
+      description: Giriş yapmış kullanıcının hesap bilgileri (`/api/account → accountInfo`). Doğrulandı 2026-02-27.
+      properties:
+        user_id:
+          type: string
+          description: Kentkart kullanıcı ID'si (JWT `sub` ile aynı)
+          examples:
+            - "{{USER_ID}}"
+        accountId:
+          type: string
+          description: Hesap numarası
+          examples:
+            - "{{ACCOUNT_ID}}"
+        name:
+          type: string
+          examples:
+            - "{{NAME}}"
+        surname:
+          type: string
+          examples:
+            - "{{SURNAME}}"
+        email:
+          type: string
+          format: email
+          examples:
+            - "{{EMAIL}}"
+        phone:
+          type: string
+          description: Telefon numarası (başında 0 olmadan)
+          examples:
+            - "{{PHONE}}"
+        identityNo:
+          type: string
+          description: TC Kimlik No (boş olabilir)
+          examples:
+            - ""
+        activationStatus:
+          type: string
+          description: "1=Aktif"
+          examples:
+            - "1"
+        accountCreateDate:
+          type: string
+          description: Hesap oluşturma tarihi
+          examples:
+            - "2022-01-08 22:40:48.0"
+        cCardNo:
+          type: string
+          description: Kayıtlı kredi kartı (maskelenmiş)
+          examples:
+            - "4345 29** **** 5595"
+        cCardExprMonth:
+          type: string
+          examples:
+            - ""
+        cCardExprYear:
+          type: string
+          examples:
+            - ""
+        nfcCardNo:
+          type: string
+          description: NFC kart numarası (boş olabilir)
+          examples:
+            - ""
+        payment_type:
+          type: string
+          description: Ödeme tipi
+          examples:
+            - "1"
+        home:
+          type: string
+          description: Ev adresi/durağı (boş olabilir)
+          examples:
+            - ""
+        work:
+          type: string
+          description: İş adresi/durağı (boş olabilir)
+          examples:
+            - ""
+        country_code:
+          type: string
+          examples:
+            - "tr"
+        file_url:
+          type: string
+          description: Profil fotoğrafı URL'si (boş olabilir)
+          examples:
+            - ""
+        additional_info:
+          type: string
+          examples:
+            - ""
+
+    # ── Ürünler ───────────────────────────────────────────────
+
+    ProductPrice:
+      type: object
+      description: Ürün fiyat ve yükleme limitleri
+      properties:
+        product_price:
+          type: string
+          description: Ürün satış fiyatı (0=ücretsiz kart)
+          examples:
+            - "0"
+        max_charge_amount:
+          type: number
+          description: Maksimum tek seferlik yükleme miktarı (₺)
+          examples:
+            - 500
+        min_charge_amount:
+          type: number
+          description: Minimum yükleme miktarı (₺)
+          examples:
+            - 50
+        card_max_balance:
+          type: number
+          description: Kartta tutulabilecek maksimum bakiye (₺)
+          examples:
+            - 2000
+        predefined_amount:
+          type: array
+          description: Önceden tanımlı yükleme miktarları
+          items:
+            type: object
+            properties:
+              type:
+                type: integer
+              amount:
+                type: number
+        membershipAmount:
+          type: string
+          description: NFC üyelik ücreti (varsa)
+          examples:
+            - "4"
+
+    ProductItem:
+      type: object
+      description: >
+        Bir kart/yükleme ürünü (`/api/products → InventoryArray`). Doğrulandı 2026-02-27.
+        Ordu (031) için: RF-Card (fiziksel) ve NFC (telefon kartı).
+      properties:
+        transaction_type:
+          type: string
+          description: "1=RF kart yükleme, 3=NFC kart"
+          examples:
+            - "1"
+        product_code:
+          type: string
+          examples:
+            - "10-1"
+        product_name:
+          type: string
+          examples:
+            - "RF-Card"
+        desc:
+          type: string
+          examples:
+            - "RF-Card"
+        product_type:
+          type: string
+          examples:
+            - "0"
+        originSystemId:
+          type: string
+          description: Bölge kodu
+          examples:
+            - "031"
+        price:
+          $ref: '#/components/schemas/ProductPrice'
+        media_type:
+          type: string
+          description: "00=RF kart, 09=NFC"
+          examples:
+            - "00"
+        passenger_type:
+          type: string
+          examples:
+            - "01"
+        process_type:
+          type: string
+          description: "RT=RF kart, NFC=NFC kart"
+          examples:
+            - "RT"
+        recharge_status:
+          type: string
+          description: "1=Yükleme yapılabilir"
+          examples:
+            - "1"
+        sale_status:
+          type: string
+          description: "1=Satışta"
+          examples:
+            - "0"
+        notifyKey:
+          type: string
+          examples:
+            - "RF"
+        checkDeposit:
+          type: boolean
+          examples:
+            - false
+        ticketSupport:
+          type: string
+          examples:
+            - "0"
+        odSupport:
+          type: string
+          examples:
+            - "0"
+
+    # ── OAuth ────────────────────────────────────────────────
+
+    OAuthResultObject:
+      type: object
+      description: >
+        OAuth endpoint'lerinin döndürdüğü `result` bloğu.
+        `/web/` ve `/api/` endpoint'lerindeki `ResultObject`'ten farklı yapıdadır.
+      properties:
+        cmd:
+          type: string
+          description: İşlem kodu (kısaltılmış, ör. `/oauth/ot`)
+          examples:
+            - "/oauth/ot"
+        code:
+          type: ["integer", "string"]
+          description: >
+            0 veya `"0"` = başarılı.
+            401 = eksik/yanlış parametre.
+            1083 = telefon formatı hatası.
+          examples:
+            - 0
+        message:
+          type: string
+          examples:
+            - "OK"
+        time:
+          type: string
+          description: ISO 8601 zaman damgası (ResultObject.dateTime'dan farklı format)
+          examples:
+            - "2026-02-27T12:48:10.484Z"
+        extraErrorMessage:
+          type: string
+          description: Hata durumunda eksik/yanlış alanı açıklar
+          examples:
+            - "required field empty :countryCode"
+
+# Rate Limiting Bilgisi:
+# OTP endpoint'i günlük limit'e sahiptir.
+# code: 1010 - "Cep telefonunuza doğrulama kodu daha önce gönderilmiş olup günlük limit aşılmıştır"
+# Çözüm: Birkaç saat veya ertesi gün tekrar deneyin.
+
+    OtpRequestBody:
+      type: object
+      required:
+        - clientId
+        - loginType
+        - phoneNumber
+        - countryCode
+        - responseType
+      description: >
+        `/oauth/otp` endpoint'ine gönderilecek JSON body.
+        `region`, `authType`, `lang` query parametresi olarak gönderilir (body'de değil).
+      properties:
+        clientId:
+          type: string
+          description: "🔑 OAuth client ID - appConfig.json'dan alınır veya kullanıcıdan istenir"
+          examples:
+            - "rH7S2"
+        loginType:
+          type: string
+          enum: [phone]
+          examples:
+            - "phone"
+        phoneNumber:
+          type: string
+          description: "📱 Kullanıcı telefon numarası - başında 0 olmadan 10 hane (örn: 5XX1234567)"
+          examples:
+            - "5XX1234567"
+        countryCode:
+          type: string
+          description: "⚠️ `'+90'` değil, ISO ülke kodu `'tr'` gönderilmeli"
+          examples:
+            - "tr"
+        responseType:
+          type: string
+          enum: [code]
+          examples:
+            - "code"
+
+    OtpResponse:
+      type: object
+      description: >
+        `/oauth/otp` başarılı yanıtı. `refNo` ikinci adımda zorunludur.
+      properties:
+        result:
+          $ref: '#/components/schemas/OAuthResultObject'
+        refNo:
+          type: string
+          description: "⭐ SMS referans numarası — `/oauth/authorize` adımında gönderilmesi gerekir"
+          examples:
+            - "4UHWUGU1SBU"
+
+    AuthorizeRequestBody:
+      type: object
+      required:
+        - clientId
+        - loginType
+        - phoneNumber
+        - countryCode
+        - responseType
+        - refNo
+        - otpCode
+      description: >
+        `/oauth/authorize` endpoint'ine gönderilecek JSON body.
+        `region`, `authType`, `lang` query parametresi olarak gönderilir.
+      properties:
+        clientId:
+          type: string
+          description: "🔑 OAuth client ID - appConfig.json'dan alınır veya kullanıcıdan istenir"
+          examples:
+            - "rH7S2"
+        loginType:
+          type: string
+          enum: [phone]
+          examples:
+            - "phone"
+        phoneNumber:
+          type: string
+          description: "📱 Kullanıcı telefon numarası - başında 0 olmadan 10 hane (örn: 5XX1234567)"
+          examples:
+            - "5XX1234567"
+        countryCode:
+          type: string
+          description: "⚠️ `'tr'` (ISO kod) — `'+90'` değil"
+          examples:
+            - "tr"
+        responseType:
+          type: string
+          enum: [code]
+          examples:
+            - "code"
+        refNo:
+          type: string
+          description: "⭐ `/oauth/otp` yanıtından gelen referans numarası"
+          examples:
+            - "4UHWUGU1SBU"
+        otpCode:
+          type: string
+          description: "⭐ Alan adı `otp` değil `otpCode`. SMS ile gelen 6 haneli kod."
+          examples:
+            - "55106"
+
+    AuthorizeResponse:
+      type: object
+      description: >
+        `/oauth/authorize` başarılı yanıtı. `code` üçüncü adımda (`/oauth/token`) kullanılır.
+      properties:
+        result:
+          $ref: '#/components/schemas/OAuthResultObject'
+        code:
+          type: string
+          description: "⭐ Authorization code — `/oauth/token` adımında `grantType:authorizationCode` ile kullanılır"
+          examples:
+            - "22ecfe70-8fa2-8cf6-473e-d94f3f240c18"
+
+    TokenRequestBody:
+      type: object
+      required:
+        - clientId
+        - clientSecret
+        - redirectUri
+        - code
+        - grantType
+      description: >
+        `/oauth/token` endpoint'ine gönderilecek JSON body.
+        Bu adım `access_token` üretir. `region`, `authType`, `lang` query'de gönderilir.
+      properties:
+        clientId:
+          type: string
+          description: "🔑 OAuth client ID - appConfig.json'dan alınır veya kullanıcıdan istenir"
+          examples:
+            - "rH7S2"
+        clientSecret:
+          type: string
+          description: "🔐 OAuth client secret - appConfig.json'dan alınır veya kullanıcıdan istenir"
+          examples:
+            - "Om121T12fSv1j66kp9Un5vE9IMkJ3639"
+        redirectUri:
+          type: string
+          examples:
+            - "m.kentkart.com"
+        code:
+          type: string
+          description: "⭐ `/oauth/authorize` yanıtından gelen authorization code"
+          examples:
+            - "22ecfe70-8fa2-8cf6-473e-d94f3f240c18"
+        grantType:
+          type: string
+          description: "Sabit değer: `authorizationCode`"
+          enum: [authorizationCode]
+          examples:
+            - "authorizationCode"
+
+    TokenResponse:
+      type: object
+      description: >
+        `/oauth/token` başarılı yanıtı. Doğrulandı 2026-02-27.
+
+        ⚠️ **Alan adı `accessToken` (camelCase) — `access_token` (snake_case) değil.**
+
+        `accessToken` tüm kart endpoint'lerinde
+        `Authorization: Bearer {accessToken}` header'ı olarak kullanılır.
+
+        **JWT payload alanları (RS256, doğrulandı):**
+        - `sub` → kullanıcı ID'si (`accountInfo.user_id` ile aynı)
+        - `sid` → session ID
+        - `aud` → clientId (`rH7S2`)
+        - `exp` → ~5 gün sonra (Unix timestamp)
+        - `pexp` → ~1 gün sonra (primary expiry)
+        - `scopes` → boş array
+      properties:
+        result:
+          $ref: '#/components/schemas/OAuthResultObject'
+        accessToken:
+          type: string
+          description: "⭐ RS256 imzalı JWT Bearer token (camelCase — NOT access_token)"
+          examples:
+            - "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refreshToken:
+          type: string
+          description: >
+            ⭐ Token yenileme anahtarı. Doğrulandı 2026-02-27.
+            Format: `{timestamp}-{uuid}`
+          examples:
+            - "{{TIMESTAMP}}-{{UUID}}"
+
+    # ── AppConfig ─────────────────────────────────────────────
+
+    AppConfig:
+      type: object
+      description: "`https://m.kentkart.com/assets/config/appConfig.json` yanıtı"
+      properties:
+        city:
+          type: object
+          properties:
+            pageTitle:
+              type: string
+            region:
+              type: string
+              description: Varsayılan şehir kodu
+              examples:
+                - "028"
+            language:
+              type: string
+            currency:
+              type: string
+            bundleId:
+              type: string
+              examples:
+                - "kentkart.web.mkentkart"
+        mapConfig:
+          type: object
+          properties:
+            map:
+              type: string
+              examples:
+                - "openstreet"
+            lat:
+              type: number
+            lng:
+              type: number
+        apiServer:
+          type: object
+          description: API ve OAuth bağlantı bilgileri
+          properties:
+            url:
+              type: string
+              examples:
+                - "https://service.kentkart.com/rl1/"
+            authUrl:
+              type: string
+              examples:
+                - "https://auth.kentkart.com/rl1/"
+            lang:
+              type: string
+            authType:
+              type: string
+            clientId:
+              type: string
+              description: "⭐ OAuth client kimliği"
+              examples:
+                - "rH7S2"
+            clientSecret:
+              type: string
+              description: "⭐ OAuth client sırrı (SPA gereği public)"
+              examples:
+                - "Om121T12fSv1j66kp9Un5vE9IMkJ3639"
+            redirectUri:
+              type: string
+              examples:
+                - "m.kentkart.com"
+            loginTypes:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    examples:
+                      - "phone"
+                  translateKey:
+                    type: string
+
+    AnnounceItem:
+      type: object
+      description: Sistem duyurusu.
+      properties:
+        id:
+          type: integer
+          examples:
+            - 2248
+        title:
+          type: string
+          examples:
+            - "TUM ALANI"
+        description:
+          type: string
+          examples:
+            - "Uzun açıklama metni..."
+        valid_from:
+          type: string
+          description: Geçerlilik başlangıcı (YYYYMMDDHHmmss)
+          examples:
+            - "20260109163000"
+        valid_to:
+          type: string
+          description: Geçerlilik bitişi (YYYYMMDDHHmmss)
+          examples:
+            - "20261231083000"
+        region:
+          type: string
+          examples:
+            - "031"
+        image:
+          type: string
+          description: Görselin URL'si (boş olabilir)
+          examples:
+            - ""
+
+  securitySchemes:
+    AuthTypeQuery:
+      type: apiKey
+      in: query
+      name: authType
+      description: >
+        Tüm `/web/` endpoint'lerinde `authType=4` olarak gönderilmelidir.
+        Bu parametre Bearer Token değil, istemci tipi belirtir.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        RS256 imzalı JWT Bearer token. `/oauth/token` endpoint'inden alınır.
+        Header: `Authorization: Bearer {access_token}`
+
+        **JWT payload alanları (doğrulandı 2026-02-27):**
+        - `sub`: kullanıcı ID
+        - `sid`: session ID
+        - `aud`: clientId (`rH7S2`)
+        - `exp`: ~5 gün geçerli
+        - `pexp`: ~1 gün primary expiry
+        - `scopes`: boş array
+
+# ─────────────────────────────────────────────────────────────
+#  ENDPOINT'LER
+# ─────────────────────────────────────────────────────────────
+paths:
+
+  /api/v2.0/city:
+    get:
+      operationId: getCityList
+      tags: [Şehirler]
+      summary: 🌍 Şehir Listesi
+      description: >
+        Kentkart altyapısını kullanan tüm aktif şehirleri döner.
+        `authType` ve `region` parametreleri gerekmez.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+      responses:
+        '200':
+          description: Aktif şehir listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  city:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CityItem'
+              examples:
+                sehir-listesi:
+                  summary: 24 aktif şehir (2026-02-27 doğrulandı)
+                  externalValue: './examples/city-response.json'
+
+  /web/nearest/find:
+    get:
+      operationId: searchAndListRoutes
+      tags: [Arama]
+      summary: 🔍 Arama ve Hat Fihristi
+      description: >
+        Sistemdeki hatlarda ve duraklar arasında arama yapar.
+
+        - `keyword` **boş** → o bölgedeki **tüm aktif hatlar** döner.
+        - `keyword` dolu → eşleşen hatlar, duraklar ve mekânlar döner.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - name: keyword
+          in: query
+          description: Arama terimi. Boş bırakılırsa tüm hatlar döner.
+          required: false
+          schema:
+            type: string
+            examples:
+              - "ÜNİVERSİTE"
+      responses:
+        '200':
+          description: Arama sonuçları
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  routeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RouteItem'
+                  stopList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StopItem'
+                  placeList:
+                    type: array
+                    items:
+                      type: object
+              examples:
+                univeriste-aramasi:
+                  summary: "ÜNİVERSİTE" anahtar kelimesiyle arama
+                  externalValue: './examples/search-response.json'
+
+  /web/pathInfo:
+    get:
+      operationId: getPathInfo
+      tags: [Hat Bilgileri]
+      summary: 🚌 Hat Detayları (Bit Maskesi ile)
+      description: >
+        Bir hattın tüm verilerini `resultType` bit maskesiyle seçici olarak getirir.
+
+        **Önerilen polling stratejisi:**
+        - Canlı takip (her 10–15s) → `resultType=010000`
+        - İlk yükleme           → `resultType=111110`
+        - Standart görünüm      → `resultType=011000`
+
+        **⚠️ Alan adı tutarsızlığı:** Bu endpoint'teki `busList[].plateNumber`,
+        `/web/nearest/bus`'taki `busList[].plate` ile aynı veridir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - name: displayRouteCode
+          in: query
+          required: true
+          description: Hat numarası (Örn. 52, 52A, 53A, 57)
+          schema:
+            type: string
+            examples:
+              - "52"
+        - name: direction
+          in: query
+          required: true
+          description: "Yön — 0=Gidiş, 1=Dönüş"
+          schema:
+            type: string
+            enum: ["0", "1"]
+            default: "0"
+        - name: resultType
+          in: query
+          required: true
+          description: >
+            6 karakterlik bit maskesi. Her karakter '0' veya '1'.
+
+            | Değer    | Dönen veri                         |
+            |----------|------------------------------------|
+            | `010000` | busList (canlı araçlar)            |
+            | `001000` | busStopList (güzergah durakları)   |
+            | `011000` | busList + busStopList              |
+            | `100000` | pointList (polyline)               |
+            | `111000` | pointList + busList + busStopList  |
+            | `000100` | timeTableList (bugünün tarifesi)   |
+            | `000010` | scheduleList (haftalık tarife)     |
+            | `111110` | Tüm veriler                        |
+
+            **⚠️ Bilinmeyen bit:** `000001` HTTP 200 döner ancak boş veri döner
+            (test edildi 2026-02-28).
+          schema:
+            type: string
+            pattern: '^[01]{6}$'
+            examples:
+              - "011000"
+      responses:
+        '200':
+          description: >
+            ⚠️ **Gerçek yanıt yapısı**: Tüm veriler `pathList[0]` içinde gömülü gelir.
+            `busList`, `busStopList` vb. üst seviyede değil — `pathList[0].busList` şeklindedir.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  pathList:
+                    type: array
+                    description: >
+                      ⭐ Tek elemanlı array. `pathList[0]` içinde hat metadata VE
+                      seçilen bit maskesine göre `busList`, `busStopList`, `timeTableList`,
+                      `scheduleList` alanları gömülü olarak gelir.
+                    items:
+                      $ref: '#/components/schemas/PathItem'
+              examples:
+                hat-52-ornek:
+                  summary: 52 numaralı hat - araçlar + duraklar (resultType=011000)
+                  externalValue: './examples/pathinfo-response.json'
+
+  /web/nearest/bus:
+    get:
+      operationId: getNearestBus
+      tags: [Canlı Takip]
+      summary: ⏱️ Durağa Yaklaşan Araçlar (ETA)
+      description: >
+        Belirtilen durak ID'sine yaklaşmakta olan aktif otobüsleri
+        tahmini geliş süresi (`timeDiff`, dakika) ve kaç durak uzakta
+        olduğuyla (`stopDiff`) birlikte döner.
+
+        Ayrıca o durağa uğrayan tüm hatların sonraki programlı sefer
+        saatini (`nextTripArrivalTime`) da içerir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/AccuracyParam'
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "40.976759"
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "37.973872"
+        - name: busStopId
+          in: query
+          required: true
+          description: Durak ID'si
+          schema:
+            type: string
+            examples:
+              - "13000"
+      responses:
+        '200':
+          description: ETA verileri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  stopInfo:
+                    $ref: '#/components/schemas/StopInfo'
+                  busList:
+                    type: array
+                    description: "⚠️ Plaka alanı: `plate` (pathInfo'da `plateNumber`)"
+                    items:
+                      $ref: '#/components/schemas/BusItemNearestBus'
+                  routeList:
+                    type: array
+                    description: Bu durağa uğrayan hatlar + sonraki sefer saati
+                    items:
+                      $ref: '#/components/schemas/RouteWithScheduleItem'
+              examples:
+                durak-13000-eta:
+                  summary: 13000 ID'li durağa yaklaşan araçlar (ETA)
+                  externalValue: './examples/nearest-bus-response.json'
+
+  /web/nearest/stop:
+    get:
+      operationId: getNearestStop
+      tags: [Keşif]
+      summary: 📍 Konuma En Yakın Duraklar
+      description: >
+        Kullanıcının GPS koordinatına en yakın otobüs duraklarını
+        mesafeye göre sıralı döner.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/AccuracyParam'
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "40.978336"
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "37.906310"
+      responses:
+        '200':
+          description: Yakın duraklar mesafeye göre sıralı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  busStopList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BusStopItemNearestStop'
+              examples:
+                yakin-duraklar:
+                  summary: GPS konumuna en yakın duraklar (mesafeye göre sıralı)
+                  externalValue: './examples/nearest-stop-response.json'
+
+  /web/nearest/place:
+    get:
+      operationId: getNearestPlace
+      tags: [Keşif]
+      summary: 🗺️ Yakınımdakiler (Kiosk + Durak + Mekân)
+      description: >
+        Kullanıcının GPS koordinatına en yakın Kentkart dolum kioskları,
+        otobüs durakları ve mekânları döner.
+
+        **Test doğrulamalı yanıt anahtarları:** `placeList`, `kioskList`, `stopList`
+        (`busStopList` değil — eski şemada yanlış dokümante edilmişti).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/AccuracyParam'
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "40.978336"
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "37.906310"
+      responses:
+        '200':
+          description: Yakın kiosk, durak ve mekân listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  placeList:
+                    type: array
+                    description: Yakın POI/mekânlar (çoğunlukla boş array döner)
+                    items:
+                      type: object
+                  kioskList:
+                    type: array
+                    description: Kentkart dolum bayileri ve kioskları
+                    items:
+                      $ref: '#/components/schemas/KioskItem'
+                  stopList:
+                    type: array
+                    description: >
+                      ⚠️ Anahtar `stopList` (NOT `busStopList`).
+                      `StopItem` şemasıyla aynı yapıdadır (`type: "stop"`).
+                    items:
+                      $ref: '#/components/schemas/StopItem'
+              examples:
+                yakin-mekanlar:
+                  summary: GPS konumuna yakın kiosk, durak ve mekânlar
+                  externalValue: './examples/nearest-place-response.json'
+
+  /web/tour:
+    get:
+      operationId: planJourney
+      tags: [Rota Planlama]
+      summary: 🗺️ Rota Planlayıcı (Journey Planner)
+      description: >
+        OpenTripPlanner tabanlı toplu taşıma yol tarifi motoru.
+        A→B koordinatları arasında yürüyüş + otobüs bacaklarından oluşan
+        çoklu rota alternatifleri döner.
+
+        **Yanıt yapısı (gerçek yanıtla doğrulandı):**
+
+        ```
+        result          → standart sonuç bloğu
+        tripList        → object (⚠️ array değil)
+          requestParameters → sunucunun aldığı parametre yansıması
+          plan
+            from / to   → başlangıç / bitiş noktası
+            itineraries[] → rota alternatifleri
+              legs[]    → bacaklar: WALK → BUS → WALK
+                legGeometry.points → Google Encoded Polyline
+                legFare   → bacak bilet ücreti (TL, sadece BUS)
+                steps[]   → yürüyüş talimatları (sadece WALK)
+          debugOutput   → OTP motor performans metrikleri
+        ```
+
+        **Ücret mantığı (Ordu 031 test):**
+        - Aktarmasız: `totalFare=32.5` (tek bilet)
+        - Tek aktarmalı: `totalFare=65.0` (2 × 32.5)
+
+        **`version` parametresi:** Opsiyonel. Yanıtı etkilemez.
+
+        **`authType` parametresi:** Opsiyonel. Olmadan da çalışır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RefererHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+        - name: arriveBy
+          in: query
+          required: true
+          description: >
+            `false` = Belirtilen saatte yola çık (en erken hareket).
+            `true`  = Belirtilen saatte hedefe var (en geç hareket).
+          schema:
+            type: string
+            enum: ["true", "false"]
+            default: "false"
+        - name: date
+          in: query
+          required: true
+          description: Yolculuk tarihi — **MM-DD-YYYY** formatı
+          schema:
+            type: string
+            pattern: '^\d{2}-\d{2}-\d{4}$'
+            examples:
+              - "02-27-2026"
+        - name: time
+          in: query
+          required: true
+          description: Yolculuk saati — **HH:MM** formatı (24 saat)
+          schema:
+            type: string
+            pattern: '^\d{2}:\d{2}$'
+            examples:
+              - "14:36"
+        - name: latStart
+          in: query
+          required: true
+          description: Başlangıç noktası enlemi (WGS84 ondalık derece)
+          schema:
+            type: string
+            examples:
+              - "40.960276"
+        - name: lngStart
+          in: query
+          required: true
+          description: Başlangıç noktası boylamı (WGS84 ondalık derece)
+          schema:
+            type: string
+            examples:
+              - "37.90323"
+        - name: latEnd
+          in: query
+          required: true
+          description: Hedef noktası enlemi (WGS84 ondalık derece)
+          schema:
+            type: string
+            examples:
+              - "40.985348"
+        - name: lngEnd
+          in: query
+          required: true
+          description: Hedef noktası boylamı (WGS84 ondalık derece)
+          schema:
+            type: string
+            examples:
+              - "37.881527"
+      responses:
+        '200':
+          description: Rota alternatifleri
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [result, tripList]
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  tripList:
+                    $ref: '#/components/schemas/TripListObject'
+              examples:
+                rota-planlama:
+                  summary: A→B toplu taşıma rotası (yürüyüş + otobüs)
+                  externalValue: './examples/tour-response.json'
+
+  /api/info/tariff:
+    get:
+      operationId: getTariff
+      tags: [Bilgi]
+      summary: 💳 Ücret Tarifesi
+      description: >
+        Bölgedeki güncel biniş ücretlerini döner. `authType` opsiyoneldir.
+
+        **✅ DURUM (2026-02-28):** Test edildi ve çalışıyor.
+        Ordu (031) bölgesinde 4 aktif tarife döndü: Tam 32.50₺, İndirimli 30.35₺,
+        Öğrenci 19.02₺, 7/24 Paralı 42.50₺.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+      responses:
+        '200':
+          description: Güncel fiyat tarifeleri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  tariffList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffItem'
+              examples:
+                ordu-tarifesi:
+                  summary: Ordu (031) bölgesi güncel biniş ücretleri
+                  externalValue: './examples/tariff-response.json'
+
+  /api/info/announce:
+    get:
+      operationId: getAnnouncements
+      tags: [Bilgi]
+      summary: 📢 Aktif Duyurular
+      description: Güzergah değişiklikleri ve sistem duyurularını döner. `authType` gerekmez.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+      responses:
+        '200':
+          description: Aktif duyurular
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  announceList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AnnounceItem'
+              examples:
+                aktif-duyurular:
+                  summary: Sistem ve güzergah duyuruları
+                  externalValue: './examples/announce-response.json'
+
+  /api/search:
+    get:
+      operationId: searchRouteAndStop
+      tags: [Arama]
+      summary: 🔍 Arama (API sürümü)
+      description: >
+        `/web/nearest/find`'ın daha sade `/api/` prefix'li karşılığı.
+        Durak nesnelerinde daha az alan vardır; alan adı `stopName` değil `name`'dir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+        - name: keyword
+          in: query
+          required: false
+          schema:
+            type: string
+            examples:
+              - "Otogar"
+      responses:
+        '200':
+          description: Arama sonuçları
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  routeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RouteItem'
+                  stopList:
+                    type: array
+                    description: Sade format — web/nearest/find'dan farklı şema
+                    items:
+                      $ref: '#/components/schemas/SearchStopItem'
+                  placeList:
+                    type: array
+                    items:
+                      type: object
+              examples:
+                otogar-aramasi:
+                  summary: API sürümü arama - Otogar
+                  externalValue: './examples/nearest-find-response.json'
+
+  /api/route/list:
+    get:
+      operationId: getRouteList
+      tags: [Arama]
+      summary: 📋 Tüm Hat Listesi
+      description: >
+        Bölgedeki tüm aktif hatların listesini döner.
+        Ordu (031) bölgesinde **91 hat** döndüğü test edilmiştir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      responses:
+        '200':
+          description: Hat listesi (routeList)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  routeList:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RouteListItem'
+              examples:
+                tum-hatlar:
+                  summary: Ordu (031) bölgesi 91 aktif hat
+                  externalValue: './examples/route-list-response.json'
+
+  /api/card/info:
+    get:
+      operationId: getCardInfo
+      tags: [Kart (Login Gerekli)]
+      summary: 🔐 Kart Bilgisi (Giriş Gerektirir)
+      description: Login olmadan HTTP 200, `result.code=33` döner.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+      responses:
+        '200':
+          description: code=33 (login gerekli) veya kart verisi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+
+  /api/card/balance:
+    get:
+      operationId: getCardBalance
+      tags: [Kart (Login Gerekli)]
+      summary: 💰 Kart Bakiyesi, Son İşlemler ve Kart Detayı
+      description: >
+        Kentkart bakiyesini, son biniş/yükleme işlemlerini ve kart detaylarını döner.
+        **Doğrulandı** (2026-02-27, Sivas 005).
+
+        **⚠️ `alias` format:** Tiresiz, bitişik yazılmalı.
+        - ✅ `{{CARD_ALIAS_FULL}}` (doğru)
+        - ❌ `01105-82854-4` (hatalı — `code=3: Sonuç Bulunamadı` döner)
+        - ❌ `XXXXXXXXXXX` (eksik/yanlış hane — `code=3` döner)
+
+        **`region`:** Kartın ait olduğu şehrin region kodu.
+        Farklı şehir region kodu ile sorgulama `code=3` döndürebilir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+        - name: alias
+          in: query
+          required: true
+          description: >
+            Kart alias numarası — tiresiz, bitişik (örn. `{{CARD_ALIAS_FULL}}`).
+            Kart üzerindeki numaranın tüm haneleri birleştirilmiş hali.
+          schema:
+            type: string
+            examples:
+              - "{{CARD_ALIAS_FULL}}"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Kart bakiyesi ve son işlemler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  cardlist:
+                    type: array
+                    description: Kart bilgileri listesi (genellikle tek eleman)
+                    items:
+                      $ref: '#/components/schemas/CardBalanceItem'
+              examples:
+                kart-bakiyesi:
+                  summary: Sivas (005) kart bakiyesi ve son işlemler
+                  externalValue: './examples/card-balance-response.json'
+
+  /api/account:
+    get:
+      operationId: getAccount
+      tags: [Kart (Login Gerekli)]
+      summary: 👤 Kullanıcı Hesap Bilgisi
+      description: >
+        Giriş yapmış kullanıcının hesap bilgilerini döner.
+        `Authorization: Bearer {access_token}` header'ı gereklidir.
+
+        **Doğrulandı** — gerçek token ile test edildi (2026-02-27).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Hesap bilgisi veya hata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  accountInfo:
+                    $ref: '#/components/schemas/AccountInfo'
+              examples:
+                hesap-bilgisi:
+                  summary: Giriş yapmış kullanıcı hesap bilgisi
+                  externalValue: './examples/account-response.json'
+
+  /api/user/info:
+    get:
+      operationId: getUserInfo
+      tags: [Kart (Login Gerekli)]
+      summary: 👤 Kullanıcı Profili
+      description: >
+        Giriş yapmış kullanıcının profil bilgilerini döner.
+
+        **⚠️ DURUM (2026-02-28):** Token olmadan `code=33` (giriş gerekli) döner.
+        Endpoint aktif ve çalışıyor, sadece login gerektiriyor.
+        Kullanıcı bilgisi için `/api/account` alternatif olarak kullanılabilir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: "code=33 (giriş gerekli) veya kullanıcı profili"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+
+  /api/v4.0/favorite:
+    get:
+      operationId: getFavoriteV4
+      tags: [Kart (Login Gerekli)]
+      summary: ⭐ Favori Kartlar ve Sanal Kartlar (v4.0)
+      description: >
+        Kullanıcının favori ve sanal kartlarını döner.
+        **Doğrulandı** — token ile test edildi (2026-02-27).
+        `userFavorites` ve `virtualCards` boş array olabilir (kart eklenmemişse).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Favori ve sanal kart listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  userFavorites:
+                    type: array
+                    description: Favori kentkart listesi (tam şema bilinmiyor)
+                    items:
+                      type: object
+                  virtualCards:
+                    type: array
+                    description: NFC/sanal kart listesi (tam şema bilinmiyor)
+                    items:
+                      type: object
+              examples:
+                favori-kartlar:
+                  summary: Kullanıcının favori ve sanal kartları (v4.0)
+                  externalValue: './examples/favorite-v4-response.json'
+
+  /api/products:
+    get:
+      operationId: getProducts
+      tags: [Bilgi]
+      summary: 🛒 Ürün ve Yükleme Seçenekleri
+      description: >
+        Bölgedeki kart yükleme ürünlerini, fiyatlarını ve önceden tanımlı
+        yükleme miktarlarını döner. **Auth gerektirmez.**
+
+        **Doğrulandı** (2026-02-27). Ordu (031) için 2 ürün döndü:
+        - `RF-Card` (fiziksel kart, min 50₺, max 500₺)
+        - `NFC` (telefon kartı, ücretli üyelik 23₺, max 200₺)
+
+        Komisyon oranları ve kısıtlamalar da içerir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      responses:
+        '200':
+          description: Ürün ve yükleme seçenekleri
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  InventoryArray:
+                    type: array
+                    description: Yüklenebilir ürün listesi
+                    items:
+                      $ref: '#/components/schemas/ProductItem'
+              examples:
+                ordu-urunleri:
+                  summary: Ordu (031) kart yükleme ürünleri
+                  externalValue: './examples/products-response.json'
+
+  /api/account/ccard:
+    get:
+      operationId: getAccountCcard
+      tags: [Kart (Login Gerekli)]
+      summary: 💳 Kayıtlı Kredi Kartları
+      description: >
+        Hesaba kayıtlı kredi kartı bilgilerini döner.
+        **Doğrulandı** (2026-02-27): `response: []` (kayıtlı kart yok).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Kayıtlı kredi kartı listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  response:
+                    type: array
+                    description: Kayıtlı kredi kartları (boş olabilir)
+                    items:
+                      type: object
+              examples:
+                kayitli-kartlar:
+                  summary: Hesaba kayıtlı kredi kartları (boş liste)
+                  externalValue: './examples/account-ccard-response.json'
+
+  /api/account/merchant:
+    get:
+      operationId: getAccountMerchant
+      tags: [Kart (Login Gerekli)]
+      summary: 🏪 Merchant Bilgisi
+      description: >
+        Hesaba bağlı merchant/bayi bilgilerini döner.
+        **Doğrulandı** (2026-02-27): boş yanıt (`result.code=0`, başka alan yok).
+        Tam şema bilinmiyor.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Merchant bilgisi (genellikle boş)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+              examples:
+                merchant-bilgisi:
+                  summary: Hesaba bağlı merchant/bayi bilgisi (boş)
+                  externalValue: './examples/account-merchant-response.json'
+
+  /api/v3.0/favorite:
+    get:
+      operationId: getFavoriteV3
+      tags: [Kart (Login Gerekli)]
+      summary: ⭐ Favoriler — Tam Liste (v3.0)
+      description: >
+        Kullanıcının tüm favori ve kayıtlı öğelerini tek endpoint'te döner.
+        `v4.0/favorite`'ten daha kapsamlıdır.
+        **Doğrulandı** (2026-02-27).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tüm favori ve kayıtlı öğeler
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  foreverCardList:
+                    type: array
+                    description: Kalıcı kart listesi
+                    items:
+                      type: object
+                  cardlist:
+                    type: array
+                    description: Kayıtlı kentkart listesi
+                    items:
+                      type: object
+                  favStopList:
+                    type: array
+                    description: Favori duraklar
+                    items:
+                      type: object
+                  favRouteList:
+                    type: array
+                    description: Favori hatlar
+                    items:
+                      type: object
+                  nfcCardList:
+                    type: array
+                    description: NFC kart listesi
+                    items:
+                      type: object
+                  tripList:
+                    type: array
+                    description: Kayıtlı yolculuklar
+                    items:
+                      type: object
+                  alertList:
+                    type: array
+                    description: Bildirim/uyarı listesi
+                    items:
+                      type: object
+                  paymentNotificationList:
+                    type: array
+                    description: Ödeme bildirimleri
+                    items:
+                      type: object
+                  qrCardList:
+                    type: array
+                    description: QR kod kart listesi
+                    items:
+                      type: object
+              examples:
+                favoriler-v3:
+                  summary: Kullanıcının tüm favori ve kayıtlı öğeleri (v3.0)
+                  externalValue: './examples/favorite-v3-response.json'
+
+  /api/card/transaction:
+    get:
+      operationId: getCardTransactions
+      tags: [Kart (Login Gerekli)]
+      summary: 📋 Kart İşlem Geçmişi
+      description: >
+        Belirtilen `alias` (kart numarası) için işlem geçmişini döner.
+        **Doğrulandı** (2026-02-27): `transactionList: []` (işlem yok veya kart sıfır).
+
+        `startDate` ve `endDate` parametreleri ile tarih aralığı filtrelenebilir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/VersionParam'
+        - name: alias
+          in: query
+          required: true
+          description: Kentkart numarası
+          schema:
+            type: string
+            examples:
+              - "{{CARD_ALIAS_SHORT}}"
+        - name: startDate
+          in: query
+          required: false
+          description: Başlangıç tarihi (YYYYMMDD)
+          schema:
+            type: string
+            examples:
+              - "20260101"
+        - name: endDate
+          in: query
+          required: false
+          description: Bitiş tarihi (YYYYMMDD)
+          schema:
+            type: string
+            examples:
+              - "20260227"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: İşlem geçmişi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/ResultObject'
+                  transactionList:
+                    type: array
+                    description: İşlem listesi (tam şema bilinmiyor — gerçek işlem yoktu)
+                    items:
+                      type: object
+              examples:
+                islem-gecmisi:
+                  summary: Kart işlem geçmişi (boş liste)
+                  externalValue: './examples/card-transaction-response.json'
+
+  /oauth/otp:
+    post:
+      operationId: requestOtp
+      servers:
+        - url: https://auth.kentkart.com/rl1
+          name: auth
+          description: OAuth kimlik doğrulama sunucusu
+      tags: [Kart (Login Gerekli)]
+      summary: 📱 OTP İste — SMS ile telefon doğrulama
+      description: >
+        OAuth akışının **1. adımı**. Kullanıcının telefon numarasına SMS ile
+        tek kullanımlık doğrulama kodu gönderir.
+
+        **Tam 3 adımlı akış (main.js'den doğrulandı):**
+        ```
+        1. POST /oauth/otp
+              → yanıt: { result.code=0, refNo: "4UHWUGU1SBU" }
+
+        2. POST /oauth/authorize  (refNo + otpCode ile)
+              → yanıt: { result.code=0, code: "22ecfe70-..." }
+
+        3. POST /oauth/token  (authorization code ile)
+              → yanıt: { accessToken: "eyJ...", refreshToken: "timestamp-uuid" }
+
+        4. GET  service.kentkart.com/rl1/api/* endpoint'leri
+              Header: Authorization: Bearer {accessToken}
+        ```
+
+        **⚠️ Önemli farklar:**
+        - `countryCode`: `"+90"` değil `"tr"` gönderilmeli
+        - `phoneNumber`: başında 0 olmadan, 10 hane
+        - Alan adı `otp` değil `otpCode` (authorize adımında)
+
+        **Bilinen hata kodları:**
+        - `1083` → Telefon numarası formatı yanlış (başında 0 olmamalı)
+        - `401`  → Eksik/yanlış parametre (`extraErrorMessage` alanına bak)
+
+        **`clientId` ve `clientSecret`:** `https://m.kentkart.com/assets/config/appConfig.json`
+        adresinden alınır. Şu an bilinen değerler:
+        `clientId=rH7S2`, `clientSecret=Om121T12fSv1j66kp9Un5vE9IMkJ3639`
+
+        **`region`, `authType`, `lang` query parametresi olarak gönderilir — body'de değil.**
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/VersionParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpRequestBody'
+            examples:
+              phone_tr:
+                summary: Türkiye telefon numarası ile (kullanıcıdan telefon numarası istenir)
+                value:
+                  clientId: "rH7S2"
+                  loginType: "phone"
+                  responseType: "code"
+                  countryCode: "tr"
+                  phoneNumber: "5XX1234567"
+      responses:
+        '200':
+          description: >
+            SMS gönderildi (code=0) veya hata.
+            `refNo` alanı bir sonraki adımda (`/oauth/authorize`) zorunludur.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpResponse'
+              examples:
+                otp-success:
+                  summary: SMS gönderildi (kullanıcıdan SMS kodu bekleniyor)
+                  value:
+                    result:
+                      cmd: "/oauth/ot"
+                      code: 0
+                      message: "OK"
+                      time: "2026-02-27T12:48:10.484Z"
+                    refNo: "4UHWUGU1SBU"
+                otp-error:
+                  summary: Telefon numarası hatası
+                  value:
+                    result:
+                      cmd: "/oauth/ot"
+                      code: 1083
+                      message: "Error"
+                      time: "2026-02-27T12:48:10.484Z"
+                      extraErrorMessage: "required field empty :countryCode"
+                    refNo: null
+
+  /oauth/authorize:
+    post:
+      operationId: authorizeWithOtp
+      servers:
+        - url: https://auth.kentkart.com/rl1
+          name: auth
+          description: OAuth kimlik doğrulama sunucusu
+      tags: [Kart (Login Gerekli)]
+      summary: 🔑 OTP Doğrula — Authorization Code Al
+      description: >
+        OAuth akışının **2. adımı**. `/oauth/otp`'den gelen `refNo` ve
+        SMS kodunu (`otpCode`) doğrular, başarılıysa `code` (authorization code) döner.
+
+        **⚠️ Alan adı farkları (gerçek istekten doğrulandı):**
+        - `otpCode` (NOT `otp`)
+        - `refNo` — `/oauth/otp` yanıtından gelen referans numarası
+        - `countryCode`: `"tr"` (NOT `"+90"`)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/VersionParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizeRequestBody'
+            examples:
+              phone_tr:
+                summary: Telefon + OTP ile doğrulama (kullanıcıdan telefon ve SMS kodu istenir)
+                value:
+                  clientId: "rH7S2"
+                  loginType: "phone"
+                  responseType: "code"
+                  countryCode: "tr"
+                  phoneNumber: "5XX1234567"
+                  refNo: "4UHWUGU1SBU"
+                  otpCode: "123456"
+      responses:
+        '200':
+          description: Authorization code veya hata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizeResponse'
+              examples:
+                authorize-success:
+                  summary: OTP doğrulandı, authorization code oluşturuldu
+                  value:
+                    result:
+                      cmd: "/oauth/authorize"
+                      code: 0
+                      message: "OK"
+                      time: "2026-02-27T12:48:15.123Z"
+                    code: "22ecfe70-8fa2-8cf6-473e-d94f3f240c18"
+                authorize-error:
+                  summary: OTP kodu yanlış
+                  value:
+                    result:
+                      cmd: "/oauth/authorize"
+                      code: 401
+                      message: "Error"
+                      time: "2026-02-27T12:48:15.123Z"
+                      extraErrorMessage: "Invalid OTP code"
+                    code: null
+
+  /oauth/token:
+    post:
+      operationId: getToken
+      servers:
+        - url: https://auth.kentkart.com/rl1
+          name: auth
+          description: OAuth kimlik doğrulama sunucusu
+      tags: [Kart (Login Gerekli)]
+      summary: 🎫 Token Al — Authorization Code → Access Token
+      description: >
+        OAuth akışının **3. adımı**. `/oauth/authorize`'dan gelen `code`'u
+        `access_token` ile değiştirir.
+
+        **⚠️ `grantType`: `"authorizationCode"` (camelCase)**
+
+        `access_token` RS256 imzalı JWT'dir. Payload:
+        - `sub` → kullanıcı ID
+        - `sid` → session ID
+        - `aud` → clientId (`rH7S2`)
+        - `exp` → geçerlilik bitiş (Unix ts) — yaklaşık 5 gün
+        - `pexp` → primary expiry — yaklaşık 1 gün
+        - `scopes` → boş array
+
+        Token, `/api/*` endpoint'lerinde şu şekilde kullanılır:
+        ```
+        Authorization: Bearer {access_token}
+        ```
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/AuthTypeParam'
+        - $ref: '#/components/parameters/LangParam'
+        - $ref: '#/components/parameters/VersionParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequestBody'
+            examples:
+              code_exchange:
+                summary: Authorization code ile token alma (gerçek istekten)
+                value:
+                  clientId: "rH7S2"
+                  clientSecret: "Om121T12fSv1j66kp9Un5vE9IMkJ3639"
+                  redirectUri: "m.kentkart.com"
+                  code: "22ecfe70-8fa2-8cf6-473e-d94f3f240c18"
+                  grantType: "authorizationCode"
+      responses:
+        '200':
+          description: Access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              examples:
+                access-token:
+                  summary: JWT access token ve refresh token (Doğrulandı 2026-02-27)
+                  externalValue: './examples/token-response.json'
+
+  /assets/config/appConfig.json:
+    get:
+      operationId: getAppConfig
+      servers:
+        - url: https://m.kentkart.com
+          name: webapp
+          description: Kentkart web uygulaması
+      tags: [Yapılandırma]
+      summary: ⚙️ Uygulama Yapılandırması
+      description: >
+        Kentkart web uygulamasının çalışma zamanı yapılandırmasını döner.
+
+        **OAuth için kritik alanlar:**
+        - `apiServer.clientId` — OAuth client kimliği
+        - `apiServer.clientSecret` — OAuth client sırrı
+        - `apiServer.authUrl` — Auth sunucu URL'si
+        - `apiServer.redirectUri` — OAuth redirect URI
+        - `apiServer.loginTypes[]` — Desteklenen giriş tipleri (`phone`)
+
+        **Auth gerektirmez.** Herhangi bir tarayıcı veya curl ile erişilebilir.
+
+        > ⚠️ `clientSecret` bu dosyada açık metin olarak bulunur.
+        > Kentkart'ın kasıtlı olarak public yaptığı bir değerdir (SPA mimarisi gereği).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Uygulama yapılandırması
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppConfig'
+              examples:
+                app-config:
+                  summary: Kentkart web uygulaması yapılandırması (OAuth clientId/secret içerir)
+                  externalValue: './examples/app-config.json'
+
+# ─────────────────────────────────────────────────────────────
+#  ETİKETLER (OpenAPI 3.1.0 uyumlu)
+# ─────────────────────────────────────────────────────────────
+tags:
+  - name: Genel Bilgi
+    description: Şehir, hat ve sisteme ait genel bilgiler
+
+  - name: Canlı Ulaşım
+    description: Gerçek zamanlı araç ve ETA verileri
+
+  - name: Konum Servisleri
+    description: GPS tabanlı keşif ve yol tarifi
+
+  - name: Hesap
+    description: Kimlik doğrulama gerektiren işlemler
+
+  - name: Şehirler
+    description: Kentkart kullanan şehirlerin listesi
+
+  - name: Arama
+    description: Hat ve durak arama / fihristi
+
+  - name: Bilgi
+    description: Tarife ve duyurular
+
+  - name: Hat Bilgileri
+    description: Güzergah, araç konumu ve tarife (bit maskesi)
+
+  - name: Canlı Takip
+    description: Durağa yaklaşan araçlar ve ETA
+
+  - name: Keşif
+    description: Konuma yakın durak, kiosk ve mekân
+
+  - name: Rota Planlama
+    description: A→B yol tarifi (OpenTripPlanner)
+
+  - name: Kart (Login Gerekli)
+    description: Kimlik doğrulama gerektiren kart işlemleri
+
+  - name: Yapılandırma
+    description: Uygulama yapılandırması ve OAuth kimlik bilgileri
+
+# ─────────────────────────────────────────────────────────────
+#  MİMARİ NOTLAR
+# ─────────────────────────────────────────────────────────────
+# x-architecture:
+#   service.kentkart.com/rl1 → tek aktif veri sunucusu
+#   rl2, rl3 → HTTP 403 (var ama kapalı)
+#   auth.kentkart.com/rl1 → OAuth sunucusu
+#   /oauth/token → AKTİF (önceki not yanlıştı) — grantType:authorizationCode
+#
+# x-result-codes:
+#   0=başarılı | 33=login gerekli | 34=geçersiz token (tahmin) | 404=endpoint yok
+#
+# x-field-inconsistencies:
+#   plateNumber (pathInfo) ≠ plate (nearest/bus)
+#   busStopid (nearest/bus stopInfo, küçük 'i') ≠ stopId (diğerleri)
+#   stopName (web/nearest/find) ≠ name (api/search)
+#   nearest/place → stopList (NOT busStopList)
+#
+# x-rate-limit:
+#   /oauth/otp → Günlük limit var. Code 1010: "günlük limit aşılmıştır"
+#   /web/* → Polling için 10-15 saniye önerilir. Rate limit gözlemlenmedi.
+#   /api/* → Rate limit gözlemlenmedi.
+#
+# x-tested-endpoints (2026-02-28):
+#   ✅ /api/v2.0/city → 200 OK, 24 şehir
+#   ✅ /web/nearest/find → 200 OK
+#   ✅ /web/pathInfo → 200 OK, resultType=011000
+#   ✅ /web/nearest/bus → 200 OK, ETA verisi
+#   ✅ /web/nearest/stop → 200 OK
+#   ✅ /web/nearest/place → 200 OK
+#   ✅ /web/tour → 200 OK, 10 rota alternatifi
+#   ✅ /api/info/announce → 200 OK
+#   ✅ /api/search → 200 OK
+#   ✅ /api/route/list → 200 OK, 91 hat
+#   ✅ /api/products → 200 OK
+#   ✅ /assets/config/appConfig.json → 200 OK
+#   ✅ /api/info/tariff → 200 OK, 4 tarife
+#
+# x-unknowns:
+#   resultType[5]='000001' → 200 OK döner ancak boş veri döner
+#   OAuth otp/authorize request body tam yapısı bilinmiyor
+#   tour.tripList leg detayları bilinmiyor
+#
+# x-hat-renkleri-ordu:
+#   52=FF9918 | 52A=F0FF06 | 52B=B6FF06 | 52C=31BF13 | 52D=FF0000
+#   53A=12FF8F | 57=AD23FF | 61=FF224F | 62=F9FF29
+#   63=FF979B | 64=A30001 | 67=9B6348

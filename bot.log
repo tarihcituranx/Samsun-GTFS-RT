@@ -1,0 +1,10 @@
+2026-03-08 14:16:21,278 - config - WARNING - ⚠️ UYARI: GROQ_API_KEY ayarlanmamış! AI özellikleri devre dışı.
+2026-03-08 14:16:21,278 - config - WARNING - ⚠️ UYARI: DIB_KURAN_API_TOKEN ayarlanmamış! Kuran-ı Kerim özellikleri devre dışı.
+2026-03-08 14:16:22,322 - db_service - INFO - SQLite backend initialized successfully
+2026-03-08 14:16:22,323 - db_service - INFO - Log added: user=999999999, type=BBK, value=1234567890
+2026-03-08 14:16:22,338 - db_service - INFO - Database backend closed
+2026-03-08 14:17:01,418 - config - WARNING - ⚠️ UYARI: GROQ_API_KEY ayarlanmamış! AI özellikleri devre dışı.
+2026-03-08 14:17:01,418 - config - WARNING - ⚠️ UYARI: DIB_KURAN_API_TOKEN ayarlanmamış! Kuran-ı Kerim özellikleri devre dışı.
+2026-03-08 14:17:02,436 - db_service - INFO - SQLite backend initialized successfully
+2026-03-08 14:17:02,438 - db_service - INFO - Log added: user=999999999, type=BBK, value=1234567890
+2026-03-08 14:17:02,447 - db_service - INFO - Database backend closed

@@ -1,0 +1,454 @@
+openapi: "3.1.0"
+info:
+  title: Diyanet Açık Kaynak Kuran API by Turan KAYA (tarihcituranx)
+  summary: Diyanet İşleri Başkanlığı resmi Kuran API'si
+  description: >
+    Diyanet İşleri Başkanlığı tarafından sağlanan resmi Kuran API'si.
+    Kuran ayetleri, sureleri, cüzleri ve yazı tiplerini döndürür.
+
+    **⚠️ Kimlik Doğrulama Zorunludur**
+
+    Tüm endpoint'ler `Authorization: Bearer <token>` header'ı gerektirir.
+    Token almak için: community@diyanet.gov.tr
+
+    ---
+
+    ## Endpoint Özeti
+
+    | Endpoint | Açıklama |
+    |----------|----------|
+    | `GET /api/v1/chapters` | Tüm 114 sureyi listeler |
+    | `GET /api/v1/chapters/{chapter_id}` | Suredeki tüm ayetler (1-114) |
+    | `GET /api/v1/verses/page/{page_number}` | Sayfadaki ayetler (1-604) |
+    | `GET /api/v1/juz/{juz_id}` | Cüzdeki tüm ayetler (1-30) |
+    | `GET /api/v1/fonts` | Tüm yazı tiplerini listeler |
+    | `GET /api/v1/fonts/{font_id}` | Yazı tipi detayı |
+    | `GET /api/v1/fonts/{font_id}/download` | Yazı tipi dosyasını indir |
+
+  version: "1.0.0"
+  contact:
+    name: Turan KAYA (tarihcituranx) — Gayriresmi şema
+    url: https://github.com/tarihcituranx
+  license:
+    name: Resmi API — Diyanet İşleri Başkanlığı
+
+servers:
+  - url: https://t061.diyanet.gov.tr/apigateway/acikkaynakkuran
+    description: Diyanet Kuran API ana sunucusu
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /api/v1/chapters:
+    get:
+      operationId: getAllChapters
+      tags: [Sureler]
+      summary: 📖 Tüm Sure Listesi
+      description: Veritabanındaki tüm 114 sureyi ve ilgili temel bilgilerini döndürür.
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Sure isimlerinin hangi dilde geleceği (örn. `tr`, `en`).
+          schema:
+            type: string
+            examples:
+              - "tr"
+      responses:
+        '200':
+          description: Başarılı yanıt. Sure listesini döndürür.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChapterResource'
+                  meta:
+                    type: object
+                    properties:
+                      requested_language:
+                        type: string
+                        examples:
+                          - "tr"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/chapters/{chapter_id}:
+    get:
+      operationId: getVersesByChapter
+      tags: [Sureler, Ayetler]
+      summary: 📜 Sure Bazlı Ayet Listesi
+      description: >
+        Belirtilen sure ID'sine göre o sureye ait tüm ayetleri,
+        çevirilerini ve isteğe bağlı Arapça metinlerini döndürür.
+      parameters:
+        - name: chapter_id
+          in: path
+          required: true
+          description: Ayetleri listelenecek surenin ID'si (1-114).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 114
+            examples:
+              - 1
+        - name: language_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: arabic_text_group_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Başarılı yanıt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VerseResource'
+        '400':
+          description: Geçersiz sure ID'si.
+        '404':
+          description: Bu sureye ait ayet bulunamadı.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/verses/page/{page_number}:
+    get:
+      operationId: getVersesByPage
+      tags: [Ayetler]
+      summary: 📄 Sayfa Bazlı Ayet Listesi
+      description: >
+        Belirtilen sayfa numasına göre ayetleri döndürür.
+        Kuran 604 sayfadan oluşur.
+
+        **⚠️ Rate Limiting:** Büyük sayfa numaraları (300+) için 403 Forbidden
+        dönebilir. Bu, API tarafından uygulanan rate limiting veya IP kısıtlamasıdır.
+        30 saniye bekleme süresi bile yeterli olmayabilir.
+      parameters:
+        - name: page_number
+          in: path
+          required: true
+          description: Görüntülenmek istenen sayfa numarası (1-604).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 604
+            examples:
+              - 1
+        - name: language_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: arabic_text_group_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Başarılı yanıt.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VerseResource'
+                  meta:
+                    type: object
+                  success:
+                    type: boolean
+                  message:
+                    type:
+                      - string
+                      - "null"
+        '400':
+          description: Geçersiz sayfa numarası.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Rate limit veya erişim kısıtlaması (büyük sayfa numaraları için).
+
+  /api/v1/juz/{juz_id}:
+    get:
+      operationId: getVersesByJuz
+      tags: [Cüzler, Ayetler]
+      summary: 📚 Cüz Bazlı Ayet Listesi
+      description: >
+        Belirtilen cüz ID'sine göre tüm ayetleri döndürür.
+        Kuran 30 cüzden oluşur.
+      parameters:
+        - name: juz_id
+          in: path
+          required: true
+          description: Ayetleri listelenecek cüzün ID'si (1-30).
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 30
+            examples:
+              - 1
+        - name: language_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Başarılı yanıt.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VerseResource'
+              examples:
+                juz-1:
+                  summary: 1. Cüz (Fatiha + Bakara başlangıcı)
+                  externalValue: './examples/juz-1-response.json'
+        '400':
+          description: Geçersiz cüz ID'si.
+        '404':
+          description: Belirtilen cüz bulunamadı.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/fonts:
+    get:
+      operationId: getFontsList
+      tags: [Yazı Tipleri]
+      summary: 🔤 Yazı Tipi Listesi
+      description: Sistemde kayıtlı tüm Kuran yazı tiplerini döndürür.
+      responses:
+        '200':
+          description: Başarılı işlem.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FontResource'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/fonts/{font_id}:
+    get:
+      operationId: getFontById
+      tags: [Yazı Tipleri]
+      summary: 🔤 Yazı Tipi Detayı
+      parameters:
+        - name: font_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            examples:
+              - 1
+      responses:
+        '200':
+          description: Başarılı işlem.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FontResource'
+              examples:
+                font-173:
+                  summary: Font ID 173 detayı
+                  externalValue: './examples/font-173-detail-response.json'
+        '404':
+          description: Kaynak bulunamadı.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/fonts/{font_id}/download:
+    get:
+      operationId: downloadFontById
+      tags: [Yazı Tipleri]
+      summary: ⬇️ Yazı Tipi İndir
+      parameters:
+        - name: font_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            examples:
+              - 1
+      responses:
+        '200':
+          description: Başarılı indirme.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                contentEncoding: binary
+        '404':
+          description: Kaynak bulunamadı.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Diyanet'ten alınan Bearer token. Token almak için community@diyanet.gov.tr
+
+  responses:
+    Unauthorized:
+      description: Yetkisiz — Token eksik veya geçersiz.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                examples:
+                  - "Unauthenticated."
+
+  schemas:
+
+    ChapterResource:
+      title: Sure Kaynağı
+      type: object
+      properties:
+        SureId:
+          type: integer
+          examples:
+            - 1
+        SureNameTurkish:
+          type: string
+          examples:
+            - "Fâtiha"
+        SureNameArabic:
+          type: string
+          examples:
+            - "الفاتحة"
+        AyetCount:
+          type: integer
+          examples:
+            - 7
+        InisOrder:
+          type: integer
+          examples:
+            - 5
+        FirstPage:
+          type: integer
+          examples:
+            - 1
+
+    VerseResource:
+      title: Ayet Kaynağı
+      type: object
+      properties:
+        surah_id:
+          type: integer
+          examples:
+            - 2
+        verse_id_in_surah:
+          type: integer
+          examples:
+            - 186
+        translation:
+          type: object
+          properties:
+            text:
+              type: string
+              examples:
+                - "Kullarım, beni senden sorarlarsa..."
+        arabic_script:
+          type:
+            - object
+            - "null"
+          properties:
+            text:
+              type: string
+              examples:
+                - "وَإِذَا سَأَلَكَ عِبَادِي..."
+        juz_number:
+          type: integer
+          examples:
+            - 2
+        page_number:
+          type: integer
+          examples:
+            - 28
+        surah_info:
+          type: object
+          properties:
+            name_turkish:
+              type: string
+              examples:
+                - "Bakara"
+            name_arabic:
+              type: string
+              examples:
+                - "البقرة"
+
+    FontResource:
+      title: Yazı Tipi Kaynağı
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          examples:
+            - 1
+        name:
+          type: string
+          examples:
+            - "KFGQPC Uthman Taha Naskh"
+        file_name:
+          type: string
+          examples:
+            - "uthman_taha_naskh.otf"
+        mime_type:
+          type: string
+          examples:
+            - "font/otf"
+        size:
+          type: integer
+          format: int64
+          examples:
+            - 150204
+        download_url:
+          type: string
+          format: uri
+          examples:
+            - "https://t061.diyanet.gov.tr/apigateway/acikkaynakkuran/api/v1/fonts/1/download"
+
+tags:
+  - name: Ayetler
+    description: Ayet sorgulama endpoint'leri
+  - name: Sureler
+    description: Sure listesi ve sure bazlı sorgular
+  - name: Cüzler
+    description: Cüz bazlı ayet sorguları
+  - name: Yazı Tipleri
+    description: Kuran yazı tipleri

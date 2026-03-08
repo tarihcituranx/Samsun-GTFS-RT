@@ -1,0 +1,12 @@
+{
+  "sequence_counter": 2,
+  "forefront_sequence_counter": 0,
+  "forefront_requests": {},
+  "regular_requests": {
+    "https://www.turk.net/internet-hiz-altyapi-sorgulama": 1
+  },
+  "in_progress_requests": [],
+  "handled_requests": [
+    "https://www.turk.net/internet-hiz-altyapi-sorgulama"
+  ]
+}

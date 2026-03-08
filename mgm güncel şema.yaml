@@ -1,0 +1,2196 @@
+openapi: "3.1.0"
+# Bu dosya OAS 3.1.0 formatındadır. OAS 3.2.0 için openapi.yaml dosyasına bakın.
+
+
+info:
+  title: MGM Servis API — Meteoroloji Genel Müdürlüğü
+  summary: MGM'nin resmi web sitesinin kullandığı dahili servis API'si.
+  contact:
+    name: Turan KAYA
+    url: https://github.com/tarihcituranx
+  description: >
+    **API Şema Geliştiricisi:** [Turan KAYA](https://github.com/tarihcituranx)
+
+    ---
+
+    Meteoroloji Genel Müdürlüğü'nün (MGM) resmi web sitesi tarafından kullanılan
+    dahili servis API'si. Gerçek API testleriyle (Şubat 2026, Samsun/Atakum) doğrulanmıştır.
+
+    ---
+
+    ## Kimlik Doğrulama
+
+    Token veya API anahtarı **gerekmez**. Her istekte şu header zorunludur:
+
+    ```
+    Origin: https://www.mgm.gov.tr
+    ```
+
+    Bu header olmadan istekler reddedilir.
+
+    ---
+
+    ## Kullanım Akışı
+
+    ```
+    1. GET /web/merkezler?il={İl}
+          → merkezId, sondurumIstNo, gunlukTahminIstNo, saatlikTahminIstNo al
+
+    2. GET /web/sondurumlar?merkezid={merkezId}
+          → Anlık ölçümler (sıcaklık, nem, rüzgar, yağış...)
+
+    3. GET /web/tahminler/gunluk?istno={gunlukTahminIstNo}
+          → Bugün dahil 6 günlük tahmin (Gun0–Gun5)
+
+    4. GET /web/tahminler/saatlik?istno={saatlikTahminIstNo}
+          → 3'er saatlik dilimler halinde tahmin
+
+    5. GET /web/ucdegerler?merkezid={merkezId}&ay={ay}&gun={gun}
+          → Tarihi rekordlar (max/min/ort)
+    ```
+
+    ⚠️ **Önemli:** Şehir merkezi ile ilçelerin istasyon ID'leri farklıdır.
+    Doğru veri için mutlaka ilçe bazlı ID'ler kullanılmalıdır.
+
+    ---
+
+    ## Hadise Kodları
+
+    | Kod  | Anlam                |
+    |------|----------------------|
+    | AK   | Açık                 |
+    | AB   | Az Bulutlu           |
+    | PB   | Parçalı Bulutlu      |
+    | CB   | Çok Bulutlu          |
+    | HY   | Hafif Yağmurlu       |
+    | Y    | Yağmurlu             |
+    | KY   | Kuvvetli Yağmurlu    |
+    | HSY  | Hafif Sisli Yağışlı  |
+    | HKY  | Hafif Karlı Yağışlı  |
+    | KAR  | Karlı                |
+    | SIS  | Sisli                |
+    | KF   | Kum Fırtınası        |
+
+    ---
+
+    ## Özel Değer: -9999
+
+    `-9999` değeri "veri yok / ölçüm yapılmadı" anlamına gelir.
+    Deniz sıcaklığı, kar yüksekliği gibi alanlarda yaygın görülür.
+
+  version: "1.5.0"
+  contact:
+    name: Meteoroloji Genel Müdürlüğü
+    url: https://www.mgm.gov.tr
+  x-maintainer:
+    name: Turan KAYA (tarihcituranx)
+    url: https://github.com/tarihcituranx
+  license:
+    name: Kamuya Açık — Resmi MGM Servisi
+
+servers:
+  - url: https://servis.mgm.gov.tr
+    description: MGM ana veri sunucusu (tüm /web/ endpoint'leri)
+  - url: https://www.mgm.gov.tr
+    description: MGM ana web sunucusu (radar JPEG görüntüleri — /FTPDATA/...)
+  - url: https://pirireis.mgm.gov.tr
+    description: MGM Piri Reis denizcilik portalı
+  - url: https://hezarfen.mgm.gov.tr
+    description: MGM Hezarfen havacılık sistemi
+  - url: https://mapservice.mgm.gov.tr
+    description: MGM Harita Servisi (routing, geocoding) — Origin header gerekmez
+  - url: https://modelservis.mgm.gov.tr
+    description: MGM Model Tahmin Servisi (KTHS) — **Origin header ZORUNLU**
+
+# ─────────────────────────────────────────────────────────────
+#  ORTAK BİLEŞENLER
+# ─────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+
+    OriginHeader:
+      name: Origin
+      in: header
+      required: true
+      description: >
+        ⚠️ **Zorunlu.** Bu header olmadan tüm istekler reddedilir.
+        Sabit değer: `https://www.mgm.gov.tr`
+      schema:
+        type: string
+        enum:
+          - "https://www.mgm.gov.tr"
+        examples:
+          - "https://www.mgm.gov.tr"
+
+    MerkezIdParam:
+      name: merkezid
+      in: query
+      required: true
+      description: >
+        Merkez ID. `/web/merkezler`'den dönen `merkezId` alanı.
+        Örn: Samsun/Atakum = 95501
+      schema:
+        type: integer
+        examples:
+          - 95501
+
+    IstNoParam:
+      name: istno
+      in: query
+      required: true
+      description: İstasyon numarası. Kullanım amacına göre `gunlukTahminIstNo` veya `saatlikTahminIstNo` seçilir.
+      schema:
+        type: integer
+        examples:
+          - 17030
+
+  schemas:
+
+    Merkez:
+      type: object
+      description: >
+        Bir meteoroloji merkezi/istasyonu. `/web/merkezler` endpoint'inden döner.
+        Doğrulandı: Samsun/Atakum (2026-02-27).
+      properties:
+        merkezId:
+          type: integer
+          description: "⭐ Merkez kimlik numarası. sondurumlar ve ucdegerler için kullanılır."
+          examples:
+            - 95501
+        il:
+          type: string
+          examples:
+            - "Samsun"
+        ilPlaka:
+          type: integer
+          examples:
+            - 55
+        ilce:
+          type: string
+          examples:
+            - "Atakum"
+        enlem:
+          type: number
+          format: double
+          examples:
+            - 41.3442
+        boylam:
+          type: number
+          format: double
+          examples:
+            - 36.2564
+        yukseklik:
+          type: integer
+          description: Denizden yükseklik (metre)
+          examples:
+            - 4
+        sondurumIstNo:
+          type: integer
+          description: "⭐ Anlık durum sorgusu için istasyon no → /web/sondurumlar"
+          examples:
+            - 17030
+        gunlukTahminIstNo:
+          type: integer
+          description: "⭐ Günlük tahmin için istasyon no → /web/tahminler/gunluk"
+          examples:
+            - 95501
+        saatlikTahminIstNo:
+          type: integer
+          description: "⭐ Saatlik tahmin için istasyon no → /web/tahminler/saatlik"
+          examples:
+            - 17030
+        alternatifHadiseIstNo:
+          type: ["integer", "null"]
+          description: Alternatif hadise istasyon numarası (null olabilir)
+          examples:
+            - null
+        oncelik:
+          type: integer
+          description: Gösterim önceliği (1=birincil)
+          examples:
+            - 1
+        modelId:
+          type: integer
+          examples:
+            - 136008
+        gps:
+          type: integer
+          description: "GPS verisi var mı (1=evet)"
+          examples:
+            - 1
+        aciklama:
+          type: string
+          examples:
+            - ""
+
+    SonDurum:
+      type: object
+      description: >
+        Anlık hava durumu ölçümleri. `/web/sondurumlar` endpoint'inden döner.
+        Doğrulandı: Samsun/Atakum, merkezId=95501 (2026-02-27).
+
+        **`-9999` değeri:** Veri yok / ölçüm yapılmadı anlamına gelir.
+        (Örn: iç istasyonlarda `denizSicaklik`, kış dışında `karYukseklik`)
+      properties:
+        istNo:
+          type: integer
+          description: İstasyon numarası
+          examples:
+            - 17030
+        veriZamani:
+          type: string
+          format: date-time
+          description: Ölçüm zamanı (ISO 8601)
+          examples:
+            - "2026-02-27T13:14:00.000Z"
+        sicaklik:
+          type: number
+          description: Sıcaklık (°C)
+          examples:
+            - 4.6
+        hissedilenSicaklik:
+          type: number
+          description: Hissedilen sıcaklık (°C)
+          examples:
+            - 4.6
+        nem:
+          type: integer
+          description: Bağıl nem (%)
+          examples:
+            - 88
+        ruzgarHiz:
+          type: number
+          description: Rüzgar hızı (km/s)
+          examples:
+            - 18
+        ruzgarYon:
+          type: integer
+          description: "Rüzgar yönü (0-360°, 0=Kuzey)"
+          examples:
+            - 356
+        hadiseKodu:
+          type: string
+          description: >
+            Hava durumu hadise kodu. Bilinen değerler:
+            AK, AB, PB, CB, HY, Y, KY, HSY, HKY, KAR, SIS, KF
+          examples:
+            - "HSY"
+        aktuelBasinc:
+          type: number
+          description: Aktüel basınç (hPa)
+          examples:
+            - 1019.4
+        denizeIndirgenmisBasinc:
+          type: number
+          description: Denize indirgenmiş basınç (hPa)
+          examples:
+            - 1019.8
+        gorus:
+          type: integer
+          description: Görüş mesafesi (metre)
+          examples:
+            - 10000
+        kapalilik:
+          type: integer
+          description: "Bulutluluk (okta, 0-8). -9999 = veri yok."
+          examples:
+            - 7
+        karYukseklik:
+          type: number
+          description: "Kar yüksekliği (cm). -9999 = kar yok / veri yok."
+          examples:
+            - -9999
+        denizSicaklik:
+          type: number
+          description: "Deniz yüzeyi sıcaklığı (°C). -9999 = deniz istasyonu değil."
+          examples:
+            - 9.5
+        denizVeriZamani:
+          type: string
+          format: date-time
+          description: Deniz ölçüm zamanı
+          examples:
+            - "2026-02-27T06:00:00.000Z"
+        yagis00Now:
+          type: number
+          description: Anlık yağış (mm)
+          examples:
+            - 12.1
+        yagis10Dk:
+          type: number
+          description: Son 10 dakika yağış (mm)
+          examples:
+            - 0.6
+        yagis1Saat:
+          type: number
+          description: Son 1 saat yağış (mm)
+          examples:
+            - 2
+        yagis6Saat:
+          type: number
+          description: Son 6 saat yağış (mm)
+          examples:
+            - 8.3
+        yagis12Saat:
+          type: number
+          description: Son 12 saat yağış (mm)
+          examples:
+            - 12
+        yagis24Saat:
+          type: number
+          description: Son 24 saat yağış (mm)
+          examples:
+            - 12.9
+        rasatMetar:
+          type: string
+          description: METAR formatı rasat (-9999 = mevcut değil)
+          examples:
+            - "-9999"
+        rasatSinoptik:
+          type: string
+          description: Sinoptik rasat (-9999 = mevcut değil)
+          examples:
+            - "-9999"
+        rasatTaf:
+          type: string
+          description: TAF formatı (-9999 = mevcut değil)
+          examples:
+            - "-9999"
+
+    GunlukTahmin:
+      type: object
+      description: >
+        6 günlük hava tahmini. `/web/tahminler/gunluk` endpoint'inden döner.
+        `Gun0` = bugün, `Gun5` = 5 gün sonra.
+        Doğrulandı: istno=95501, Samsun/Atakum (2026-02-27).
+
+        ⚠️ `Gun0` alanları bu yanıtta **bulunmaz** — sunucu bugünü atlamaktadır.
+        Yanıt `Gun1`–`Gun5` arasındadır (5 gün).
+      properties:
+        istNo:
+          type: integer
+          examples:
+            - 95501
+        tarihGun1:
+          type: string
+          format: date
+          examples:
+            - "2026-02-28"
+        enDusukGun1:
+          type: number
+          description: En düşük sıcaklık (°C)
+          examples:
+            - 4
+        enYuksekGun1:
+          type: number
+          description: En yüksek sıcaklık (°C)
+          examples:
+            - 6
+        enDusukNemGun1:
+          type: integer
+          examples:
+            - 82
+        enYuksekNemGun1:
+          type: integer
+          examples:
+            - 93
+        hadiseGun1:
+          type: string
+          description: Hadise kodu (bkz. hadise kodları tablosu)
+          examples:
+            - "Y"
+        ruzgarHizGun1:
+          type: number
+          description: Rüzgar hızı (km/s)
+          examples:
+            - 27
+        ruzgarYonGun1:
+          type: integer
+          examples:
+            - 310
+        tarihGun2:
+          type: string
+          format: date
+        enDusukGun2:
+          type: number
+        enYuksekGun2:
+          type: number
+        enDusukNemGun2:
+          type: integer
+        enYuksekNemGun2:
+          type: integer
+        hadiseGun2:
+          type: string
+        ruzgarHizGun2:
+          type: number
+        ruzgarYonGun2:
+          type: integer
+        tarihGun3:
+          type: string
+          format: date
+        enDusukGun3:
+          type: number
+        enYuksekGun3:
+          type: number
+        enDusukNemGun3:
+          type: integer
+        enYuksekNemGun3:
+          type: integer
+        hadiseGun3:
+          type: string
+        ruzgarHizGun3:
+          type: number
+        ruzgarYonGun3:
+          type: integer
+        tarihGun4:
+          type: string
+          format: date
+        enDusukGun4:
+          type: number
+        enYuksekGun4:
+          type: number
+        enDusukNemGun4:
+          type: integer
+        enYuksekNemGun4:
+          type: integer
+        hadiseGun4:
+          type: string
+        ruzgarHizGun4:
+          type: number
+        ruzgarYonGun4:
+          type: integer
+        tarihGun5:
+          type: string
+          format: date
+        enDusukGun5:
+          type: number
+        enYuksekGun5:
+          type: number
+        enDusukNemGun5:
+          type: integer
+        enYuksekNemGun5:
+          type: integer
+        hadiseGun5:
+          type: string
+        ruzgarHizGun5:
+          type: number
+        ruzgarYonGun5:
+          type: integer
+
+    SaatlikTahminItem:
+      type: object
+      description: Tek bir 3 saatlik tahmin dilimi.
+      properties:
+        tarih:
+          type: string
+          format: date-time
+          examples:
+            - "2026-02-27T15:00:00.000Z"
+        hadise:
+          type: string
+          description: Hadise kodu
+          examples:
+            - "KY"
+        sicaklik:
+          type: number
+          examples:
+            - 4
+        hissedilenSicaklik:
+          type: number
+          examples:
+            - 4
+        nem:
+          type: integer
+          examples:
+            - 93
+        ruzgarYonu:
+          type: integer
+          examples:
+            - 310
+        ruzgarHizi:
+          type: number
+          description: Ortalama rüzgar hızı (km/s)
+          examples:
+            - 30
+        maksimumRuzgarHizi:
+          type: number
+          description: Maksimum rüzgar hızı (km/s)
+          examples:
+            - 55
+
+    SaatlikTahminWrapper:
+      type: object
+      description: >
+        Saatlik tahmin wrapper nesnesi. `/web/tahminler/saatlik` endpoint'inden döner.
+        Doğrulandı: istno=17030, Samsun/Atakum (2026-02-27).
+      properties:
+        istNo:
+          type: integer
+          examples:
+            - 17030
+        merkez:
+          type: string
+          description: Merkez adı
+          examples:
+            - "Samsun"
+        baslangicZamani:
+          type: string
+          format: date-time
+          description: Tahminin başlangıç zamanı
+          examples:
+            - "2026-02-27T12:00:00.000Z"
+        tahmin:
+          type: array
+          description: 3 saatlik tahmin dilimleri
+          items:
+            $ref: '#/components/schemas/SaatlikTahminItem'
+
+    UcDeger:
+      type: object
+      description: >
+        Tarihi uç değer (rekor). `/web/ucdegerler` endpoint'inden döner.
+        Doğrulandı: merkezId=95501, ay=2, gun=27, Samsun/Atakum (2026-02-27).
+      properties:
+        merkezId:
+          type: integer
+          examples:
+            - 95501
+        istNo:
+          type: integer
+          examples:
+            - 95501
+        ay:
+          type: integer
+          examples:
+            - 2
+        gun:
+          type: integer
+          examples:
+            - 27
+        max:
+          type: number
+          description: Tarihi en yüksek sıcaklık rekoru (°C)
+          examples:
+            - 24.5
+        min:
+          type: number
+          description: Tarihi en düşük sıcaklık rekoru (°C)
+          examples:
+            - -5.6
+        ort:
+          type: number
+          description: Tarihi ortalama sıcaklık (°C)
+          examples:
+            - 8
+        maxOrt:
+          type: number
+          description: Tarihi ortalama maksimum sıcaklık (°C)
+          examples:
+            - 12.2
+        minOrt:
+          type: number
+          description: Tarihi ortalama minimum sıcaklık (°C)
+          examples:
+            - 4.4
+
+    Alarm:
+      type: object
+      description: Meteoroloji uyarısı. `/web/alarmlar` endpoint'inden döner. Doğrulandı 2026-02-27.
+      properties:
+        seriNo:
+          type: string
+          description: Uyarı seri numarası
+          examples:
+            - "26010175"
+        baslangic:
+          type: string
+          format: date-time
+          description: Uyarı başlangıç zamanı
+          examples:
+            - "2026-02-26T20:15:00.000Z"
+        baslik:
+          type: string
+          description: Uyarı başlığı
+          examples:
+            - "Doğu Akdeniz'de Kuvvetli Rüzgar ve Fırtınaya Dikkat!"
+        hadiseCinsi:
+          type: string
+          description: >
+            Uyarı hadise türü. Boş string olabilir (genel uyarılarda).
+            Bilinen değerler: "Fırtına", "Kar Yağışı", "Sağanak Yağış", "Kuvvetli Rüzgar"
+          examples:
+            - "Fırtına"
+        ihbarTipi:
+          type: integer
+          description: >
+            İhbar tipi kodu. Bilinen değerler:
+            1 = Meteoroloji Uyarısı (kırmızı/turuncu seviye),
+            2 = Genel Duyuru / Bilgilendirme,
+            4 = Denizcilik Uyarısı (fırtına, dalga)
+          enum: [1, 2, 3, 4]
+          examples:
+            - 1
+
+    MeteoAlarm:
+      type: object
+      description: >
+        Avrupa MeteoAlarm formatında günlük uyarı.
+        `/web/meteoalarm/today` endpoint'inden döner. Doğrulandı 2026-02-27.
+      properties:
+        _id:
+          type: string
+          examples:
+            - "69a0ab8d88f30e14ccc096eb"
+        alertNo:
+          type: integer
+          examples:
+            - 2026022604
+        begin:
+          type: string
+          format: date-time
+          examples:
+            - "2026-02-26T21:00:00.000Z"
+        end:
+          type: string
+          format: date-time
+          examples:
+            - "2026-02-27T15:00:00.000Z"
+        text:
+          type: object
+          description: Uyarı metni seviyelere göre (yellow/orange/red)
+          properties:
+            yellow:
+              type: string
+              examples:
+                - "Kuvvetli rüzgar ve fırtınanın etkili olması beklenmektedir."
+            orange:
+              type: string
+            red:
+              type: string
+        weather:
+          type: object
+          description: Etkilenen hava olayları seviyelere göre
+          properties:
+            yellow:
+              type: array
+              items:
+                type: string
+              examples:
+                - ["wind"]
+            orange:
+              type: array
+              items:
+                type: string
+            red:
+              type: array
+              items:
+                type: string
+        towns:
+          type: object
+          description: Etkilenen ilçe kodları seviyelere göre
+          properties:
+            yellow:
+              type: array
+              items:
+                type: integer
+              examples:
+                - [90102, 90105, 90108]
+            orange:
+              type: array
+              items:
+                type: integer
+            red:
+              type: array
+              items:
+                type: integer
+
+    KarKalinligi:
+      type: object
+      description: Kar kalınlığı ölçümü. `/web/sondurumlar/kar` endpoint'inden döner.
+      properties:
+        istNo:
+          type: integer
+          examples:
+            - 18672
+        istAd:
+          type: string
+          examples:
+            - "Samsun / LADİK/AKDAĞ KAYAK MERKEZİ"
+        karYukseklik:
+          type: integer
+          description: Kar kalınlığı (cm)
+          examples:
+            - 13
+        veriZamani:
+          type: string
+          format: date-time
+          examples:
+            - "2026-02-26T00:38:00.000Z"
+        enlem:
+          type: number
+          examples:
+            - 40.9
+        boylam:
+          type: number
+          examples:
+            - 35.9
+
+    DenizSuyuIstasyonu:
+      type: object
+      description: >
+        Deniz/göl suyu sıcaklık istasyonu. `pirireis.mgm.gov.tr/deniz-suyu-sicakliklari`
+        sayfasından kazınan JSON verisinden elde edilir.
+      properties:
+        istNo:
+          type: integer
+          description: İstasyon numarası
+          examples:
+            - 17034
+        istAd:
+          type: string
+          description: İstasyon adı (il/ilçe/yer formatında)
+          examples:
+            - "İLKADIM/SAMSUN LİMAN KUZEY MENDİREK FENERİ"
+        il:
+          type: string
+          examples:
+            - "Samsun"
+        ilce:
+          type: string
+          examples:
+            - "İlkadım"
+        denizSicaklik:
+          type: number
+          description: Deniz/göl yüzeyi sıcaklığı (°C)
+          examples:
+            - 9.5
+        denizVeriZamani:
+          type: string
+          format: date-time
+          description: Ölçüm zamanı (ISO 8601 UTC)
+          examples:
+            - "2026-02-26T06:00:00.000Z"
+        enlem:
+          type: number
+          format: double
+          examples:
+            - 41.3
+        boylam:
+          type: number
+          format: double
+          examples:
+            - 36.33
+
+    TarimsalTahmin:
+      type: object
+      description: >
+        Tarımsal hava tahmini verisi. `/web/tahminler/tarimsal` endpoint'inden döner.
+        Tarım MGM uygulaması için özel tahmin verileri içerir.
+      properties:
+        gun:
+          type: string
+          description: Tahmin günü (ISO 8601 formatında)
+          examples:
+            - "2026-02-28"
+        ortSicaklik:
+          type: number
+          description: Ortalama sıcaklık (°C)
+          examples:
+            - 8.5
+        minSicaklik:
+          type: number
+          description: Minimum sıcaklık (°C)
+          examples:
+            - 4.2
+        maxSicaklik:
+          type: number
+          description: Maksimum sıcaklık (°C)
+          examples:
+            - 12.8
+        yagisOlasiligi:
+          type: integer
+          description: Yağış olasılığı (%)
+          examples:
+            - 20
+        ruzgarHiz:
+          type: number
+          description: Rüzgar hızı (km/s)
+          examples:
+            - 15.5
+        ruzgarYon:
+          type: integer
+          description: Rüzgar yönü (derece, 0=Kuzey)
+          examples:
+            - 356
+        nem:
+          type: integer
+          description: Bağıl nem (%)
+          examples:
+            - 75
+        hadiseKodu:
+          type: string
+          description: Hava durumu hadise kodu
+          examples:
+            - "PB"
+
+    YagisVerisi:
+      type: object
+      description: >
+        Günlük yağış verisi. `/web/sondurumlar/toplamyagis` endpoint'inden döner.
+      properties:
+        istNo:
+          type: integer
+          description: İstasyon numarası
+          examples:
+            - 17030
+        tarih:
+          type: string
+          format: date
+          description: Tarih (YYYY-MM-DD)
+          examples:
+            - "2026-02-28"
+        toplamYagis:
+          type: number
+          description: Toplam yağış miktarı (mm)
+          examples:
+            - 12.5
+        veriZamani:
+          type: string
+          format: date-time
+          description: Veri ölçüm zamanı
+          examples:
+            - "2026-02-28T18:00:00.000Z"
+
+    SicaklikVerisi:
+      type: object
+      description: >
+        Günlük sıcaklık verisi. `/web/sondurumlar/endusuk`, `/web/sondurumlar/toprakustu`,
+        ve `/web/sondurumlar/enyuksek` endpoint'lerinden döner.
+      properties:
+        istNo:
+          type: integer
+          description: İstasyon numarası
+          examples:
+            - 17030
+        tarih:
+          type: string
+          format: date
+          description: Tarih (YYYY-MM-DD)
+          examples:
+            - "2026-02-28"
+        deger:
+          type: number
+          description: Sıcaklık değeri (°C)
+          examples:
+            - 4.2
+        veriZamani:
+          type: string
+          format: date-time
+          description: Veri ölçüm zamanı
+          examples:
+            - "2026-02-28T06:00:00.000Z"
+
+    MarinaDetay:
+      type: object
+      description: >
+        Marina bilgisi. `pirireis.mgm.gov.tr/marinalar/{id}` sayfasından kazınan
+        `__NEXT_DATA__` JSON içindeki marina nesnesi.
+      properties:
+        id:
+          type: integer
+          description: Marina ID numarası
+          examples:
+            - 1
+        name:
+          type: string
+          description: Marina adı
+          examples:
+            - "Hopa Limanı"
+        lat:
+          type: number
+          format: double
+          description: Enlem
+          examples:
+            - 41.4192
+        lon:
+          type: number
+          format: double
+          description: Boylam
+          examples:
+            - 41.4292
+        isShowMap:
+          type: boolean
+          description: Haritada gösterilsin mi
+          examples:
+            - true
+
+    WW3DalgaModeli:
+      type: object
+      description: >
+        WaveWatch3 (WW3) dalga modeli verisi. `pirireis.mgm.gov.tr/marinalar/{id}`
+        sayfasından kazınan JSON içindeki dalga tahmin nesnesi.
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: Tahmin zamanı (ISO 8601 UTC)
+          examples:
+            - "2026-02-26T03:00:00.000Z"
+        hs:
+          type: number
+          description: Belirgin dalga yüksekliği (metre)
+          examples:
+            - 0.005
+        dir:
+          type: number
+          description: Dalga yönü (derece, 0=Kuzey)
+          examples:
+            - 33.36
+        t01:
+          type: number
+          description: Ortalama dalga periyodu (saniye)
+          examples:
+            - 2.22
+        ws:
+          type: number
+          description: Modele yansıyan rüzgar hızı (m/s)
+          examples:
+            - 5.38
+
+    EcmwfRuzgarModeli:
+      type: object
+      description: >
+        ECMWF rüzgar modeli verisi. `pirireis.mgm.gov.tr/marinalar/{id}`
+        sayfasından kazınan JSON içindeki rüzgar tahmin nesnesi.
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: Tahmin zamanı (ISO 8601 UTC)
+          examples:
+            - "2026-02-26T03:00:00.000Z"
+        ws:
+          type: number
+          description: Rüzgar hızı (m/s)
+          examples:
+            - 3.23
+        wd:
+          type: number
+          description: Rüzgar yönü (derece, 0=Kuzey)
+          examples:
+            - 5.78
+        t2:
+          type: number
+          description: 2 metre yüzey sıcaklığı (°C)
+          examples:
+            - 3.29
+        msl:
+          type: number
+          description: Deniz seviyesi basıncı (hPa)
+          examples:
+            - 1022.54
+        weather:
+          type: string
+          description: Hava durumu hadise kodu (MGM formatı, örn. KKY)
+          examples:
+            - "KKY"
+
+# ─────────────────────────────────────────────────────────────
+#  ENDPOINT'LER
+# ─────────────────────────────────────────────────────────────
+paths:
+
+  /web/merkezler:
+    get:
+      operationId: getMerkezler
+      tags: [Merkezler]
+      summary: 🗺️ İl/İlçe Merkez Listesi
+      description: >
+        Belirtilen ile (ve varsa ilçeye) ait meteoroloji istasyonlarını döner.
+        **Kullanım akışının ilk adımıdır** — diğer tüm endpoint'ler için gereken
+        ID'ler buradan alınır.
+
+        Sadece `il` parametresi verilirse o ilin tüm ilçe istasyonları döner.
+        `il` + `ilce` verilirse tek istasyon döner (array içinde).
+
+        **Doğrulandı:** Samsun/Atakum → `merkezId=95501` (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: il
+          in: query
+          required: true
+          description: İl adı (Türkçe, büyük harfle başlayabilir)
+          schema:
+            type: string
+            examples:
+              - "Samsun"
+              - "Ankara"
+              - "İstanbul"
+        - name: ilce
+          in: query
+          required: false
+          description: İlçe adı (Türkçe) — verilirse tek istasyon döner
+          schema:
+            type: string
+            examples:
+              - "Atakum"
+        - name: sorgu
+          in: query
+          required: false
+          description: Arama sorgusu (autocomplete için) — il/ilçe arama
+          schema:
+            type: string
+            examples:
+              - "ist"
+        - name: limit
+          in: query
+          required: false
+          description: Maksimum sonuç sayısı (sorgu ile birlikte kullanılır)
+          schema:
+            type: integer
+            default: 50
+            examples:
+              - 50
+      responses:
+        '200':
+          description: Merkez listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Merkez'
+              examples:
+                samsun-atakum:
+                  summary: Samsun/Atakum (tek ilçe)
+                  externalValue: './examples/merkezler-response.json'
+
+  /web/merkezler/iller:
+    get:
+      operationId: getMerkezlerIller
+      tags: [Merkezler]
+      summary: 🏙️ Tüm İl Merkezleri Listesi
+      description: >
+        Türkiye'deki tüm 81 ilin ana meteoroloji merkezi bilgilerini döner.
+        Dönen yapı `Merkez` şemasıyla aynıdır.
+
+        **Doğrulandı:** 81 kayıt (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Tüm il merkezleri
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Merkez'
+              examples:
+                tum-iller:
+                  summary: Tüm 81 il merkezi (ilk 3 kayıt)
+                  externalValue: './examples/merkezler-iller-response.json'
+
+  /web/merkezler/ililcesi:
+    get:
+      operationId: getIlIlcesi
+      tags: [Merkezler]
+      summary: 🏘️ İl İlçe Listesi
+      description: >
+        Belirtilen ilin tüm ilçelerinin listesini döner.
+        Tarım MGM uygulaması tarafından kullanılır.
+
+        **Parametre:** `il` — il adı (örn: Samsun)
+
+        **Doğrulandı:** Samsun için 17 ilçe (2026-02-28)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: il
+          in: query
+          required: true
+          description: İl adı
+          schema:
+            type: string
+            examples:
+              - "Samsun"
+      responses:
+        '200':
+          description: İlçe listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ilce:
+                      type: string
+                      description: İlçe adı
+                      examples:
+                        - "Atakum"
+                    il:
+                      type: string
+                      description: İl adı
+                      examples:
+                        - "Samsun"
+                    merkezId:
+                      type: integer
+                      description: Merkez ID
+                      examples:
+                        - 95501
+                    sondurumIstNo:
+                      type: integer
+                      description: Son durum istasyon numarası
+                      examples:
+                        - 17030
+              examples:
+                samsun-ilceleri:
+                  summary: Samsun ilçeleri
+                  externalValue: './examples/merkezler-ililcesi-response.json'
+
+  /web/sondurumlar:
+    get:
+      operationId: getSonDurum
+      tags: [Anlık Durum]
+      summary: 🌡️ Anlık Hava Durumu (Son Durum)
+      description: >
+        Belirtilen merkeze ait en güncel ölçüm verilerini döner.
+
+        **Parametre:** `/web/merkezler`'den dönen `merkezId` kullanılır
+        (`sondurumIstNo` değil).
+
+        **Doğrulandı:** merkezId=95501, Samsun/Atakum (2026-02-27)
+
+        `hissedilenSicaklik` alanı şemada eksikti — gerçek yanıttan doğrulandı.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/MerkezIdParam'
+      responses:
+        '200':
+          description: Anlık hava durumu (tek elemanlı array)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SonDurum'
+              examples:
+                samsun-atakum:
+                  summary: Samsun/Atakum (merkezId=95501)
+                  externalValue: './examples/sondurumlar-response.json'
+
+  /web/sondurumlar/ilmerkezleri:
+    get:
+      operationId: getIlMerkezleriSonDurum
+      tags: [Anlık Durum]
+      summary: 🇹🇷 Tüm İl Merkezleri Anlık Durum
+      description: >
+        Türkiye genelindeki tüm il merkezlerinin anlık hava durumunu döner.
+        Harita uygulamaları için toplu veri kaynağıdır.
+
+        **Doğrulandı:** 81 il merkezi (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Tüm il merkezleri anlık ölçümler
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SonDurum'
+              examples:
+                tum-il-merkezleri:
+                  summary: Tüm 81 il merkezi anlık ölçümler
+                  externalValue: './examples/sondurumlar-ilmerkezleri-response.json'
+
+  /web/sondurumlar/kar:
+    get:
+      operationId: getKarKalinliklari
+      tags: [Anlık Durum]
+      summary: ❄️ Türkiye Geneli Kar Kalınlıkları
+      description: >
+        Türkiye genelindeki kayak merkezleri ve yüksek rakımlı istasyonların
+        anlık kar kalınlığı (cm) verilerini döner.
+
+        Belirli bir istasyonu bulmak için dönen dizide `istAd` alanına göre
+        filtreleme yapılmalıdır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Kar kalınlıkları listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KarKalinligi'
+              examples:
+                kar-kalinliklari:
+                  summary: Türkiye geneli kar kalınlıkları
+                  externalValue: './examples/sondurumlar-kar-response.json'
+
+  /web/tahminler/gunluk:
+    get:
+      operationId: getGunlukTahmin
+      tags: [Tahminler]
+      summary: 📅 5 Günlük Hava Tahmini
+      description: >
+        5 günlük (Gun1–Gun5) hava tahmini döner.
+        **`gunlukTahminIstNo`** parametresi kullanılır.
+
+        ⚠️ `Gun0` (bugün) alanları yanıtta **bulunmaz** — sunucu bugünü atlamaktadır.
+        Yanıt `Gun1`–`Gun5` içerir.
+
+        **Doğrulandı:** istno=95501, Samsun/Atakum (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/IstNoParam'
+      responses:
+        '200':
+          description: 5 günlük tahmin
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GunlukTahmin'
+              examples:
+                samsun-atakum:
+                  summary: Samsun/Atakum (istno=95501)
+                  externalValue: './examples/tahminler-gunluk-response.json'
+
+  /web/tahminler/saatlik:
+    get:
+      operationId: getSaatlikTahmin
+      tags: [Tahminler]
+      summary: ⏰ Saatlik Hava Tahmini
+      description: >
+        3 saatlik dilimler halinde saatlik tahmin döner.
+        **`saatlikTahminIstNo`** parametresi kullanılır.
+
+        Yanıt bir wrapper objesi içerir:
+        `{ istNo, merkez, baslangicZamani, tahmin: [...] }`
+
+        **Doğrulandı:** istno=17030, Samsun/Atakum — 11 zaman dilimi (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/IstNoParam'
+      responses:
+        '200':
+          description: Saatlik tahmin (wrapper içinde)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SaatlikTahminWrapper'
+              examples:
+                samsun-atakum:
+                  summary: Samsun/Atakum (istno=17030) — 11 zaman dilimi
+                  externalValue: './examples/tahminler-saatlik-response.json'
+
+  /web/ucdegerler:
+    get:
+      operationId: getUcDegerler
+      tags: [Uç Değerler]
+      summary: 📊 Tarihi Uç Değerler (Rekorlar)
+      description: >
+        Belirtilen merkez ve güne ait tarihi meteorolojik uç değerleri döner.
+        (Rekor en yüksek, en düşük, ortalama sıcaklıklar)
+
+        **Doğrulandı:** merkezId=95501, ay=2, gun=27 → max=24.5°C, min=-5.6°C (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - $ref: '#/components/parameters/MerkezIdParam'
+        - name: ay
+          in: query
+          required: true
+          description: Ay numarası (1–12)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            examples:
+              - 2
+        - name: gun
+          in: query
+          required: true
+          description: Gün numarası (1–31)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 31
+            examples:
+              - 27
+      responses:
+        '200':
+          description: Tarihi uç değerler
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UcDeger'
+              examples:
+                samsun-atakum:
+                  summary: Samsun/Atakum - 27 Şubat 2026 tarihi uç değerler
+                  externalValue: './examples/ucdegerler-response.json'
+
+  /web/alarmlar:
+    get:
+      operationId: getAlarmlar
+      tags: [Uyarılar]
+      summary: 🔔 Aktif Meteoroloji Uyarıları
+      description: >
+        Aktif meteoroloji uyarılarını döner.
+        **Doğrulandı:** 8 aktif uyarı (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Alarm/Uyarı listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alarm'
+              examples:
+                aktif-uyarilar:
+                  summary: 8 aktif meteoroloji uyarısı
+                  externalValue: './examples/alarmlar-response.json'
+
+  /web/meteoalarm/today:
+    get:
+      operationId: getMeteoAlarmToday
+      tags: [Uyarılar]
+      summary: ⚠️ Bugünkü MeteoAlarmlar (Avrupa Formatı)
+      description: >
+        Avrupa MeteoAlarm sistemi formatında günlük uyarıları döner.
+        Uyarılar sarı/turuncu/kırmızı seviyelere göre ayrılmıştır.
+
+        **Doğrulandı:** 10 aktif MeteoAlarm (2026-02-27)
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Günlük MeteoAlarmlar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeteoAlarm'
+              examples:
+                bugunku-uyarilar:
+                  summary: 10 aktif MeteoAlarm uyarısı (Avrupa formatı)
+                  externalValue: './examples/meteoalarm-today-response.json'
+
+  /FTPDATA/uzal/radar/{gizli_kod}/{gizli_kod}{radar_tipi}{periyot}.jpg:
+    get:
+      operationId: getCanliRadar
+      servers:
+        - url: https://www.mgm.gov.tr
+          name: mgm-www
+          description: "⚠️ Radar için servis.mgm.gov.tr değil, www.mgm.gov.tr kullanılmalıdır"
+      tags: [Radar]
+      summary: 📡 Canlı Radar Görüntüleri
+      description: >
+        MGM web sunucusundan radar JPEG görüntüsü döner.
+        Harita uygulamalarında overlay olarak kullanılabilir.
+
+        **⚠️ Doğru sunucu: `https://www.mgm.gov.tr`**
+        `servis.mgm.gov.tr` üzerinden HTTP 403 döner — bu endpoint yalnızca
+        `www.mgm.gov.tr` üzerinden erişilebilir (test edildi, 2026-02-27).
+
+        **📝 Not:** Radar görüntüleri herkese açık olarak sunulur —
+        `Origin` header'ı gerekli değildir.
+
+        **Radar istasyon kodları (gizli_kod):**
+
+        | Kod    | Şehir/Bölge    |
+        |--------|----------------|
+        | `smn`  | Samsun         |
+        | `ist`  | İstanbul       |
+        | `afy`  | Afyon          |
+        | `comp` | Türkiye Geneli |
+
+        **`radar_tipi`:**
+        - `max` → En net kütleler (önerilen)
+        - `ppi` → Hücre tabanlı
+        - `vil` → Dikey entegre sıvı suya göre ⚠️ `comp` koduyla çalışmaz (HTTP 302)
+
+        **`periyot`:**
+        - `15` veya `00` → Güncel tekil görüntü
+        - `1`, `2`, `3`, … → Animasyon kareleri (geçmişe dönük)
+      parameters:
+        - name: gizli_kod
+          in: path
+          required: true
+          description: Radar istasyonu 3 harfli kodu
+          schema:
+            type: string
+            examples:
+              - "smn"
+        - name: radar_tipi
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [max, ppi, vil]
+            examples:
+              - "max"
+        - name: periyot
+          in: path
+          required: true
+          schema:
+            type: string
+            examples:
+              - "15"
+      responses:
+        '200':
+          description: Radar görüntüsü (JPEG)
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Erişim reddedildi — tarayıcı session/cookie gerekebilir
+        '404':
+          description: Görüntü bulunamadı (radar bakımda veya parametreler hatalı)
+
+  /FTPDATA/sht/wrf/{il}_{ilce}.png:
+    get:
+      operationId: getWRFMeteogram
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Tahmin Görsel]
+      summary: 📈 WRF Meteogram Görüntüsü
+      description: >
+        WRF (Weather Research and Forecasting) modeline ait meteogram görüntüsü.
+        İl ve ilçe bazında hava durumu tahmin grafikleri sunar.
+
+        **📝 Önemli Bilgiler:**
+        - **Güncelleme:** Her gün 01:00 ve 13:00 TSİ'de (2 defa)
+        - **Zaman Dilimi:** UTC (GMT) formatında hazırlanır
+        - **Format:** PNG görüntü
+        - **Naming:** `{il}_{ilce}.png` formatında (örn: `Samsun_Atakum.png`)
+
+        **🌐 Sunucu:** `www.mgm.gov.tr` — `Origin` header gerekmez
+      parameters:
+        - name: il
+          in: path
+          required: true
+          description: İl adı (büyük harfle başlayan, boşluksuz)
+          schema:
+            type: string
+            examples:
+              - "Samsun"
+              - "Istanbul"
+              - "Ankara"
+        - name: ilce
+          in: path
+          required: true
+          description: İlçe adı (büyük harfle başlayan, boşluksuz)
+          schema:
+            type: string
+            examples:
+              - "Atakum"
+              - "Kadikoy"
+              - "Cankaya"
+      responses:
+        '200':
+          description: WRF Meteogram görüntüsü (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Görüntü bulunamadı (il/ilçe kombinasyonu hatalı veya görüntü henüz oluşturulmadı)
+
+  /FTPDATA/sht/harita/{t}_{s}.png:
+    get:
+      operationId: getWRFHarita
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Tahmin Görsel]
+      summary: 🗺️ WRF Model Haritası
+      description: >
+        WRF (Weather Research and Forecasting) modeline ait çeşitli meteorolojik
+        harita görüntüleri. 3 saatlik aralıklarla 72 saate kadar tahmin sunar.
+
+        **📝 Önemli Bilgiler:**
+        - **Güncelleme:** Her gün 01:00 ve 13:00 TSİ'de (2 defa)
+        - **Zaman Dilimi:** UTC (GMT) formatında — TSİ'den 3 saat geridedir
+        - **Format:** PNG görüntü
+        - **Öngörü:** 0-72 saat (3 saatlik adımlarla)
+
+        **🌐 Sunucu:** `www.mgm.gov.tr` — `Origin` header gerekmez
+      parameters:
+        - name: t
+          in: path
+          required: true
+          description: Harita tipi
+          schema:
+            type: string
+            enum: [SFC, "850", "700", "500", "300", rain, rainG]
+            examples:
+              - "SFC"
+        - name: s
+          in: path
+          required: true
+          description: Tahmin saati (UTC/GMT, 3 saatlik aralıklar)
+          schema:
+            type: string
+            enum: ["00", "03", "06", "09", "12", "15", "18", "21", "24", "27", "30", "33", "36", "39", "42", "45", "48", "51", "54", "57", "60", "63", "66", "69", "72"]
+            examples:
+              - "03"
+      responses:
+        '200':
+          description: WRF Model haritası (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Görüntü bulunamadı (parametreler hatalı veya görüntü henüz oluşturulmadı)
+
+  /FTPDATA/analiz/sonSOA.xml:
+    get:
+      operationId: getSonSOA
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Analiz]
+      summary: 📊 Son SOA (Sıcaklık ve Yağış) Analiz Verisi
+      description: >
+        Son Sıcaklık ve Yağış analiz verilerini XML formatında döner.
+        Bu endpoint harita görselleştirmeleri için kullanılır.
+
+        **Not:** XML formatında yanıt döner. JSON değildir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: SOA analiz verisi (XML)
+          content:
+            application/xml:
+              schema:
+                type: string
+                description: XML formatında sıcaklık ve yağış analiz verisi
+        '404':
+          description: Dosya bulunamadı
+
+  /ftpdata/analiz/haftalik/uzunvade.png:
+    get:
+      operationId: getUzunVadeHaftalik
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Tahmin Görsel]
+      summary: 🗺️ 7 Günlük Uzun Vadeli Tahmin Haritası
+      description: >
+        7 günlük uzun vadeli hava tahmin haritasını PNG formatında döner.
+        Aylık tahmin sayfasında kullanılır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: 7 günlük tahmin haritası (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Görsel bulunamadı
+
+  /FTPDATA/analiz/aylik/{hafta}_{tip}.PNG:
+    get:
+      operationId: getAylikTahminGorsel
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Tahmin Görsel]
+      summary: 📅 Aylık Tahmin Görseli (Haftalık)
+      description: >
+        Belirtilen hafta için sıcaklık veya yağış tahmin görselini döner.
+        `h` parametresi 1-4 arası değer alır (4 hafta).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: hafta
+          in: path
+          required: true
+          description: Hafta numarası (1-4)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+            examples:
+              - 1
+        - name: tip
+          in: path
+          required: true
+          description: >
+            Görsel tipi: 1=Sıcaklık, 2=Yağış
+          schema:
+            type: integer
+            enum: [1, 2]
+            examples:
+              - 1
+      responses:
+        '200':
+          description: Haftalık tahmin görseli (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Görsel bulunamadı
+
+  /FTPDATA/analiz/yillik/{ay}_{tip}.PNG:
+    get:
+      operationId: getYillikTahminGorsel
+      servers:
+        - url: https://www.mgm.gov.tr
+          description: MGM ana web sunucusu
+      tags: [Tahmin Görsel]
+      summary: 📆 Mevsimlik Tahmin Görseli (Aylık)
+      description: >
+        Belirtilen ay için sıcaklık veya yağış tahmin görselini döner.
+        `a` parametresi 1-3 arası değer alır (3 ay).
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: ay
+          in: path
+          required: true
+          description: Ay numarası (1-3)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3
+            examples:
+              - 1
+        - name: tip
+          in: path
+          required: true
+          description: >
+            Görsel tipi: 1=Sıcaklık, 2=Yağış
+          schema:
+            type: integer
+            enum: [1, 2]
+            examples:
+              - 1
+      responses:
+        '200':
+          description: Aylık tahmin görseli (PNG)
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Görsel bulunamadı
+
+  /route/v1/driving/{coordinates}:
+    get:
+      operationId: getRoute
+      servers:
+        - url: https://mapservice.mgm.gov.tr
+          description: MGM Harita Servisi
+      tags: [Harita]
+      summary: 🛣️ Rota Hesaplama (Driving)
+      description: >
+        İki nokta arasında araç rotası hesaplar. OSRM (Open Source Routing Machine) formatında döner.
+        KTHS (Karayolları Hava Tahmin Sistemi) tarafından kullanılır.
+
+        **Koordinat formatı:** `boylam,enlem;boylam,enlem` (WGS84)
+
+        **Not:** Origin header gerekmez.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: coordinates
+          in: path
+          required: true
+          description: >
+            Başlangıç ve bitiş koordinatları (boylam,enlem;boylam,enlem)
+          schema:
+            type: string
+            examples:
+              - "36.2526309,41.3246162;28.8208,40.9819"
+        - name: steps
+          in: query
+          required: false
+          description: Adım adım yönergeleri dahil et
+          schema:
+            type: boolean
+            examples:
+              - true
+        - name: alternatives
+          in: query
+          required: false
+          description: Alternatif rotaları dahil et
+          schema:
+            type: boolean
+            examples:
+              - true
+        - name: geometries
+          in: query
+          required: false
+          description: Geometri formatı
+          schema:
+            type: string
+            enum: [geojson, polyline, polyline6]
+            examples:
+              - "geojson"
+        - name: overview
+          in: query
+          required: false
+          description: Rota özeti seviyesi
+          schema:
+            type: string
+            enum: [simplified, full, false]
+            examples:
+              - "full"
+        - name: annotations
+          in: query
+          required: false
+          description: Ek bilgileri dahil et
+          schema:
+            type: boolean
+            examples:
+              - true
+      responses:
+        '200':
+          description: Rota bilgisi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    examples:
+                      - "Ok"
+                  routes:
+                    type: array
+                    items:
+                      type: object
+        '400':
+          description: Geçersiz koordinat formatı
+        '404':
+          description: Rota bulunamadı
+
+  /nominatim/reverse.php:
+    get:
+      operationId: reverseGeocode
+      servers:
+        - url: https://mapservice.mgm.gov.tr
+          description: MGM Harita Servisi
+      tags: [Harita]
+      summary: 📍 Koordinattan Adres (Reverse Geocoding)
+      description: >
+        GPS koordinatlarını adres bilgisine çevirir. Nominatim API'si.
+        KTHS tarafından kullanılır.
+
+        **⚠️ DURUM:** Bu endpoint şu an çalışmıyor (500 Internal Server Error).
+        Test edilen tüm koordinatlar (Ankara, İstanbul, Samsun) ve zoom seviyeleri
+        (5, 8, 10, 14) 500 hatası döndürüyor (2026-02-28).
+
+        **Çoklu Koordinat:** `coords` parametresi ile birden fazla koordinat sorgulanabilir.
+        Format: `lat1,lon1;lat2,lon2;lat3,lon3`
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: coords
+          in: query
+          required: false
+          description: >
+            Çoklu koordinatlar (noktalı virgül ile ayrılmış).
+            Örnek: `39.98,32.83;40.43,32.42`
+          schema:
+            type: string
+            examples:
+              - "39.9867904,32.833536;40.432302,32.422893"
+        - name: format
+          in: query
+          required: true
+          description: Yanıt formatı
+          schema:
+            type: string
+            enum: [json, xml]
+            examples:
+              - "json"
+        - name: lat
+          in: query
+          required: true
+          description: Enlem (latitude)
+          schema:
+            type: number
+            format: double
+            examples:
+              - 41.3246162
+        - name: lon
+          in: query
+          required: true
+          description: Boylam (longitude)
+          schema:
+            type: number
+            format: double
+            examples:
+              - 36.2526309
+        - name: zoom
+          in: query
+          required: false
+          description: >
+            Zoom seviyesi (0-18). Daha yüksek zoom = daha detaylı adres.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 18
+            examples:
+              - 14
+      responses:
+        '200':
+          description: Adres bilgisi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  place_id:
+                    type: integer
+                  display_name:
+                    type: string
+                    examples:
+                      - "Atakum, Samsun, Türkiye"
+                  lat:
+                    type: string
+                    examples:
+                      - "41.3246162"
+                  lon:
+                    type: string
+                    examples:
+                      - "36.2526309"
+        '400':
+          description: Geçersiz koordinatlar
+        '404':
+          description: Adres bulunamadı
+
+  /web/modeltahmin/lokasyon/light3:
+    get:
+      operationId: getModelTahminLokasyon
+      servers:
+        - url: https://modelservis.mgm.gov.tr
+          description: MGM Model Tahmin Servisi
+      tags: [Model Tahmin]
+      summary: 🛣️ Lokasyon Bazlı Model Tahmini (KTHS)
+      description: >
+        İki nokta arası yol güzergahı için model tabanlı hava tahmini döner.
+        KTHS (Karayolları Hava Tahmin Sistemi) karayolları hava tahmini için kullanılır.
+
+        **⚠️ Önemli:** Tek koordinat ile timeout alabilirsiniz. **En az 2 lokasyon** gönderin.
+        - `enlem=39.9334_41.0082&boylam=32.8597_28.9784` (Ankara → İstanbul)
+
+        **Yanıt:** Her zaman adımı için sıcaklık, nem, yağış, rüzgar, bulutlulik vb.
+
+        **⚠️ IP Kısıtlaması:** Türkiye IP adreslerinden erişim gerektirir.
+        Yurtdışından timeout hatası alırsınız. Türkiye içinden test ediniz.
+
+        **Doğrulandı (2026-02-28):** Ankara → İstanbul rotası başarıyla test edildi.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: enlem
+          in: query
+          required: true
+          description: Enlem koordinatları (alt çizgi ile ayrılmış)
+          schema:
+            type: string
+            examples:
+              - "39.9334_41.0082"
+        - name: boylam
+          in: query
+          required: true
+          description: Boylam koordinatları (alt çizgi ile ayrılmış)
+          schema:
+            type: string
+            examples:
+              - "32.8597_28.9784"
+        - name: tarih
+          in: query
+          required: true
+          description: Başlangıç tarihi ve saati (YYYY-MM-DD HH:mm)
+          schema:
+            type: string
+            format: date-time
+            examples:
+              - "2026-02-28 16:00"
+        - name: step
+          in: query
+          required: true
+          description: Zaman adımı (dakika cinsinden, örn. 60 = saatlik tahminler)
+          schema:
+            type: integer
+            examples:
+              - 60
+      responses:
+        '200':
+          description: Model tahmin verisi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    tarih:
+                      type: string
+                      format: date-time
+                      description: Tahmin zamanı
+                    sicaklik:
+                      type: number
+                      description: Sıcaklık (°C)
+                    hissedilenSicaklik:
+                      type: number
+                      description: Hissedilen sıcaklık (°C)
+                    saatlikToplamYagis:
+                      type: number
+                      description: Saatlik toplam yağış (mm)
+                    karYuksekligi:
+                      type: number
+                      description: Kar yüksekliği (cm)
+                    bulutKapaliligi:
+                      type: integer
+                      description: Bulut kapalılığı (%)
+                    nem:
+                      type: integer
+                      description: Nem (%)
+                    basinc:
+                      type: integer
+                      description: Basınç (hPa)
+                    ruzgarHizi:
+                      type: integer
+                      description: Rüzgar hızı (km/s)
+                    ruzgarYonu:
+                      type: integer
+                      description: Rüzgar yönü (derece)
+                    hadise:
+                      type: string
+                      description: Hava durumu kodu
+                    enlem:
+                      type: number
+                      description: Lokasyon enlemi
+                    boylam:
+                      type: number
+                      description: Lokasyon boylamı
+                    yolSaati:
+                      type: string
+                      format: date-time
+                      description: Yol saati
+                    yolEnlem:
+                      type: number
+                      description: Yol enlemi
+                    yolBoylam:
+                      type: number
+                      description: Yol boylamı
+              examples:
+                ankara-istanbul:
+                  summary: Ankara → İstanbul rotası
+                  externalValue: './examples/modeltahmin-ankara-istanbul-response.json'
+        '400':
+          description: Geçersiz parametreler
+        '404':
+          description: Veri bulunamadı
+
+  /web/sondurumlar/maximumMaxTarih:
+    get:
+      operationId: getMaximumMaxTarih
+      tags: [Anlık Durum]
+      summary: 📅 Son 7 Günün Tarih Listesi
+      description: >
+        Tarım MGM sitesinin kullandığı, geçmişe dönük son 7 günün
+        tarihlerini ISO 8601 formatında döner.
+
+        **Doğrulandı (2026-02-27):** 7 tarih, UTC+3 18:00 saatinde.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: Tarih listesi (array)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: date-time
+                  examples:
+                    - "2026-02-26T18:00:00.000Z"
+              examples:
+                son-7-gun:
+                  summary: Son 7 günün tarih listesi
+                  externalValue: './examples/maximummaxtarih-response.json'
+
+  /deniz-suyu-sicakliklari:
+    get:
+      operationId: getDenizSuyuSicakliklari
+      servers:
+        - url: https://pirireis.mgm.gov.tr
+          name: piri-reis
+          description: Piri Reis denizcilik portalı
+      tags: [Denizcilik]
+      summary: 🌊 Deniz/Göl Suyu Sıcaklıkları
+      description: >
+        Piri Reis portalından Türkiye kıyıları ve gölleri için anlık su sıcaklığını döner.
+        **Not:** HTML sayfası döner — içeriden JSON kazınması gerekir.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: HTML sayfası (içinden JSON kazınmalıdır)
+
+  /tahmin-raporlari/ucgunluk-tahmin:
+    get:
+      operationId: getUcGunlukDenizTahmin
+      servers:
+        - url: https://pirireis.mgm.gov.tr
+          name: piri-reis
+          description: Piri Reis denizcilik portalı
+      tags: [Denizcilik]
+      summary: ⛵ 3 Günlük Deniz Tahmini
+      description: >
+        Türkiye'deki denizler için 3 günlük hava ve rüzgar tahminlerini döner.
+        HTML içindeki `__NEXT_DATA__` etiketi üzerinden JSON kazınmalıdır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: HTML döner — içinden `__NEXT_DATA__` ile JSON kazınmalıdır
+
+  /marinalar/{id}:
+    get:
+      operationId: getMarinaDetay
+      servers:
+        - url: https://pirireis.mgm.gov.tr
+          name: piri-reis
+          description: Piri Reis denizcilik portalı
+      tags: [Denizcilik]
+      summary: ⚓ Marina Detayı (ECMWF + WW3)
+      description: >
+        Belirli bir marinaya ait ECMWF rüzgar tahminlerini ve WW3 dalga modellerini döner.
+        HTML sayfası döner — içinden model verileri kazınmalıdır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: id
+          in: path
+          required: true
+          description: Marina ID numarası
+          schema:
+            type: integer
+            examples:
+              - 21
+      responses:
+        '200':
+          description: HTML döner — ECMWF ve WW3 modelleri kazınmalıdır
+
+  /deniz-yolu-tahmin-sistemi:
+    get:
+      operationId: getDenizYoluTahmini
+      servers:
+        - url: https://pirireis.mgm.gov.tr
+          name: piri-reis
+          description: Piri Reis denizcilik portalı
+      tags: [Denizcilik]
+      summary: 🚢 Deniz Yolu Tahmin Sistemi
+      description: >
+        Deniz rotaları için tahmin sistemi. HTML sayfası döner.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+      responses:
+        '200':
+          description: HTML döner
+
+  /UyariMeydan/xmlGetir.ashx:
+    get:
+      operationId: getMeydanUyariXML
+      servers:
+        - url: https://hezarfen.mgm.gov.tr
+          name: hezarfen
+          description: MGM Hezarfen havacılık sistemi
+      tags: [Havacılık]
+      summary: ✈️ Havacılık Meydan Uyarı Sistemi (XML)
+      description: >
+        Hezarfen havacılık sisteminden XML formatında meydan uyarılarını döner.
+        `servis.mgm.gov.tr` değil `hezarfen.mgm.gov.tr` üzerinden çağrılmalıdır.
+      parameters:
+        - $ref: '#/components/parameters/OriginHeader'
+        - name: dosya
+          in: query
+          required: true
+          schema:
+            type: string
+            examples:
+              - "MeydanUyariSistemi.xml"
+      responses:
+        '200':
+          description: XML formatında uyarı
+          content:
+            application/xml:
+              schema:
+                type: string
+
+# ─────────────────────────────────────────────────────────────
+#  ETİKETLER
+# ─────────────────────────────────────────────────────────────
+tags:
+  - name: Merkezler
+    summary: İstasyon ve merkez bilgileri
+    description: Diğer tüm endpoint'ler için gerekli ID'ler buradan alınır.
+
+  - name: Anlık Durum
+    summary: Gerçek zamanlı ölçümler
+    description: >
+      Anlık sıcaklık, nem, rüzgar, yağış ölçümleri.
+      `hadiseKodu` string olarak gelir: PB, AB, CB, Y, HKY vb.
+
+  - name: Tahminler
+    summary: Günlük ve saatlik tahminler
+    description: Gun0=bugün, Gun5=5. gün şeklinde indexlenir.
+
+  - name: Uç Değerler
+    summary: Tarihi rekorlar
+    description: Alan adları — max, min, ort, maxOrt, minOrt.
+
+  - name: Uyarılar
+    summary: Meteoroloji uyarıları ve alarmlar
+
+  - name: Radar
+    summary: Canlı radar görüntüleri
+    description: FTP tabanlı JPEG radar görüntüleri.
+
+  - name: Denizcilik
+    summary: Piri Reis denizcilik servisleri
+    description: pirireis.mgm.gov.tr üzerinden çalışır.
+
+  - name: Havacılık
+    summary: Hezarfen havacılık servisleri
+    description: hezarfen.mgm.gov.tr üzerinden çalışır.
+
+# ─────────────────────────────────────────────────────────────
+#  NOTLAR
+# ─────────────────────────────────────────────────────────────
+# x-test: 2026-02-27, Samsun/Atakum (merkezId=95501, sondurumIstNo=17030)
+# x-origin-header: Her istekte "Origin: https://www.mgm.gov.tr" zorunludur
+# x-ozel-deger: -9999 = veri yok / ölçüm yapılmadı
+# x-hadise-kodlari: AK, AB, PB, CB, HY, Y, KY, HSY, HKY, KAR, SIS, KF
+# x-gun0-notu: /web/tahminler/gunluk yanıtında Gun0 (bugün) alanları bulunmaz
+# x-merkezid-notu: sondurumlar parametresi sondurumIstNo değil merkezId'dir
