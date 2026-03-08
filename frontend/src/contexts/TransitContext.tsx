@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 // transit context v2
 import { mockVehicles, type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
-import { fetchAllLines, fetchLineStops, fetchLineVehicles } from "@/lib/api";
+import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops } from "@/lib/api";
 
 // ─── Uygulama yapılandırması (ileride şehir değişimi için altyapı) ──────────
 export const APP_CONFIG = {
@@ -39,6 +39,7 @@ interface TransitContextType {
   setSelectedLine: (line: TransitLine | null) => void;
   lines: TransitLine[];
   stops: TransitStop[];
+  globalStops: TransitStop[];
   vehicles: Vehicle[];
   isLoading: boolean;
   showSplash: boolean;
@@ -84,6 +85,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Real data states
   const [lines, setLines] = useState<TransitLine[]>([]);
   const [stops, setStops] = useState<TransitStop[]>([]);
+  const [globalStops, setGlobalStops] = useState<TransitStop[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -124,17 +126,23 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  // Fetch lines on app load
+  // Fetch lines and global stops on app load
   useEffect(() => {
-    const loadLines = async () => {
+    const loadInitialData = async () => {
       setIsLoading(true);
-      const data = await fetchAllLines();
-      if (data && data.length > 0) {
-        setLines(data);
+      const [linesData, stopsData] = await Promise.all([
+        fetchAllLines(),
+        fetchAllStops()
+      ]);
+      if (linesData && linesData.length > 0) {
+        setLines(linesData);
+      }
+      if (stopsData && stopsData.length > 0) {
+        setGlobalStops(stopsData);
       }
       setIsLoading(false);
     };
-    loadLines();
+    loadInitialData();
   }, []);
 
   // Fetch stops and start polling vehicles when a line is selected
@@ -173,6 +181,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setSelectedLine,
         lines,
         stops,
+        globalStops,
         vehicles,
         isLoading,
         showSplash,

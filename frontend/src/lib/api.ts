@@ -140,3 +140,24 @@ export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
         return [];
     }
 };
+
+export const fetchAllStops = async (): Promise<TransitStop[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/tum_duraklar`);
+        if (!res.ok) return [];
+
+        const data: any[] = await res.json();
+        return data.map((d) => ({
+            id: d.id || d.kod,
+            name: d.ad || "Bilinmeyen Durak",
+            lat: parseFloat(d.lat),
+            lng: parseFloat(d.lon),
+            distance: 0,
+            lines: [] // These are bare map stops without lines context initially
+        })).filter((s) => !isNaN(s.lat) && !isNaN(s.lng));
+
+    } catch (error) {
+        console.error("Failed to fetch all stops:", error);
+        return [];
+    }
+};

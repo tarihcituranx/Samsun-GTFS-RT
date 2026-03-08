@@ -13,7 +13,7 @@ const typeToFilter: Record<string, string> = {
 };
 
 const MapCanvas = () => {
-  const { vehicles, stops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation } = useTransit();
+  const { vehicles, stops, globalStops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine } = useTransit();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -89,24 +89,49 @@ const MapCanvas = () => {
     stopMarkersRef.current = [];
     if (!mapFilters.has("stops")) return;
 
-    stops.forEach((stop) => {
+    // Use line-specific stops if a line is selected, otherwise fallback to global stops
+    const stopsToRender = selectedLine && stops.length > 0 ? stops : globalStops;
+
+    stopsToRender.forEach((stop) => {
+      // Different styling if it's a global generic stop vs line-specific stop
+      const isGlobal = !stop.lines || stop.lines.length === 0;
+
+      let htmlContent = "";
+      if (isGlobal) {
+        htmlContent = `<div style="width:12px;height:12px;background:#6366f1;border:2px solid white;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>`;
+      } else {
+        htmlContent = `<div style="width:14px;height:14px;background:hsl(24,95%,53%);border:2.5px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`;
+      }
+
       const icon = L.divIcon({
         className: "",
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-        html: `<div style="width:14px;height:14px;background:hsl(24,95%,53%);border:2.5px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+        iconSize: isGlobal ? [12, 12] : [16, 16],
+        iconAnchor: isGlobal ? [6, 6] : [8, 8],
+        html: htmlContent,
       });
+
       const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(mapRef.current!);
       marker.on("click", () => setDetailItem({ type: "stop", data: stop }));
-      marker.bindPopup(
-        `<div style="font-family:'DM Sans',sans-serif;font-size:13px;">
-          <b style="font-family:'Sora',sans-serif;">${stop.name}</b><br/>
-          <div style="margin-top:4px;">${stop.lines.map((l) => `<span style="background:#f9731618;color:#f97316;padding:1px 6px;border-radius:6px;font-size:11px;font-family:monospace;font-weight:600;margin-right:3px;">${l.code}: ${l.mins}dk</span>`).join("")}</div>
-        </div>`
-      );
+
+      if (isGlobal) {
+        marker.bindPopup(
+          `<div style="font-family:'DM Sans',sans-serif;font-size:13px;">
+            <b style="font-family:'Sora',sans-serif;">${stop.name}</b><br/>
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">${String(stop.id).includes('-') ? "Durak İçi" : `Kod: ${stop.id}`}</div>
+          </div>`
+        );
+      } else {
+        marker.bindPopup(
+          `<div style="font-family:'DM Sans',sans-serif;font-size:13px;">
+            <b style="font-family:'Sora',sans-serif;">${stop.name}</b><br/>
+            <div style="margin-top:4px;">${stop.lines.map((l) => `<span style="background:#f9731618;color:#f97316;padding:1px 6px;border-radius:6px;font-size:11px;font-family:monospace;font-weight:600;margin-right:3px;">${l.code}: ${l.mins}dk</span>`).join("")}</div>
+          </div>`
+        );
+      }
+
       stopMarkersRef.current.push(marker);
     });
-  }, [mapFilters, setDetailItem]);
+  }, [mapFilters, stops, globalStops, selectedLine, setDetailItem]);
 
   // Vehicle markers
   useEffect(() => {
