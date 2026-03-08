@@ -17,6 +17,7 @@ const MapCanvas = () => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
   const vehicleMarkersRef = useRef<L.Marker[]>([]);
   const stopMarkersRef = useRef<L.Marker[]>([]);
   const [locationRetryVisible, setLocationRetryVisible] = useState(false);
@@ -165,12 +166,67 @@ const MapCanvas = () => {
         `<div style="font-family:'DM Sans',sans-serif;font-size:13px;">
           <b style="font-family:'Sora',sans-serif;">${v.line} - ${v.plate}</b><br/>
           <span style="font-family:monospace;font-size:12px;">${Math.round(v.speed)} km/h</span><br/>
-          <span style="font-size:11px;">${v.status === "active" ? "🟢 Çalışıyor" : v.status === "slow" ? "🟡 Yavaş" : "🔴 Durdu"}</span>
+          <span style="font-size:11px;">${v.status === "active" ? "🟢 Çalışıyor" : v.status === "delayed" ? "🟡 Yavaş" : "🔴 Durdu"}</span>
         </div>`
       );
       vehicleMarkersRef.current.push(marker);
     });
   }, [vehicles, mapFilters, setDetailItem]);
+
+  // Route drawing for Selected Line
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (routeLayerRef.current) {
+      routeLayerRef.current.remove();
+      routeLayerRef.current = null;
+    }
+
+    if (!selectedLine || stops.length < 2) return;
+
+    const drawRouteOSRM = async (coords: [number, number][], color: string) => {
+      try {
+        let pts = coords;
+        if (pts.length > 25) {
+          const step = Math.ceil(pts.length / 24);
+          const sampled = [pts[0]];
+          for (let i = step; i < pts.length - 1; i += step) sampled.push(pts[i]);
+          sampled.push(pts[pts.length - 1]);
+          pts = sampled;
+        }
+        const wp = pts.map(c => c[1] + ',' + c[0]).join(';');
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${wp}?overview=full&geometries=geojson`);
+        if (!res.ok) throw new Error("OSRM fetching failed");
+
+        const data = await res.json();
+        if (data.routes && data.routes[0]) {
+          const geo = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+          const pl = L.polyline(geo, { color: color, weight: 5, opacity: 0.8 }).addTo(mapRef.current!);
+          routeLayerRef.current = pl;
+          mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
+        }
+      } catch (e) {
+        console.warn('OSRM route error, falling back to direct line:', e);
+        const pl = L.polyline(coords, { color: color, weight: 5, opacity: 0.8, dashArray: '8,6' }).addTo(mapRef.current!);
+        routeLayerRef.current = pl;
+        mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
+      }
+    };
+
+    const coords: [number, number][] = stops.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
+    const isDirectLine = selectedLine.type === 'teleferik' || selectedLine.type === 'vapur';
+
+    if (coords.length > 1) {
+      if (isDirectLine) {
+        const pl = L.polyline(coords, { color: selectedLine.color, weight: 5, opacity: 0.8, dashArray: '8,6' }).addTo(mapRef.current!);
+        routeLayerRef.current = pl;
+        mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
+      } else {
+        drawRouteOSRM(coords, selectedLine.color);
+      }
+    }
+
+  }, [selectedLine, stops]);
 
   const requestLocation = () => {
     navigator.geolocation.getCurrentPosition(
