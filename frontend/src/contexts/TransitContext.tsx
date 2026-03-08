@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 // transit context v2
 import { mockVehicles, type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
 import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops } from "@/lib/api";
+import { useSettings } from "@/hooks/useSettings";
 
 // ─── Uygulama yapılandırması (ileride şehir değişimi için altyapı) ──────────
 export const APP_CONFIG = {
@@ -68,6 +69,7 @@ export const useTransit = () => {
 };
 
 export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { settings } = useSettings();
   const [activeTab, setActiveTabRaw] = useState<TabId>("harita");
   const setActiveTab = useCallback((tab: TabId) => {
     setActiveTabRaw(tab);
@@ -157,12 +159,17 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchLineVehicles(selectedLine.code).then(data => setVehicles(data));
 
       // Poll vehicles globally for the selected line
-      const interval = setInterval(async () => {
-        const liveData = await fetchLineVehicles(selectedLine.code);
-        setVehicles(liveData);
-      }, 10000);
+      let interval: NodeJS.Timeout | undefined;
+      if (settings.autoRefresh) {
+        interval = setInterval(async () => {
+          const liveData = await fetchLineVehicles(selectedLine.code);
+          setVehicles(liveData);
+        }, 5000);
+      }
 
-      return () => clearInterval(interval);
+      return () => {
+        if (interval) clearInterval(interval);
+      };
     } else {
       // Clear interval by return closure, also clear data if unselected
       setStops([]);

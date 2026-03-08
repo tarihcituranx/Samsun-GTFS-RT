@@ -126,13 +126,16 @@ export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
 
         const data: any[] = await res.json();
         return data.map(v => ({
+            id: v.kodu || v.id || v.plate || "v1",
             plate: v.plate || v.plaka || "Bilinmeyen",
             line: code,
             speed: parseFloat(v.hiz || v.speed || "0"),
             lat: parseFloat(v.enlem || v.lat),
             lng: parseFloat(v.boylam || v.lon),
             status: "active" as const,
-            heading: parseFloat(v.yon || v.heading || "0")
+            heading: parseFloat(v.yon || v.heading || "0"),
+            yakin: v.yakin || "",
+            hasilat: v.hasilat || v.hasila || v.gunluk_hasilat || undefined
         })).filter(v => !isNaN(v.lat) && !isNaN(v.lng));
 
     } catch (error) {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useTransit } from "@/contexts/TransitContext";
+import { useSettings } from "@/hooks/useSettings";
 
 const SAMSUN_CENTER: [number, number] = [41.2867, 36.3300];
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
@@ -14,6 +15,7 @@ const typeToFilter: Record<string, string> = {
 
 const MapCanvas = () => {
   const { vehicles, stops, globalStops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine } = useTransit();
+  const { settings } = useSettings();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -90,8 +92,14 @@ const MapCanvas = () => {
     stopMarkersRef.current = [];
     if (!mapFilters.has("stops")) return;
 
-    // Use line-specific stops if a line is selected, otherwise fallback to global stops
-    const stopsToRender = selectedLine && stops.length > 0 ? stops : globalStops;
+    // Use line-specific stops if a line is selected. 
+    // If no line is selected, only render global stops if settings.showAllStops is true
+    let stopsToRender: any[] = [];
+    if (selectedLine && stops.length > 0) {
+      stopsToRender = stops;
+    } else if (settings.showAllStops) {
+      stopsToRender = globalStops;
+    }
 
     stopsToRender.forEach((stop) => {
       // Different styling if it's a global generic stop vs line-specific stop
@@ -113,6 +121,16 @@ const MapCanvas = () => {
 
       const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(mapRef.current!);
       marker.on("click", () => setDetailItem({ type: "stop", data: stop }));
+
+      if (settings.showLabels && !isGlobal) {
+        marker.bindTooltip(stop.name, {
+          direction: 'top',
+          offset: [0, -4],
+          className: 'font-sora text-xs font-bold leading-none py-1 px-2 border-border shadow-md rounded-md',
+          permanent: true,
+          opacity: 0.9
+        });
+      }
 
       if (isGlobal) {
         marker.bindPopup(
@@ -182,7 +200,7 @@ const MapCanvas = () => {
       routeLayerRef.current = null;
     }
 
-    if (!selectedLine || stops.length < 2) return;
+    if (!selectedLine || stops.length < 2 || !settings.showRoute) return;
 
     const drawRouteOSRM = async (coords: [number, number][], color: string) => {
       try {

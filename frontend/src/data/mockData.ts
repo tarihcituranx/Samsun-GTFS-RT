@@ -28,6 +28,7 @@ export interface Vehicle {
   yakin?: string; // e.g. "Stadyum", added via the API matching in Samsun api.ts
   plate?: string;
   time?: string;
+  hasilat?: string; // Daily revenue added for the Settings feature
 }
 
 export interface Place {

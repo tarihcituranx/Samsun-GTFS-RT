@@ -4,6 +4,7 @@ import { useTransit } from "@/contexts/TransitContext";
 import { mockVehicles } from "@/data/mockData";
 import { useEffect, useState } from "react";
 import { getSpecialInfo } from "./SpecialBanners";
+import { useSettings } from "@/hooks/useSettings";
 
 const AnimatedNumber = ({ value }: { value: number }) => {
   const [display, setDisplay] = useState(0);
@@ -26,6 +27,7 @@ const AnimatedNumber = ({ value }: { value: number }) => {
 
 const LineDetail = () => {
   const { selectedLine, setSelectedLine, vehicles, stops } = useTransit();
+  const { settings } = useSettings();
   if (!selectedLine) return null;
 
   // Real vehicles from API
@@ -95,9 +97,14 @@ const LineDetail = () => {
               />
             </div>
             <span className="font-mono text-xs font-bold text-foreground">{Math.round(v.speed)} km/h</span>
-            <span className="text-xs">
+            <span className="text-xs mr-2">
               {v.status === "active" ? "🟢" : v.status === "delayed" ? "🟡" : "🔴"}
             </span>
+            {settings.showHasilat && v.hasilat && (
+              <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 font-bold px-1.5 py-0.5 rounded border border-green-500/20 whitespace-nowrap">
+                {v.hasilat} ₺
+              </span>
+            )}
           </div>
         ))}
       </div>
