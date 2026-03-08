@@ -131,7 +131,7 @@ export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
             speed: parseFloat(v.hiz || v.speed || "0"),
             lat: parseFloat(v.enlem || v.lat),
             lng: parseFloat(v.boylam || v.lon),
-            status: "active",
+            status: "active" as const,
             heading: parseFloat(v.yon || v.heading || "0")
         })).filter(v => !isNaN(v.lat) && !isNaN(v.lng));
 

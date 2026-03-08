@@ -3441,6 +3441,34 @@ def create_app(db, col):
                 return HTMLResponse(f.read())
         return HTML
 
+    @app.get("/favicon.ico")
+    async def get_favicon():
+        from fastapi.responses import FileResponse
+        path = "frontend/dist/favicon.ico"
+        if os.path.exists(path): return FileResponse(path)
+        return HTMLResponse(status_code=404)
+
+    @app.get("/manifest.json")
+    async def get_manifest():
+        from fastapi.responses import FileResponse
+        path = "frontend/dist/manifest.json"
+        if os.path.exists(path): return FileResponse(path)
+        return HTMLResponse(status_code=404)
+
+    @app.get("/robots.txt")
+    async def get_robots():
+        from fastapi.responses import FileResponse
+        path = "frontend/dist/robots.txt"
+        if os.path.exists(path): return FileResponse(path)
+        return HTMLResponse(status_code=404)
+
+    @app.get("/placeholder.svg")
+    async def get_placeholder():
+        from fastapi.responses import FileResponse
+        path = "frontend/dist/placeholder.svg"
+        if os.path.exists(path): return FileResponse(path)
+        return HTMLResponse(status_code=404)
+
     @app.get("/api/yakin")
     async def api_yakin(lat: float, lon: float):
         return JSONResponse(col.yakindaki_duraklar(lat, lon))
