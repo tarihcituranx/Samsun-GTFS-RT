@@ -1,0 +1,16 @@
+{
+  "name": "Kentli",
+  "short_name": "Kentli",
+  "description": "Şehrinin toplu taşıma rehberi. Canlı araç takibi, güzergah planlama.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#020617",
+  "background_color": "#020617",
+  "lang": "tr",
+  "categories": ["travel", "navigation", "utilities"],
+  "icons": [
+    { "src": "/static/images/kentli-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/static/images/kentli-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
