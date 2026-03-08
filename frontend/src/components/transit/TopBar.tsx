@@ -63,7 +63,24 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Desktop brand logos */}
+            <div className="hidden items-center gap-2 md:flex mr-4">
+              <img
+                src={isDark ? "/static/images/sbb_dark.png" : "/static/images/sbb_v2.png"}
+                alt="SBB"
+                className="h-9 w-auto object-contain drop-shadow"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+              <img
+                src={isDark ? "/static/images/samulas_3.png" : "/static/images/samulas.png"}
+                alt="Samulaş"
+                className="h-9 w-auto object-contain drop-shadow"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+              <div className="h-6 w-px bg-border/40 mx-1" />
+            </div>
+
             <WeatherWidget />
             <button
               onClick={toggleTheme}
@@ -109,22 +126,6 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Desktop brand logos */}
-      <div className="hidden items-center gap-1.5 absolute right-20 top-1/2 -translate-y-1/2 md:flex">
-        <img
-          src={isDark ? "/static/images/sbb_dark.png" : "/static/images/sbb_v2.png"}
-          alt="SBB"
-          className="h-10 w-auto object-contain drop-shadow"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-        />
-        <img
-          src={isDark ? "/static/images/samulas_3.png" : "/static/images/samulas.png"}
-          alt="Samulaş"
-          className="h-10 w-auto object-contain drop-shadow"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-        />
       </div>
 
       {/* Search results dropdown */}
