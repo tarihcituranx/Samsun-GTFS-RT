@@ -1,0 +1,261 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;600;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 25% 96%;
+    --foreground: 222 84% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 5%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 24 95% 53%;
+    --radius: 0.75rem;
+
+    --transit-orange: 24 95% 53%;
+    --transit-orange-glow: 24 95% 53%;
+    --transit-blue: 199 89% 48%;
+    --transit-green: 142 71% 45%;
+    --transit-purple: 271 91% 65%;
+    --transit-red: 0 84% 60%;
+    --transit-yellow: 48 96% 53%;
+
+    --surface-glass: 0 0% 100% / 0.65;
+    --surface-glass-md: 0 0% 100% / 0.45;
+    --surface-border: 0 0% 100% / 0.8;
+    --text-primary: 222 47% 11%;
+    --text-secondary: 215 19% 35%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 240 6% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .dark {
+    --background: 222 84% 3%;
+    --foreground: 210 40% 96%;
+    --card: 222 84% 5%;
+    --card-foreground: 210 40% 96%;
+    --popover: 222 84% 5%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 24 95% 53%;
+
+    --surface-glass: 222 84% 5% / 0.75;
+    --surface-glass-md: 222 84% 5% / 0.55;
+    --surface-border: 0 0% 100% / 0.08;
+    --text-primary: 210 40% 96%;
+    --text-secondary: 215 20% 65%;
+
+    --sidebar-background: 240 6% 10%;
+    --sidebar-foreground: 240 5% 96%;
+    --sidebar-primary: 224 76% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-dm;
+    font-display: swap;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sora;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: hsl(var(--surface-glass));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--surface-border));
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.18),
+      0 2px 8px rgba(0,0,0,0.08),
+      inset 0 1px 0 rgba(255,255,255,0.12);
+  }
+
+  .glass-panel-active {
+    box-shadow: 0 0 0 1px hsl(var(--transit-orange)), 0 0 24px hsl(var(--transit-orange-glow) / 0.25);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-gradient-orange {
+    background: linear-gradient(135deg, hsl(var(--transit-orange)), hsl(var(--transit-yellow)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@layer components {
+  @keyframes sonar {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes flip {
+    0% { transform: rotateX(0deg); }
+    50% { transform: rotateX(90deg); }
+    100% { transform: rotateX(0deg); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+}
+
+/* ─── Erişilebilirlik: Yazı boyutu ölçekleme ─────────────────────────── */
+.text-scale-normal {
+  font-size: 100%;
+}
+.text-scale-large {
+  font-size: 112.5%; /* 18px base */
+}
+.text-scale-xlarge {
+  font-size: 131.25%; /* 21px base — yaşlı modu */
+}
+
+/* ─── Erişilebilirlik: Yüksek kontrast ───────────────────────────────── */
+.high-contrast {
+  --muted-foreground: 215 16% 30%;
+  --border: 214 32% 70%;
+}
+.high-contrast.dark {
+  --muted-foreground: 215 20% 80%;
+  --border: 217 33% 35%;
+}
+.high-contrast .glass-panel {
+  border-width: 2px;
+}
+.high-contrast .text-muted-foreground {
+  opacity: 1 !important;
+}
+
+/* ─── Erişilebilirlik: Azaltılmış hareket ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+.force-reduced-motion *,
+.force-reduced-motion *::before,
+.force-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ─── Erişilebilirlik: Focus göstergesi ──────────────────────────────── */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* ─── iOS Safari viewport fix ─────────────────────────────────────────── */
+html {
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Harita container */
+#map, .map-container {
+  touch-action: pan-x pan-y;
+}
+
+/* Leaflet popup mobil düzeltme */
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+}
+
+/* Tap highlight kaldır */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS input zoom engeli */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Safe area değişkenleri */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}

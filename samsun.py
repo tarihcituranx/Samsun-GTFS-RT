@@ -3301,6 +3301,7 @@ def create_app(db, col):
     app.add_middleware(CustomHeadersMiddleware)
 
     if os.path.exists("static"): app.mount("/static", StaticFiles(directory="static"), name="static")
+    if os.path.exists("frontend/dist/assets"): app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="react_assets")
 
     @app.on_event("startup")
     async def startup_event():
@@ -3434,7 +3435,11 @@ def create_app(db, col):
             await asyncio.sleep(interval)
 
     @app.get("/", response_class=HTMLResponse)
-    async def home(): return HTML
+    async def home():
+        if os.path.exists("frontend/dist/index.html"):
+            with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+                return HTMLResponse(f.read())
+        return HTML
 
     @app.get("/api/yakin")
     async def api_yakin(lat: float, lon: float):
