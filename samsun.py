@@ -1,7 +1,7 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🚌 SAMSUN TRANSIT - SUPER APP v25 (MASTER)
+🚌 SAMSUN TRANSIT - SUPER APP v26 (FLUTTER READY)
 - Yol Tarifi Modülü (Konumdan Hedefe Hat Bulma)
 - Samulaş Web Fiyat Çekme (samulas.com.tr)
 - Samair Canlı Takip ve Uçuş Bilgileri Entegre
@@ -61,6 +61,9 @@ _admin_config = {
     'gtfs_rt_mode': 'ondemand', # 'ondemand' veya 'all'
     'gtfs_rt_max_lines': 10,    # 'all' modunda max hat sayısı
     'samair_interval': 7200,    # 2 saat
+    'app_version': '2.5.0',     # Mobil uygulama güncel sürüm (admin panelinden değiştirilebilir)
+    'app_min_version': '2.0.0', # Minimum desteklenen sürüm
+    'app_force_update': False,  # Güncelleme zorunlu mu?
 }
 _api_stats = {'asis_calls': 0, 'ybs_calls': 0, 'last_reset': time.time()}
 
@@ -1304,7 +1307,7 @@ class Collector:
                   ('fixed', oh['name'], oh['code'], 250.00, 200.00, 200.00, 'Yok', now))
         
         # 9. İlçe Hatları (Samsun-Terme, Samsun-Çarşamba - Özel listelere göre bırakılmıştır: varsayılan 60.00)
-        ilce_hatlar = self.db.get("SELECT code, name FROM hat WHERE tip='ilce'")
+        ilce_hatlar = self.db.get("SELECT code, name FROM hat WHERE kat='ilce'")
         for ih in ilce_hatlar:
             self.db.ex("INSERT OR REPLACE INTO fiyat(kaynak,hat_adi,hat_code,tam_fiyat,indirimli_fiyat,ogrenci_fiyat,aktarma1,guncelleme) VALUES(?,?,?,?,?,?,?,?)",
                   ('fixed', ih['name'], ih['code'], 60.00, 30.00, 30.00, 'Yok', now))
@@ -3471,7 +3474,20 @@ def create_app(db, col):
 
     @app.get("/api/yakin")
     async def api_yakin(lat: float, lon: float):
-        return JSONResponse(col.yakindaki_duraklar(lat, lon))
+        """Yakındaki durakları döner — her durak için hangi hatların geçtiği dahil (Flutter Tab 3)"""
+        duraklar = col.yakindaki_duraklar(lat, lon)
+        # Her durak için geçen hat listesi ekle (Flutter Yakınım ekranı chip'leri için)
+        for d in duraklar:
+            kod = d.get('kod') or d.get('id', '')
+            hat_rows = db.get(
+                """SELECT DISTINCT h.code, h.name, h.kat FROM hat_durak hd
+                   JOIN hat h ON hd.hat = h.code
+                   WHERE hd.durak_id = (SELECT id FROM durak WHERE id=? OR kod=? LIMIT 1)
+                   ORDER BY h.code LIMIT 10""",
+                (str(kod), str(kod))
+            )
+            d['hat_listesi'] = [{'code': r['code'], 'name': r['name'], 'kat': r['kat']} for r in hat_rows]
+        return JSONResponse(duraklar)
 
     # ==========================================
     # TURİSTİK MEKANLAR (POI)
@@ -3927,29 +3943,66 @@ def create_app(db, col):
             "version": "v26",
             "uptime_seconds": int(time.time() - _START_TIME),
             "endpoints": {
-                "proxy": [
-                    "/api/proxy/lines",
-                    "/api/proxy/orjlines",
-                    "/api/proxy/smart_stations?stationId=",
-                    "/api/proxy/realtime?lineCode=",
-                    "/api/proxy/stops_stations?lineCode=",
-                    "/api/proxy/line_directions?lineCode=",
-                    "/api/proxy/schedules?lineCode=&scheduleDate=",
-                ],
                 "hat": [
-                    "/api/hat",
-                    "/api/hat/arac/{code}",
-                    "/api/hat/durak/{code}",
-                    "/api/hat/sefer/{code}",
-                    "/api/hat/fiyat/{code}",
-                    "/api/hat/info/{code}",
+                    "GET /api/hat                        — Tüm hatlar (renk, tip_adi dahil)",
+                    "GET /api/hat/info/{code}            — Tek hat detayı",
+                    "GET /api/hat/durak/{code}           — Hat durakları (tramvay CSV düzeltmeli)",
+                    "GET /api/hat/sefer/{code}           — Sefer saatleri",
+                    "GET /api/hat/fiyat/{code}           — Fiyat bilgisi",
+                    "GET /api/hat/arac/{code}            — Canlı araç konumları (GTFS-RT tetikler)",
+                    "GET /api/hat/esles/{code}           — Gidiş/dönüş eşleştirme",
+                    "GET /api/hat/{code}/yonler          — Hat yönleri (LineDirections)",
                 ],
-                "diger": [
-                    "/api/health",
-                    "/api/yakin?lat=&lon=",
-                    "/api/rota",
-                    "/api/odak",
-                    "/api/samair",
+                "durak": [
+                    "GET /api/yakin?lat=&lon=            — Yakındaki duraklar (hat_listesi dahil)",
+                    "GET /api/durak_ara?q=               — Durak arama (fuzzy)",
+                    "GET /api/durak_panel/{kod}          — Durak detayı + yaklaşan araçlar",
+                    "GET /api/tum_duraklar               — Harita için tüm duraklar",
+                ],
+                "odak": [
+                    "GET /api/odak                       — Odak turistik hatlar",
+                    "GET /api/odak/{id}/durak            — Odak hat durakları",
+                    "GET /api/proxy_odak                 — YBS Odak proxy",
+                    "GET /api/proxy_odak_araclar?hatid=  — Odak canlı araçlar",
+                ],
+                "samair": [
+                    "GET /api/samair                     — SamAir hatları",
+                    "GET /api/samair/{id}/durak          — SamAir durakları",
+                    "GET /api/samair/{id}/sefer          — SamAir sefer saatleri",
+                    "GET /api/proxy_samair_saatler?hatid= — YBS SamAir saatler proxy",
+                    "GET /api/proxy_samair_araclar       — SamAir canlı araçlar",
+                ],
+                "rota_hava": [
+                    "GET /api/rota?lat1=&lon1=&lat2=&lon2= — Rota hesaplama (Groq AI + OSRM)",
+                    "GET /api/hava                       — MGM hava durumu (Samsun)",
+                ],
+                "mobil": [
+                    "GET  /api/app_version               — Mobil uygulama sürüm bilgisi",
+                    "POST /api/fcm_token                 — FCM push token kayıt",
+                    "GET  /api/mekanlar                  — Turistik POI listesi",
+                    "GET  /api/yakin_mekanlar?lat=&lon=  — Yakın POI'ler",
+                ],
+                "proxy": [
+                    "GET /api/proxy/lines",
+                    "GET /api/proxy/orjlines",
+                    "GET /api/proxy/smart_stations?stationId=",
+                    "GET /api/proxy/realtime?lineCode=",
+                    "GET /api/proxy/stops_stations?lineCode=",
+                    "GET /api/proxy/line_directions?lineCode=",
+                    "GET /api/proxy/schedules?lineCode=&scheduleDate=",
+                ],
+                "gtfs": [
+                    "GET /gtfs/static.zip                — GTFS static feed",
+                    "GET /gtfs-rt/vehicle-positions      — GTFS-RT Protobuf",
+                    "GET /gtfs-rt/vehicle-positions.json — GTFS-RT JSON (debug)",
+                    "GET /gtfs/validate                  — Validator bilgisi",
+                ],
+                "admin": [
+                    "GET  /api/admin/config?key=         — Admin config oku",
+                    "POST /api/admin/config?key=         — Admin config güncelle",
+                    "GET  /api/admin/stats?key=          — Canlı sistem istatistikleri",
+                    "GET  /api/health                    — Sistem sağlık kontrol",
+                    "GET  /api/debug/proxy               — Proxy bağlantı testi",
                 ],
             }
         })
@@ -4079,14 +4132,70 @@ def create_app(db, col):
 
     @app.get("/api/app_version")
     async def app_version():
-        """Mobil uygulama güncel sürüm bilgisi (repo gizli olduğu için proxy)"""
+        """Mobil uygulama güncel sürüm bilgisi — admin panelinden değiştirilebilir"""
+        # Dinamik: release_notes DB'den okunur, version admin_config'dan gelir
+        release_notes = db.get_meta("release_notes") or (
+            "• SamAir canlı araç takibi düzeltildi\n• Odak Samsun canlı sorgu aktif\n"
+            "• Fiyatlar güncellendi\n• Yakın durak harita modu eklendi\n• Uygulama içi güncelleme kontrolü"
+        )
         return JSONResponse({
-            "latest_version": "2.5.0",
-            "min_version": "2.0.0",
-            "release_notes": "• SamAir canlı araç takibi düzeltildi\n• Odak Samsun canlı sorgu aktif\n• Fiyatlar güncellendi\n• Yakın durak harita modu eklendi\n• Uygulama içi güncelleme kontrolü",
+            "latest_version": _admin_config.get("app_version", "2.5.0"),
+            "min_version": _admin_config.get("app_min_version", "2.0.0"),
+            "release_notes": release_notes,
             "download_url": "https://samsun-gtfs-rt.onrender.com/api/app_version",
-            "force_update": False,
+            "force_update": _admin_config.get("app_force_update", False),
         })
+
+    # ==========================================
+    # 📲 FCM PUSH TOKEN (Flutter Push Bildirim)
+    # ==========================================
+    class FcmTokenModel(BaseModel):
+        token: str
+        platform: str = "android"  # android | ios
+        version: str = ""
+        locale: str = "tr"
+
+    @app.post("/api/fcm_token")
+    async def register_fcm_token(body: FcmTokenModel):
+        """Flutter uygulaması başlarken FCM token kaydeder.
+        Token app_config tablosuna (fcm_tokens anahtarı) JSON listesi olarak saklanır."""
+        if not body.token or len(body.token) < 10:
+            return JSONResponse({"error": "Geçersiz token"}, status_code=400)
+        try:
+            import json as _json
+            existing_raw = db.get_meta('fcm_tokens') or '[]'
+            try:
+                tokens = _json.loads(existing_raw)
+            except Exception:
+                tokens = []
+            # Var olan token'ı güncelle ya da yeni ekle
+            now_str = datetime.now().isoformat()
+            updated = False
+            for t in tokens:
+                if isinstance(t, dict) and t.get('token') == body.token:
+                    t['updated'] = now_str
+                    t['platform'] = body.platform
+                    t['version'] = body.version
+                    updated = True
+                    break
+            if not updated:
+                tokens.append({
+                    'token': body.token,
+                    'platform': body.platform,
+                    'version': body.version,
+                    'locale': body.locale,
+                    'created': now_str,
+                    'updated': now_str,
+                })
+            # Max 10.000 token tut
+            if len(tokens) > 10000:
+                tokens = tokens[-10000:]
+            db.set_meta('fcm_tokens', _json.dumps(tokens))
+            log.info(f"📲 FCM token kaydedildi: {body.platform} ({body.version})")
+            return JSONResponse({"status": "ok", "registered": not updated, "updated": updated})
+        except Exception as e:
+            log.error(f"FCM token kayıt hatası: {e}")
+            return JSONResponse({"error": str(e)}, status_code=500)
 
     @app.get("/api/debug/proxy")
     async def debug_proxy():
@@ -4169,8 +4278,15 @@ def create_app(db, col):
         return JSONResponse(_admin_config)
     
     @app.post("/api/admin/config")
-    async def admin_set_config(key: str = '', gtfs_rt_enabled: bool = None, gtfs_rt_interval: int = None,
-                                gtfs_rt_mode: str = None, gtfs_rt_max_lines: int = None, samair_interval: int = None):
+    async def admin_set_config(
+        key: str = '', 
+        gtfs_rt_enabled: bool = None, gtfs_rt_interval: int = None,
+        gtfs_rt_mode: str = None, gtfs_rt_max_lines: int = None, 
+        samair_interval: int = None,
+        # Mobil uygulama versiyon yönetimi
+        app_version: str = None, app_min_version: str = None,
+        app_force_update: bool = None, release_notes: str = None
+    ):
         if not _check_admin(key):
             return JSONResponse({"error": "Yetkisiz"}, status_code=403)
         
@@ -4179,6 +4295,11 @@ def create_app(db, col):
         if gtfs_rt_mode in ('ondemand', 'all'): _admin_config['gtfs_rt_mode'] = gtfs_rt_mode
         if gtfs_rt_max_lines is not None: _admin_config['gtfs_rt_max_lines'] = max(1, min(50, gtfs_rt_max_lines))
         if samair_interval is not None: _admin_config['samair_interval'] = max(600, samair_interval)
+        # Versiyon alanları
+        if app_version: _admin_config['app_version'] = app_version.strip()
+        if app_min_version: _admin_config['app_min_version'] = app_min_version.strip()
+        if app_force_update is not None: _admin_config['app_force_update'] = app_force_update
+        if release_notes: db.set_meta('release_notes', release_notes.strip())
         
         _save_config()
         log.info(f"⚙️ Admin config güncellendi: {_admin_config}")
@@ -4269,6 +4390,21 @@ button:hover{{background:#29b6f6}}
 <input type="number" id="samair" value="{_admin_config["samair_interval"]}" min="600" max="86400">
 </div>
 
+<div class="card">
+<h2>📱 Mobil Uygulama Sürüm Yönetimi</h2>
+<label>Güncel Sürüm (latest_version)</label>
+<input type="text" id="app_version" value="{_admin_config["app_version"]}" placeholder="2.5.0">
+<label>Minimum Sürüm (min_version)</label>
+<input type="text" id="app_min_version" value="{_admin_config["app_min_version"]}" placeholder="2.0.0">
+<label style="margin-top:10px">Güncelleme Zorunlu</label>
+<div class="toggle">
+  <input type="checkbox" id="app_force_update" {"checked" if _admin_config["app_force_update"] else ""}>
+  <span>Zorunlu güncelleme aktif (kullanıcıları zorla)</span>
+</div>
+<label>Release Notes (her satır • ile başlayabilir)</label>
+<textarea id="release_notes" rows="4" style="width:100%;padding:8px 12px;background:#0d1117;border:1px solid #444;border-radius:6px;color:#e0e0e0;font-size:0.9em;resize:vertical"></textarea>
+</div>
+
 <button onclick="save()">💾 Kaydet</button>
 <div id="status"></div>
 
@@ -4285,7 +4421,7 @@ async function save(){{
   const s=document.getElementById('status');
   try{{
     const r=await fetch(API+'/api/admin/config?key='+K,{{method:'POST',headers:{{'Content-Type':'application/x-www-form-urlencoded'}},
-      body:'gtfs_rt_enabled='+document.getElementById('enabled').checked+'&gtfs_rt_interval='+document.getElementById('interval').value+'&gtfs_rt_mode='+document.getElementById('mode').value+'&gtfs_rt_max_lines='+document.getElementById('maxlines').value+'&samair_interval='+document.getElementById('samair').value}});
+      body:'gtfs_rt_enabled='+document.getElementById('enabled').checked+'&gtfs_rt_interval='+document.getElementById('interval').value+'&gtfs_rt_mode='+document.getElementById('mode').value+'&gtfs_rt_max_lines='+document.getElementById('maxlines').value+'&samair_interval='+document.getElementById('samair').value+'&app_version='+document.getElementById('app_version').value+'&app_min_version='+document.getElementById('app_min_version').value+'&app_force_update='+document.getElementById('app_force_update').checked+'&release_notes='+encodeURIComponent(document.getElementById('release_notes').value)}});
     const d=await r.json();
     s.className=d.ok?'ok':'err'; s.textContent=d.ok?'✅ Kaydedildi!':'❌ Hata';
   }}catch(e){{s.className='err';s.textContent='❌ '+e}}
@@ -4327,16 +4463,44 @@ loadStats(); setInterval(loadStats, 10000);
             data = gtfs_feed.SerializeToString()
         return Response(content=data, media_type="application/x-protobuf")
 
+    # Flutter UI için hat renk eşleştirmesi (Design Tokens: busColor, tramColor, boatColor vb.)
+    _HAT_RENK = {
+        'otobus': '1877F2',   # busColor
+        'tramvay': 'E53935',  # tramColor
+        'ring': 'F39C12',     # orange
+        'ekspres': '9C27B0',  # purple
+        'havalimani': '43A047', # samairGreen
+        'ilce': '00BFA5',     # secondary
+        'teleferik': 'E91E63', # pink
+        'tekne': '0D47A1',    # boatColor
+    }
+    _HAT_TIP_ADI = {
+        'otobus': 'Otobüs', 'tramvay': 'Tramvay', 'ring': 'Ring',
+        'ekspres': 'Ekspres', 'havalimani': 'Havalimanı', 'ilce': 'İlçe',
+        'teleferik': 'Teleferik', 'tekne': 'Deniz',
+    }
+
+    def _enrich_hat(h):
+        """Hat objesine Flutter UI için renk ve tip_adi alanları ekle"""
+        d = dict(h)
+        kat = (d.get('kat') or d.get('tip') or 'otobus').lower()
+        # gtfs_route_color varsa öncelikli kullan, yoksa kat'a göre hesapla
+        gtfs_color = (d.get('gtfs_route_color') or '').strip()
+        d['renk'] = gtfs_color if gtfs_color and gtfs_color != '1877F2' else _HAT_RENK.get(kat, '1877F2')
+        d['tip_adi'] = _HAT_TIP_ADI.get(kat, 'Otobüs')
+        return d
+
     @app.get("/api/hat")
     async def get_hatlar():
-        return JSONResponse(db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC"))
+        hatlar = db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC")
+        return JSONResponse([_enrich_hat(h) for h in hatlar])
     
     @app.get("/api/hat/info/{code:path}")
     async def api_hat_one(code: str):
         c = urllib.parse.unquote(code).strip()
         res = db.one("SELECT * FROM hat WHERE code=?", (c,))
         if not res: res = db.one("SELECT * FROM hat WHERE code LIKE ?", (c+'%',))
-        return JSONResponse(res or {})
+        return JSONResponse(_enrich_hat(res) if res else {})
     
     @app.get("/api/hat/durak/{code:path}")
     async def api_durak(code: str):
@@ -4402,10 +4566,19 @@ loadStats(); setInterval(loadStats, 10000);
         # Öğrenci fiyatı için öncelikli gösterim (Yoksa indirimli fiyat kullanılır)
         gosterilecek_indirimli = res.get("ogrenci_fiyat") or res.get("indirimli_fiyat") or 14.0
 
+        tam = res.get("tam_fiyat", 20.0)
+        indirimli = gosterilecek_indirimli
+        aktarma_ucret = res.get("aktarma2", 0.0)
+        aktarma_str = res.get("aktarma1", "Ücretsiz")
         return JSONResponse({
-            "tam_fiyat": res.get("tam_fiyat", 20.0),
-            "indirimli_fiyat": gosterilecek_indirimli,
-            "aktarma1": res.get("aktarma1", "Ücretsiz"),
+            "tam_fiyat": tam,
+            "indirimli_fiyat": indirimli,
+            "ogrenci_fiyat": res.get("ogrenci_fiyat") or indirimli,
+            "aktarma1": aktarma_str,
+            "aktarma2": aktarma_ucret,
+            # Flutter fiyat chip için hazır gösterim metni
+            "fiyat_goster": f"{tam:.2f} TL",
+            "indirimli_goster": f"{indirimli:.2f} TL",
             "extra_info": [
                 "1 Saat İçi Aktarma: Ücretsiz | 1 Saat Sonrası: 8,00 TL",
                 "Öğrenci Abonman: 50 Biniş 500 TL | Sınırsız 550 TL",
@@ -4799,7 +4972,7 @@ def main():
         except Exception: pass
     
     print("=" * 55)
-    print("  SAMSUN TRANSIT - SUPER APP v25 (MASTER)")
+    print("  SAMSUN TRANSIT - SUPER APP v26 (FLUTTER READY)")
     print("=" * 55)
 
     # Graceful shutdown (sadece lokal CLI için)
