@@ -525,3 +525,41 @@ window.shSD = shSD;
 
 init();
 checkCerezOnay();
+
+// ===== BOTTOM SHEET SWIPE LOGIC =====
+const bdPanel = document.getElementById('main-panel');
+if (bdPanel) {
+    let startY = 0;
+    let currentY = 0;
+    bdPanel.addEventListener('touchstart', (e) => {
+        const ctContainer = document.getElementById('ct');
+        // Ignore swipe down if we are inside a scrolling container and not at the top
+        if (e.target.closest('#ct') && ctContainer && ctContainer.scrollTop > 0) return;
+        if (window.innerWidth >= 768) return; // Desktop is fixed sidebar
+        startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    bdPanel.addEventListener('touchmove', (e) => {
+        if (startY === 0) return;
+        const y = e.touches[0].clientY;
+        const dy = y - startY;
+        if (dy > 0) { // Only allow swipe down
+            currentY = dy;
+            bdPanel.style.transform = `translateY(${dy}px)`;
+            bdPanel.style.transition = 'none';
+            if (e.cancelable && e.target.closest('.drag-handle')) e.preventDefault();
+        }
+    }, { passive: false });
+
+    bdPanel.addEventListener('touchend', () => {
+        bdPanel.style.transition = '';
+        bdPanel.style.transform = '';
+        if (currentY > 100) {
+            // Swiped down significantly, close it by firing map tab click
+            const haritaTab = document.querySelector('.tab[data-t="harita"]');
+            if (haritaTab) haritaTab.click();
+        }
+        startY = 0;
+        currentY = 0;
+    });
+}
