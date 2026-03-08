@@ -3,6 +3,7 @@ import { ArrowLeft, Star } from "lucide-react";
 import { useTransit } from "@/contexts/TransitContext";
 import { mockVehicles } from "@/data/mockData";
 import { useEffect, useState } from "react";
+import { getSpecialInfo } from "./SpecialBanners";
 
 const AnimatedNumber = ({ value }: { value: number }) => {
   const [display, setDisplay] = useState(0);
@@ -24,17 +25,11 @@ const AnimatedNumber = ({ value }: { value: number }) => {
 };
 
 const LineDetail = () => {
-  const { selectedLine, setSelectedLine, vehicles } = useTransit();
+  const { selectedLine, setSelectedLine, vehicles, stops } = useTransit();
   if (!selectedLine) return null;
 
+  // Real vehicles from API
   const lineVehicles = vehicles.filter((v) => v.line === selectedLine.code);
-
-  const stops = Array.from({ length: Math.min(12, selectedLine.stops) }, (_, i) => ({
-    name: `Durak ${i + 1}`,
-    eta: Math.round(Math.random() * 15 + 1),
-    passed: i < 3,
-    isNext: i === 3,
-  }));
 
   return (
     <motion.div
@@ -67,6 +62,9 @@ const LineDetail = () => {
         </button>
       </div>
 
+      {/* Special Line Details (Alerts, Timetables) */}
+      {getSpecialInfo(selectedLine.name)}
+
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
@@ -98,7 +96,7 @@ const LineDetail = () => {
             </div>
             <span className="font-mono text-xs font-bold text-foreground">{Math.round(v.speed)} km/h</span>
             <span className="text-xs">
-              {v.status === "active" ? "🟢" : v.status === "slow" ? "🟡" : "🔴"}
+              {v.status === "active" ? "🟢" : v.status === "delayed" ? "🟡" : "🔴"}
             </span>
           </div>
         ))}
@@ -106,33 +104,46 @@ const LineDetail = () => {
 
       {/* Stop timeline */}
       <h4 className="font-sora text-sm font-semibold text-foreground mb-2">Durak Sırası</h4>
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {stops.map((stop, i) => (
-          <div key={i} className="flex items-start gap-3 pb-1">
-            <div className="flex flex-col items-center">
-              <div
-                className={`h-3 w-3 rounded-full border-2 ${
-                  stop.passed
-                    ? "border-muted-foreground/40 bg-muted-foreground/40"
-                    : stop.isNext
-                    ? "border-primary bg-primary animate-pulse"
-                    : "border-border bg-card"
-                }`}
-              />
-              {i < stops.length - 1 && (
-                <div className={`w-0.5 h-8 ${stop.passed ? "bg-muted-foreground/20" : "bg-border"}`} />
-              )}
-            </div>
-            <div className="pb-3">
-              <p className={`text-sm ${stop.isNext ? "font-bold text-primary" : stop.passed ? "text-muted-foreground" : "text-foreground"}`}>
-                {stop.name}
-              </p>
-              {!stop.passed && (
-                <p className="font-mono text-xs text-muted-foreground">{stop.eta} dk</p>
-              )}
-            </div>
+      <div className="flex-1 overflow-y-auto scrollbar-hide bg-card/50 rounded-xl p-3 border border-border">
+        {stops.length > 0 ? (
+          stops.map((stop, i) => {
+            // Check if any vehicle is currently near this stop
+            const vehicleNear = lineVehicles.find(v => v.yakin && (stop.name.includes(v.yakin) || v.yakin.includes(stop.name)));
+
+            return (
+              <div key={stop.id || i} className="flex items-start gap-3 pb-1">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`h-4 w-4 rounded-full border-[3px] shadow-sm ${vehicleNear
+                      ? "border-primary bg-primary animate-pulse"
+                      : "border-border bg-card"
+                      }`}
+                  />
+                  {i < stops.length - 1 && (
+                    <div className="w-0.5 h-8 bg-border" />
+                  )}
+                </div>
+                <div className="pb-3 flex-1">
+                  <p className={`text-sm ${vehicleNear ? "font-bold text-primary" : "text-foreground font-medium"} leading-tight`}>
+                    {stop.name}
+                  </p>
+                  {vehicleNear && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs font-bold border border-primary/20">
+                        🚌 {vehicleNear.plate}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-mono">{vehicleNear.speed} km/h</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center p-6 text-muted-foreground">
+            <span className="text-sm font-medium">📍 Durak bilgisi bulunamadı</span>
           </div>
-        ))}
+        )}
       </div>
     </motion.div>
   );

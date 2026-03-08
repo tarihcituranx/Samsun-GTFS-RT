@@ -18,13 +18,16 @@ export interface TransitStop {
 }
 
 export interface Vehicle {
-  plate: string;
+  id: string;
   line: string;
-  speed: number;
   lat: number;
   lng: number;
-  status: "active" | "slow" | "stopped";
+  speed: number;
   heading: number;
+  status: "active" | "delayed" | "stopped";
+  yakin?: string; // e.g. "Stadyum", added via the API matching in Samsun api.ts
+  plate?: string;
+  time?: string;
 }
 
 export interface Place {
@@ -69,16 +72,16 @@ export const mockStops: TransitStop[] = [
 ];
 
 export const mockVehicles: Vehicle[] = [
-  { plate: "55 SB 8821", line: "E1", speed: 62, lat: 41.2980, lng: 36.3450, status: "active", heading: 145 },
-  { plate: "55 SB 9104", line: "E1", speed: 71, lat: 41.3100, lng: 36.3670, status: "active", heading: 145 },
-  { plate: "55 SB 7733", line: "E1", speed: 45, lat: 41.3200, lng: 36.3890, status: "slow", heading: 145 },
-  { plate: "55 TR 2201", line: "T1", speed: 55, lat: 41.2867, lng: 36.3300, status: "active", heading: 270 },
-  { plate: "55 TR 2205", line: "T1", speed: 58, lat: 41.2810, lng: 36.3200, status: "active", heading: 270 },
-  { plate: "55 VR 0011", line: "V1", speed: 24, lat: 41.2940, lng: 36.3385, status: "active", heading: 90 },
-  { plate: "55 SB 1122", line: "19", speed: 48, lat: 41.2850, lng: 36.3250, status: "active", heading: 180 },
-  { plate: "55 SB 3344", line: "26", speed: 52, lat: 41.2920, lng: 36.3400, status: "active", heading: 220 },
-  { plate: "55 TF 0001", line: "TF1", speed: 12, lat: 41.2960, lng: 36.3430, status: "active", heading: 45 },
-  { plate: "55 RN 5501", line: "R1", speed: 35, lat: 41.2890, lng: 36.3320, status: "active", heading: 90 },
+  { id: "v1", plate: "55 SB 8821", line: "E1", speed: 62, lat: 41.2980, lng: 36.3450, status: "active", heading: 145 },
+  { id: "v2", plate: "55 SB 9104", line: "E1", speed: 71, lat: 41.3100, lng: 36.3670, status: "active", heading: 145 },
+  { id: "v3", plate: "55 SB 7733", line: "E1", speed: 45, lat: 41.3200, lng: 36.3890, status: "delayed", heading: 145 },
+  { id: "v4", plate: "55 TR 2201", line: "T1", speed: 55, lat: 41.2867, lng: 36.3300, status: "active", heading: 270 },
+  { id: "v5", plate: "55 TR 2205", line: "T1", speed: 58, lat: 41.2810, lng: 36.3200, status: "active", heading: 270 },
+  { id: "v6", plate: "55 VR 0011", line: "V1", speed: 24, lat: 41.2940, lng: 36.3385, status: "active", heading: 90 },
+  { id: "v7", plate: "55 SB 1122", line: "19", speed: 48, lat: 41.2850, lng: 36.3250, status: "active", heading: 180 },
+  { id: "v8", plate: "55 SB 3344", line: "26", speed: 52, lat: 41.2920, lng: 36.3400, status: "active", heading: 220 },
+  { id: "v9", plate: "55 TF 0001", line: "TF1", speed: 12, lat: 41.2960, lng: 36.3430, status: "active", heading: 45 },
+  { id: "v10", plate: "55 RN 5501", line: "R1", speed: 35, lat: 41.2890, lng: 36.3320, status: "active", heading: 90 },
 ];
 
 export const mockPlaces: Place[] = [
