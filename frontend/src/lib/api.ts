@@ -119,27 +119,36 @@ export const fetchLineStops = async (code: string, type: string): Promise<Transi
     }
 };
 
-export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
+export const fetchLineVehicles = async (code: string, type?: string): Promise<Vehicle[]> => {
     try {
-        const res = await fetch(`${API_BASE}/api/hat/arac/${code}`);
+        let endpoint = `${API_BASE}/api/hat/arac/${code}`;
+        if (type === "samair") {
+            endpoint = `${API_BASE}/api/proxy_samair_araclar`;
+        } else if (type === "odak") {
+            endpoint = `${API_BASE}/api/proxy_odak_araclar?hatid=${code}`;
+        }
+
+        const res = await fetch(endpoint);
         if (!res.ok) return [];
 
-        const data: any[] = await res.json();
+        const rawData = await res.json();
+        const data: any[] = type === "odak" ? (rawData.vehicles || []) : rawData;
+
         return data.map(v => ({
             id: v.kodu || v.id || v.plate || "v1",
-            plate: v.plate || v.plaka || "Bilinmeyen",
+            plate: v.plate || v.plaka || v.Plaka || "Bilinmeyen",
             line: code,
-            speed: parseFloat(v.hiz || v.speed || "0"),
-            lat: parseFloat(v.enlem || v.lat),
-            lng: parseFloat(v.boylam || v.lon),
+            speed: parseFloat(v.hiz || v.speed || v.Hizi || "0"),
+            lat: parseFloat(v.lat || v.enlem || v.Enlem || "0"),
+            lng: parseFloat(v.lon || v.boylam || v.Boylam || "0"),
             status: "active" as const,
             heading: parseFloat(v.yon || v.heading || "0"),
             yakin: v.yakin || "",
             hasilat: v.hasilat || v.hasila || v.gunluk_hasilat || undefined
-        })).filter(v => !isNaN(v.lat) && !isNaN(v.lng));
+        })).filter(v => !isNaN(v.lat) && !isNaN(v.lng) && v.lat > 0 && v.lng > 0);
 
     } catch (error) {
-        // some lines (odak, samair) might not have live vehicles, ignore error
+        console.error(`Failed to fetch vehicles for ${code}:`, error);
         return [];
     }
 };
@@ -211,6 +220,17 @@ export const fetchAppVersion = async (): Promise<any> => {
         return await res.json();
     } catch (error) {
         console.error("Failed to fetch app version:", error);
+        return null;
+    }
+};
+
+export const fetchSamairSchedule = async (id: string): Promise<any> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/samair/${id}/sefer`);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (error) {
+        console.error("Failed to fetch samair schedule:", error);
         return null;
     }
 };

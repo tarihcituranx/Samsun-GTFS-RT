@@ -38,7 +38,7 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
     isNext: i === 3,
   }));
 
-  const specialBanner = getSpecialInfo(line.name.toUpperCase());
+  const specialBanner = getSpecialInfo(line);
 
   return (
     <div className="flex flex-col h-full">
@@ -150,8 +150,8 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
             <span
               key={i}
               className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] ${s.isCurrent
-                  ? "bg-primary/15 text-primary font-bold"
-                  : "text-muted-foreground"
+                ? "bg-primary/15 text-primary font-bold"
+                : "text-muted-foreground"
                 }`}
             >
               {s.isCurrent && "📍"}{s.name}
@@ -166,7 +166,7 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
         <span>🏎 Max:{maxHiz}</span>
         <span>📏 {mesafe}km</span>
         <span className="font-mono font-bold text-foreground">{Math.round(vehicle.speed)} km/h</span>
-        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
+        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
       </div>
 
       {showHasilat && (
@@ -284,9 +284,9 @@ const VehicleDetailContent = ({ vehicle }: { vehicle: Vehicle }) => {
           <p className="text-xs text-muted-foreground mt-1">km/h</p>
         </div>
         <div className="glass-panel rounded-xl p-3 text-center">
-          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
+          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
           <p className="text-xs text-muted-foreground mt-1">
-            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "slow" ? "Yavaş" : "Durdu"}
+            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "delayed" ? "Yavaş" : "Durdu"}
           </p>
         </div>
       </div>

@@ -65,7 +65,7 @@ const LineDetail = () => {
       </div>
 
       {/* Special Line Details (Alerts, Timetables) */}
-      {getSpecialInfo(selectedLine.name)}
+      {getSpecialInfo(selectedLine)}
 
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-2 mb-4">

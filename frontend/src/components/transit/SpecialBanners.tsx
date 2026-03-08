@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /* ── SAMSUNUM-1 Banner ─────────────────────────────────────────────────────── */
 export const SamsuNum1Banner = () => (
@@ -126,11 +126,10 @@ export const TramvayScheduleBanner = () => {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors ${
-              tab === t.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-accent text-muted-foreground"
-            }`}
+            className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors ${tab === t.id
+              ? "bg-primary text-primary-foreground"
+              : "bg-accent text-muted-foreground"
+              }`}
           >
             {t.label}
           </button>
@@ -205,13 +204,49 @@ export const TramvayScheduleBanner = () => {
   );
 };
 
+export const SamairScheduleBanner = ({ lineCode }: { lineCode: string }) => {
+  const [schedule, setSchedule] = useState<any[]>([]);
+
+  useEffect(() => {
+    import("@/lib/api").then(({ fetchSamairSchedule }) => {
+      fetchSamairSchedule(lineCode).then((data) => {
+        if (data?.data) setSchedule(data.data || []);
+        else if (Array.isArray(data)) setSchedule(data);
+      });
+    });
+  }, [lineCode]);
+
+  if (!schedule.length) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-accent/30 p-4 mb-4">
+      <p className="text-sm font-bold text-foreground mb-3">✈️ Uçuş & Servis Saatleri</p>
+      <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+        {schedule.map((s, i) => (
+          <div key={i} className="flex justify-between items-center text-xs border-b border-border/50 pb-2 last:border-0 last:pb-0">
+            <div className="flex flex-col">
+              <span className="font-bold">{s.saat || s.kalkis} → {s.varis || s.varis_saati}</span>
+              <span className="text-muted-foreground text-[10px]">{s.tarih || s.gun_format}</span>
+            </div>
+            <div className="text-right text-[10px] text-muted-foreground w-3/5 truncate">
+              {s.firma || s.ucak_firmasi} - {s.ucak_saat || s.ucak_saatleri}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ── getSpecialInfo helper ─────────────────────────────────────────────────── */
-export const getSpecialInfo = (hatAdi: string) => {
+export const getSpecialInfo = (line: import("@/data/mockData").TransitLine) => {
+  const hatAdi = line.name.toUpperCase();
   if (hatAdi.includes("SAMSUNUM-1")) return <SamsuNum1Banner />;
   if (hatAdi.includes("SAMSUNUM-2")) return <SamsuNum2Banner />;
   if (hatAdi.includes("SAMSUNUM-3")) return <SamsuNum3Banner />;
   if (hatAdi.includes("ALTINKAYa") || hatAdi.includes("ALTINKAYA") || hatAdi.includes("FERİBOT") || hatAdi.includes("FERIBOT")) return <FerryBanner />;
-  if (hatAdi.includes("TELEFERİK") || hatAdi.includes("TELEFERIK") || hatAdi.includes("Teleferik")) return <TeleferikBanner />;
-  if (hatAdi.includes("TRAMVAY") || hatAdi.includes("Tramvay")) return <TramvayScheduleBanner />;
+  if (hatAdi.includes("TELEFERİK") || hatAdi.includes("TELEFERIK") || hatAdi.includes("Teleferik") || line.type === 'teleferik') return <TeleferikBanner />;
+  if (hatAdi.includes("TRAMVAY") || hatAdi.includes("Tramvay") || line.type === 'tramvay') return <TramvayScheduleBanner />;
+  if (line.type === "samair") return <SamairScheduleBanner lineCode={line.code} />;
   return null;
 };

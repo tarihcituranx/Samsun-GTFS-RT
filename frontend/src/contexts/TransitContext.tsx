@@ -156,13 +156,13 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchLineStops(selectedLine.code, selectedLine.type).then(data => setStops(data));
 
       // Initial vehicles fetch
-      fetchLineVehicles(selectedLine.code).then(data => setVehicles(data));
+      fetchLineVehicles(selectedLine.code, selectedLine.type).then(data => setVehicles(data));
 
       // Poll vehicles globally for the selected line
       let interval: NodeJS.Timeout | undefined;
       if (settings.autoRefresh) {
         interval = setInterval(async () => {
-          const liveData = await fetchLineVehicles(selectedLine.code);
+          const liveData = await fetchLineVehicles(selectedLine.code, selectedLine.type);
           setVehicles(liveData);
         }, 5000);
       }
