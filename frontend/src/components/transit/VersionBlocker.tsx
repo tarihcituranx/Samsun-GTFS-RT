@@ -21,7 +21,24 @@ const VersionBlocker = () => {
     const [blocked, setBlocked] = useState(false);
     const [appData, setAppData] = useState<any>(null);
 
+    // Detect if running inside a mobile app wrapper (WebView) or PWA
+    const isMobileApp = () => {
+        if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+        const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+        const isAndroidWebView = ua.includes('wv');
+        const isIOSWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua);
+        const isFlutter = !!(window as any).flutter_inappwebview;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+
+        return isAndroidWebView || isIOSWebView || isFlutter || isStandalone;
+    };
+
     useEffect(() => {
+        // Sadece mobil uygulama veya PWA (WebView) ortamındaysa engelleme yap
+        if (!isMobileApp()) {
+            return;
+        }
+
         fetchAppVersion().then(data => {
             if (data) {
                 setAppData(data);
