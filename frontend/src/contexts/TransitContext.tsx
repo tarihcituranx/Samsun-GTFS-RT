@@ -8,7 +8,8 @@ import { useSettings } from "@/hooks/useSettings";
 export const APP_CONFIG = {
   name: "Kentli",
   tagline: "Şehrinin Rehberi",
-  version: "1.0.0",
+  // Backend /api/app_version ile uyumlu tutulmalı (aksi halde PWA'da yanlış force-update olur)
+  version: "2.5.0",
   author: "Turan KAYA",
   github: "https://github.com/tarihcituranx",
   website: "https://kentli.app",

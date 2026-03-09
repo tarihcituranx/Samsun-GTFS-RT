@@ -39,8 +39,9 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
             const cat = (item.kat || "").toLowerCase();
             const code = item.code || "";
 
+            // Not: Yeni backend'de bazı "T" kodlu hatlar otobüs; yalnızca kat=tramvay ise tramvay kabul et.
             if (cat.includes("ekspres") || code.startsWith("E")) type = "ekspres";
-            else if (cat.includes("tramvay") || code.startsWith("T")) type = "tramvay";
+            else if (cat.includes("tramvay")) type = "tramvay";
             else if (cat.includes("ring") || code.startsWith("R")) type = "ring";
             else if (cat.includes("vapur")) type = "vapur";
             else if (cat.includes("teleferik")) type = "teleferik";
