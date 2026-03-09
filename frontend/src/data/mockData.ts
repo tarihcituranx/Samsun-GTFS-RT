@@ -9,7 +9,7 @@ export interface TransitLine {
 }
 
 export interface TransitStop {
-  id: number;
+  id: string | number;
   name: string;
   lat: number;
   lng: number;

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fetchProxySamairSchedules, fetchProxySamairVehicles } from "@/lib/api";
 
 interface SamairHat {
   id: number;
@@ -24,6 +25,18 @@ interface SeferItem {
   firma: string;
   ucak_saat: string;
 }
+
+const normalizeCode = (v: any) => String(v || "").toUpperCase().replace(/\s+/g, "");
+
+const filterSamairVehiclesByHat = (items: any[], hatKod: string): any[] => {
+  const target = normalizeCode(hatKod);
+  if (!target) return items;
+  const filtered = items.filter((v) => {
+    const lineCode = normalizeCode(v?.lineCode || v?.line || v?.HatKodu);
+    return lineCode.includes(target);
+  });
+  return filtered.length > 0 ? filtered : items;
+};
 
 const SamairView = () => {
   const [hatlar, setHatlar] = useState<SamairHat[]>([]);
@@ -54,24 +67,18 @@ const SamairView = () => {
   const selectHat = async (hat: SamairHat) => {
     setSelectedHat(hat);
     try {
-      const [durakRes, seferRes, aracRes] = await Promise.all([
+      const [durakRes, seferRes, allSamairVehicles] = await Promise.all([
         fetch(`/api/samair/${hat.id}/durak`),
-        fetch(`/api/samair/${hat.id}/sefer`),
-        fetch(`/api/hat/arac/${hat.kod}`),
+        fetchProxySamairSchedules(hat.id),
+        fetchProxySamairVehicles(),
       ]);
       if (durakRes.ok) {
         const d = await durakRes.json();
         setDuraklar(d.data || (Array.isArray(d) ? d : []));
       }
-      if (seferRes.ok) {
-        const s = await seferRes.json();
-        setSeferler(s.data || []);
-        setLastUpdate(s.last_update || null);
-      }
-      if (aracRes.ok) {
-        const a = await aracRes.json();
-        setAraclar(a.vehicles || a.data || []);
-      }
+      setSeferler(seferRes);
+      setLastUpdate(null);
+      setAraclar(filterSamairVehiclesByHat(allSamairVehicles, hat.kod));
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" });
     }
@@ -82,11 +89,8 @@ const SamairView = () => {
     if (!selectedHat) return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/hat/arac/${selectedHat.kod}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAraclar(data.vehicles || data.data || []);
-        }
+        const allVehicles = await fetchProxySamairVehicles();
+        setAraclar(filterSamairVehiclesByHat(allVehicles, selectedHat.kod));
       } catch {}
     }, 5000);
     return () => clearInterval(interval);
@@ -137,7 +141,7 @@ const SamairView = () => {
                 <div key={i} className="glass-panel flex items-center gap-3 rounded-xl px-3 py-2">
                   <span className="font-mono text-xs font-bold" style={{ color: "#9333ea" }}>{a.Plaka || a.plate || "?"}</span>
                   <div className="flex-1" />
-                  <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(a.Hizi || a.speed || 0)).toFixed(0)} km/s</span>
+                  <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(a.Hizi || a.speed || 0)).toFixed(0)} km/h</span>
                 </div>
               ))}
             </div>

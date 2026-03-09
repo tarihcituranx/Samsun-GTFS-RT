@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Star, ArrowRightLeft } from "lucide-react";
 import { useTransit } from "@/contexts/TransitContext";
-import { mockVehicles } from "@/data/mockData";
 import { useEffect, useState } from "react";
 import { getSpecialInfo } from "./SpecialBanners";
 import { useSettings } from "@/hooks/useSettings";
@@ -260,7 +259,7 @@ const LineDetail = () => {
         )}
       </div>
 
-      {/* Live vehicles — context > ASIS raw > mock */}
+      {/* Live vehicles — context > ASIS raw */}
       <h4 className="font-sora text-sm font-semibold text-foreground mb-2">Aktif Araçlar</h4>
       <div className="flex flex-col gap-1.5 mb-4">
         {lineVehicles.length > 0 ? (
@@ -292,15 +291,7 @@ const LineDetail = () => {
             </div>
           ))
         ) : (
-          mockVehicles.slice(0, 3).map((v) => (
-            <div key={v.plate} className="glass-panel flex items-center gap-3 rounded-xl px-3 py-2 opacity-50">
-              <span className="font-mono text-xs font-semibold text-foreground">{v.plate}</span>
-              <div className="flex-1 h-1.5 rounded-full bg-accent overflow-hidden">
-                <div className="h-full rounded-full bg-muted-foreground/40" style={{ width: "40%" }} />
-              </div>
-              <span className="text-xs text-muted-foreground">örnek veri</span>
-            </div>
-          ))
+          <p className="text-xs text-muted-foreground text-center py-2">Canlı araç verisi bulunamadı.</p>
         )}
       </div>
 

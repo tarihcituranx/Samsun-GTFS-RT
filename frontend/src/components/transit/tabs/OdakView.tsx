@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { fetchProxyOdakVehicles } from "@/lib/api";
 
 interface OdakHat {
   id: number;
@@ -61,16 +62,13 @@ const OdakView = () => {
     try {
       const [durakRes, aracRes] = await Promise.all([
         fetch(`/api/odak/${hat.id}/durak`),
-        fetch(`/api/proxy_odak_araclar?hatid=${hat.id}`),
+        fetchProxyOdakVehicles(hat.id),
       ]);
       if (durakRes.ok) {
         const d = await durakRes.json();
         setDuraklar(Array.isArray(d) ? d : d.data || []);
       }
-      if (aracRes.ok) {
-        const a = await aracRes.json();
-        setAraclar(a.vehicles || []);
-      }
+      setAraclar(aracRes);
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" });
     }
@@ -90,11 +88,8 @@ const OdakView = () => {
     if (!selectedHat) return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/proxy_odak_araclar?hatid=${selectedHat.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAraclar(data.vehicles || []);
-        }
+        const data = await fetchProxyOdakVehicles(selectedHat.id);
+        setAraclar(data);
       } catch {}
     }, 5000);
     return () => clearInterval(interval);
@@ -147,7 +142,7 @@ const OdakView = () => {
                   <div key={i} className="glass-panel flex items-center gap-3 rounded-xl px-3 py-2">
                     <span className="font-mono text-xs font-bold" style={{ color: "#16a34a" }}>{plaka}</span>
                     <div className="flex-1" />
-                    <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(hiz)).toFixed(0)} km/s</span>
+                    <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(hiz)).toFixed(0)} km/h</span>
                   </div>
                 );
               })}

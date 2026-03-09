@@ -39,8 +39,9 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
             const cat = (item.kat || "").toLowerCase();
             const code = item.code || "";
 
+            // Not: Yeni backend'de bazı "T" kodlu hatlar otobüs; yalnızca kat=tramvay ise tramvay kabul et.
             if (cat.includes("ekspres") || code.startsWith("E")) type = "ekspres";
-            else if (cat.includes("tramvay") || code.startsWith("T")) type = "tramvay";
+            else if (cat.includes("tramvay")) type = "tramvay";
             else if (cat.includes("ring") || code.startsWith("R")) type = "ring";
             else if (cat.includes("vapur")) type = "vapur";
             else if (cat.includes("teleferik")) type = "teleferik";
@@ -352,6 +353,39 @@ export const registerFcmToken = async (token: string, platform: string = "web"):
 export const fetchProxyLines = async (): Promise<any[]> => {
     try {
         const res = await fetch(`${API_BASE}/api/proxy/lines`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: Odak Araçlar ────────────────────────────────────────────────
+export const fetchProxyOdakVehicles = async (hatid: string | number): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy_odak_araclar?hatid=${encodeURIComponent(String(hatid))}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.vehicles)) return data.vehicles;
+        if (Array.isArray(data?.data)) return data.data;
+        return [];
+    } catch { return []; }
+};
+
+// ─── Proxy: Samair Araçlar (YBS canlı) ─────────────────────────────────
+export const fetchProxySamairVehicles = async (): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy_samair_araclar`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: Samair Saatler (YBS canlı saatler) ──────────────────────────
+export const fetchProxySamairSchedules = async (hatid: string | number): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy_samair_saatler?hatid=${encodeURIComponent(String(hatid))}`);
         if (!res.ok) return [];
         const data = await res.json();
         return Array.isArray(data) ? data : [];
