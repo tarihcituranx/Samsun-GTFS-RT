@@ -27,7 +27,7 @@ from pathlib import Path
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime, date, timedelta
-from fastapi import FastAPI, BackgroundTasks, Response
+from fastapi import FastAPI, BackgroundTasks, Response, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -2242,11 +2242,67 @@ Kurallar:
         return self.akilli_rota(lat1, lon1, lat2, lon2)
 
     def esles(self, code):
-        cur = self.db.one("SELECT tip, kat FROM hat WHERE code=?", (code,))
-        if not cur: return ""
-        for h in self.db.get("SELECT code, tip FROM hat WHERE kat=?", (cur['kat'],)):
-            if h['code'] == code: continue
-            if code.split()[0] == h['code'].split()[0] and h['tip'] != cur['tip']: return h['code']
+        cur = self.db.one("SELECT code, name, tip, kat FROM hat WHERE code=?", (code,))
+        if not cur:
+            return ""
+
+        candidates = self.db.get("SELECT code, name, tip FROM hat WHERE kat=?", (cur['kat'],))
+        cur_code = (cur.get('code') or '').strip()
+        cur_name = (cur.get('name') or '').strip()
+
+        def _norm(v: str) -> str:
+            v = unicodedata.normalize('NFKD', v or '').encode('ascii', 'ignore').decode().upper()
+            v = re.sub(r'\b(GIDIS|DONUS|DONUSU|DONUS)\b', '', v)
+            return re.sub(r'\s+', ' ', v).strip()
+
+        def _base_token(v: str) -> str:
+            return (v or '').strip().split()[0].upper()
+
+        def _split_stations(v: str):
+            s = (v or '').strip()
+            if '-' not in s:
+                return None, None
+            a, b = s.split('-', 1)
+            return _norm(a), _norm(b)
+
+        cur_start, cur_end = _split_stations(cur_name)
+
+        # 1) En güvenilir eşleşme: isimdeki başlangıç/bitiş duraklarının tersi
+        if cur_start and cur_end:
+            for h in candidates:
+                h_code = (h.get('code') or '').strip()
+                if h_code == cur_code:
+                    continue
+                h_start, h_end = _split_stations(h.get('name') or '')
+                if h_start and h_end and h_start == cur_end and h_end == cur_start:
+                    return h_code
+
+        # 2) Kod bazlı eşleşme: aynı hat ana kodu (ör. 12/17, R5, H1) ve farklı yön
+        cur_base = _base_token(cur_code)
+        for h in candidates:
+            h_code = (h.get('code') or '').strip()
+            if h_code == cur_code:
+                continue
+            if _base_token(h_code) != cur_base:
+                continue
+
+            h_tip = (h.get('tip') or '').strip().lower()
+            cur_tip = (cur.get('tip') or '').strip().lower()
+            if h_tip and cur_tip and h_tip != cur_tip:
+                return h_code
+
+            # tip alanı kirliyse isimden yön ayrıştır
+            if _norm(h.get('name') or '') != _norm(cur_name):
+                return h_code
+
+        # 3) Legacy fallback
+        for h in candidates:
+            h_code = (h.get('code') or '').strip()
+            if h_code == cur_code:
+                continue
+            if cur_base == _base_token(h_code) and (h.get('tip') or '') != (cur.get('tip') or ''):
+                return h_code
+
         return ""
 
     def analiz_hatlar_tipleri(self):
@@ -4172,7 +4228,7 @@ def create_app(db, col):
         })
 
     @app.get("/api/app_version")
-    async def app_version(request: "Request"): # type: ignore
+    async def app_version(request: Request):
         """Mobil uygulama güncel sürüm bilgisi — admin panelinden değiştirilebilir"""
         # Tarayıcıdan direkt girildiğini tespit edip engelle (Flutter ve fetch'te genelde empty veya gelmez)
         if request.headers.get("sec-fetch-dest") == "document" or request.headers.get("accept", "").startswith("text/html"):
