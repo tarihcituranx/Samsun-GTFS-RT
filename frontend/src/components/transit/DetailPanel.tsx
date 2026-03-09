@@ -39,7 +39,7 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
     isNext: i === 3,
   }));
 
-  const specialBanner = getSpecialInfo(line.name.toUpperCase());
+  const specialBanner = line && line.name ? getSpecialInfo(line.name.toUpperCase()) : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -151,8 +151,8 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
             <span
               key={i}
               className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] ${s.isCurrent
-                  ? "bg-primary/15 text-primary font-bold"
-                  : "text-muted-foreground"
+                ? "bg-primary/15 text-primary font-bold"
+                : "text-muted-foreground"
                 }`}
             >
               {s.isCurrent && "📍"}{s.name}
