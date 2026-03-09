@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Star, MapPin, Gauge } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Gauge, Loader2 } from "lucide-react";
 import { useTransit } from "@/contexts/TransitContext";
 import { type TransitLine, type TransitStop, type Vehicle } from "@/data/mockData";
 import { lineStopNames } from "@/data/lineStops";
 import { useEffect, useState } from "react";
 import { getSpecialInfo } from "./SpecialBanners";
 import { useSettings } from "@/hooks/useSettings";
+import { fetchStopPanel, fetchSmartStation } from "@/lib/api";
 
 /* ── Animated counter ──────────────────────────────────────────────────────── */
 const AnimatedNumber = ({ value }: { value: number }) => {
@@ -38,7 +39,7 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
     isNext: i === 3,
   }));
 
-  const specialBanner = getSpecialInfo(line);
+  const specialBanner = getSpecialInfo(line.name.toUpperCase());
 
   return (
     <div className="flex flex-col h-full">
@@ -150,8 +151,8 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
             <span
               key={i}
               className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] ${s.isCurrent
-                ? "bg-primary/15 text-primary font-bold"
-                : "text-muted-foreground"
+                  ? "bg-primary/15 text-primary font-bold"
+                  : "text-muted-foreground"
                 }`}
             >
               {s.isCurrent && "📍"}{s.name}
@@ -166,7 +167,7 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
         <span>🏎 Max:{maxHiz}</span>
         <span>📏 {mesafe}km</span>
         <span className="font-mono font-bold text-foreground">{Math.round(vehicle.speed)} km/h</span>
-        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
+        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
       </div>
 
       {showHasilat && (
@@ -182,6 +183,39 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
 const StopDetailContent = ({ stop }: { stop: TransitStop }) => {
   const { closeDetail, lines } = useTransit();
   const [pois, setPois] = useState<any[]>([]);
+  const [panelData, setPanelData] = useState<any[]>([]);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [smartData, setSmartData] = useState<any[]>([]);
+
+  // Fetch live ETA from /api/durak_panel/{kod}
+  // For tram stops, also try /api/proxy/smart_stations?stationId=
+  useEffect(() => {
+    const stopKod = stop.id?.toString() || stop.name;
+    if (!stopKod) return;
+    setPanelLoading(true);
+
+    const loadAll = async () => {
+      const [panel, smart] = await Promise.allSettled([
+        fetchStopPanel(stopKod),
+        fetchSmartStation(stopKod),
+      ]);
+      if (panel.status === "fulfilled") setPanelData(Array.isArray(panel.value) ? panel.value : []);
+      if (smart.status === "fulfilled" && smart.value.length > 0) setSmartData(smart.value);
+      setPanelLoading(false);
+    };
+    loadAll();
+
+    // Refresh every 10 seconds
+    const t = setInterval(async () => {
+      const [panel, smart] = await Promise.allSettled([
+        fetchStopPanel(stopKod),
+        fetchSmartStation(stopKod),
+      ]);
+      if (panel.status === "fulfilled") setPanelData(Array.isArray(panel.value) ? panel.value : []);
+      if (smart.status === "fulfilled" && smart.value.length > 0) setSmartData(smart.value);
+    }, 10000);
+    return () => clearInterval(t);
+  }, [stop.id, stop.name]);
 
   useEffect(() => {
     const fetchPOIs = async () => {
@@ -210,30 +244,107 @@ const StopDetailContent = ({ stop }: { stop: TransitStop }) => {
       </div>
 
       <h4 className="font-sora text-sm font-semibold text-foreground mb-2">Yaklaşan Araçlar</h4>
-      <div className="flex flex-col gap-2">
-        {stop.lines.map((line) => {
-          const lineData = lines.find((l) => l.code === line.code);
-          return (
-            <div key={line.code} className="glass-panel rounded-xl p-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg font-sora text-xs font-bold text-primary-foreground" style={{ backgroundColor: lineData?.color || "hsl(var(--primary))" }}>
-                {line.code}
+      {panelLoading ? (
+        <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+      ) : panelData.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {panelData.map((h: any, idx: number) => {
+            const lineData = lines.find((l) => l.code === h.hat);
+            const gelen = h.gelen;
+            return (
+              <div key={idx} className="glass-panel rounded-xl p-3 flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg font-sora text-xs font-bold text-primary-foreground"
+                    style={{ backgroundColor: lineData?.color || "hsl(var(--primary))" }}>
+                    {h.hat}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{h.ad || lineData?.name || h.hat}</p>
+                  </div>
+                  {gelen ? (
+                    <div className="text-right">
+                      <span className="font-mono text-lg font-bold text-primary">{gelen.tahmini_dk}</span>
+                      <span className="text-xs text-muted-foreground ml-1">dk</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </div>
+                {gelen && (
+                  <div className="flex flex-wrap gap-1 text-[10px] text-muted-foreground pl-1">
+                    <span className="bg-accent rounded px-1.5 py-0.5">🚌 {gelen.plaka}</span>
+                    <span className="bg-accent rounded px-1.5 py-0.5">⏱ {gelen.durak_kaldi} durak kaldı</span>
+                    <span className="bg-accent rounded px-1.5 py-0.5">{gelen.hiz} km/s</span>
+                    {gelen.doluluk !== undefined && <span className="bg-accent rounded px-1.5 py-0.5">👥 {gelen.doluluk}</span>}
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{lineData?.name || line.code}</p>
+            );
+          })}
+        </div>
+      ) : (
+        // Fallback to cached lines from context
+        <div className="flex flex-col gap-2">
+          {stop.lines.map((line) => {
+            const lineData = lines.find((l) => l.code === line.code);
+            return (
+              <div key={line.code} className="glass-panel rounded-xl p-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg font-sora text-xs font-bold text-primary-foreground"
+                  style={{ backgroundColor: lineData?.color || "hsl(var(--primary))" }}>
+                  {line.code}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{lineData?.name || line.code}</p>
+                </div>
+                <div className="text-right">
+                  <span className="font-mono text-lg font-bold text-primary">{line.mins}</span>
+                  <span className="text-xs text-muted-foreground ml-1">dk</span>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="font-mono text-lg font-bold text-primary">{line.mins}</span>
-                <span className="text-xs text-muted-foreground ml-1">dk</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+          {stop.lines.length === 0 && <p className="text-xs text-muted-foreground italic">Hat bilgisi bulunamadı.</p>}
+        </div>
+      )}
 
       <div className="mt-4 glass-panel rounded-xl p-3">
         <p className="text-xs text-muted-foreground mb-1">Konum</p>
         <p className="font-mono text-xs text-foreground">{stop.lat.toFixed(4)}, {stop.lng.toFixed(4)}</p>
       </div>
+
+      {/* SmartStations: Tramvay / Akıllı İstasyon Verisi */}
+      {smartData.length > 0 && (
+        <div className="mt-4">
+          <h4 className="font-sora text-sm font-semibold text-foreground mb-2">🚋 İstasyon Canlı Verisi</h4>
+          <div className="flex flex-col gap-2">
+            {smartData.map((s: any, i: number) => (
+              <div key={i} className="glass-panel rounded-xl p-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg font-sora text-xs font-bold text-primary-foreground bg-transit-green">
+                  {s.lineCode || s.line || "T"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {s.lineName || s.name || s.lineCode || "Tramvay"}
+                  </p>
+                  {s.direction && (
+                    <p className="text-xs text-muted-foreground">{s.direction}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  {s.estimatedTime !== undefined ? (
+                    <>
+                      <span className="font-mono text-lg font-bold text-transit-green">{s.estimatedTime}</span>
+                      <span className="text-xs text-muted-foreground ml-1">dk</span>
+                    </>
+                  ) : s.status ? (
+                    <span className="text-xs text-muted-foreground">{s.status}</span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Nearby POIs */}
       {pois.length > 0 && (
@@ -284,9 +395,9 @@ const VehicleDetailContent = ({ vehicle }: { vehicle: Vehicle }) => {
           <p className="text-xs text-muted-foreground mt-1">km/h</p>
         </div>
         <div className="glass-panel rounded-xl p-3 text-center">
-          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
+          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
           <p className="text-xs text-muted-foreground mt-1">
-            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "delayed" ? "Yavaş" : "Durdu"}
+            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "slow" ? "Yavaş" : "Durdu"}
           </p>
         </div>
       </div>

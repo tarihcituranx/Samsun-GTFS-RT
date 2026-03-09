@@ -1,8 +1,9 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useTransit } from "@/contexts/TransitContext";
+import { registerFcmToken } from "@/lib/api";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -28,6 +29,32 @@ const SettingsPanel = ({ open, onClose }: SettingsPanelProps) => {
   const { settings, setSetting, resetAll } = useSettings();
   const { toast } = useToast();
   const { toggleTheme } = useTransit();
+  const [notifEnabled, setNotifEnabled] = useState(() => Notification.permission === "granted");
+  const [notifLoading, setNotifLoading] = useState(false);
+
+  const handleNotificationToggle = async (enable: boolean) => {
+    if (!enable) {
+      setNotifEnabled(false);
+      toast({ title: "Bildirimler kapatıldı", description: "Tarayıcı ayarlarından da kaldırabilirsiniz." });
+      return;
+    }
+    setNotifLoading(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        // Gerçek FCM token yerine placeholder kullan (Flutter uygulama için)
+        const fakeToken = `web_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        await registerFcmToken(fakeToken, "web");
+        setNotifEnabled(true);
+        toast({ title: "✅ Bildirimler Açıldı", description: "Samsun toplu taşıma bildirimleri aktif." });
+      } else {
+        toast({ title: "Bildirim izni reddedildi", description: "Tarayıcı ayarlarından manuel olarak açabilirsiniz." });
+      }
+    } catch {
+      toast({ title: "Bildirim hatası", description: "Bir sorun oluştu, tekrar deneyin." });
+    }
+    setNotifLoading(false);
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -152,6 +179,25 @@ const SettingsPanel = ({ open, onClose }: SettingsPanelProps) => {
               />
             </label>
           </div>
+
+          {/* ── Bildirimler ── */}
+          <div className="my-4 h-px bg-border/40" />
+          <h3 className="font-sora text-sm font-bold text-foreground mb-3">🔔 Bildirimler</h3>
+          <label className="flex items-center justify-between cursor-pointer">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-foreground">
+                {notifEnabled ? "🔔 Bildirimler Açık" : "🔕 Bildirimler Kapalı"}
+              </span>
+              <span className="text-[10px] text-muted-foreground">Hat gecikme ve duyurular</span>
+            </div>
+            <button
+              disabled={notifLoading}
+              onClick={() => handleNotificationToggle(!notifEnabled)}
+              className={`relative h-6 w-11 rounded-full border transition-all duration-200 ${notifEnabled ? "bg-primary border-primary" : "bg-muted border-border"} ${notifLoading ? "opacity-50" : ""}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all duration-200 ${notifEnabled ? "left-5" : "left-0.5"}`} />
+            </button>
+          </label>
 
           {/* ── Sıfırla ── */}
           <button

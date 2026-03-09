@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTransit } from "@/contexts/TransitContext";
 import { APP_CONFIG } from "@/contexts/TransitContext";
+import { fetchAppVersion, type AppVersionInfo } from "@/lib/api";
 
 const GitHubIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 16 16" fill="currentColor">
@@ -18,14 +19,25 @@ const GitHubIcon = ({ className }: { className?: string }) => (
 const SplashScreen = () => {
   const { setShowSplash } = useTransit();
   const [phase, setPhase] = useState(0);
+  const [versionInfo, setVersionInfo] = useState<AppVersionInfo | null>(null);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
+
+  useEffect(() => {
+    // Versiyon bilgisini arka planda çek
+    fetchAppVersion().then((info) => {
+      if (info) setVersionInfo(info);
+    });
+  }, []);
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 600);
     const t2 = setTimeout(() => setPhase(2), 1400);
     const t3 = setTimeout(() => setPhase(3), 2600);
-    const t4 = setTimeout(() => setShowSplash(false), 3200);
+    const t4 = setTimeout(() => {
+      if (!versionInfo?.force_update) setShowSplash(false);
+    }, 3200);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [setShowSplash]);
+  }, [setShowSplash, versionInfo]);
 
   return (
     <div
@@ -138,6 +150,15 @@ const SplashScreen = () => {
               <span className="text-[11px] font-medium">tarihcituranx</span>
             </a>
           </div>
+          <a
+            href="https://samsunkesfet.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-slate-600 hover:text-orange-400 transition-colors duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            🏛️ samsunkesfet.com
+          </a>
         </div>
 
         {/* Yükleme çubuğu */}
@@ -154,14 +175,76 @@ const SplashScreen = () => {
       {/* Alt not */}
       <div
         className={[
-          "absolute bottom-8 left-0 right-0 flex justify-center transition-all duration-700",
+          "absolute bottom-8 left-0 right-0 flex flex-col items-center gap-2 transition-all duration-700",
           phase >= 2 ? "opacity-100" : "opacity-0",
         ].join(" ")}
       >
+        {/* Versiyon bilgisi */}
+        {versionInfo && (
+          <button
+            onClick={() => setShowReleaseNotes(true)}
+            className="text-slate-500 text-[10px] font-medium hover:text-orange-400 transition-colors"
+          >
+            v{versionInfo.latest_version} · Yenilikler için tıkla
+          </button>
+        )}
         <span className="text-slate-700 text-[10px] text-center px-4">
           Gayri resmi, bağımsız vatandaş projesi • Veriler açık kaynaklardan derlenmektedir
         </span>
       </div>
+
+      {/* Force Update Modal */}
+      {versionInfo?.force_update && phase >= 3 && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="mx-4 rounded-2xl bg-[#0f172a] border border-orange-500/30 p-6 max-w-sm w-full shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🚀</div>
+              <h2 className="text-white font-bold text-lg">Güncelleme Gerekli</h2>
+              <p className="text-slate-400 text-sm mt-1">Yeni sürüm mevcut: v{versionInfo.latest_version}</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-xl p-3 mb-4 text-left">
+              <p className="text-slate-300 text-[11px] leading-relaxed whitespace-pre-line">
+                {versionInfo.release_notes}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <a
+                href={versionInfo.download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full rounded-xl bg-orange-500 py-3 text-center text-sm font-bold text-white hover:bg-orange-400 transition-colors"
+              >
+                Güncelle
+              </a>
+              <button
+                onClick={() => setShowSplash(false)}
+                className="w-full rounded-xl bg-slate-700 py-2 text-center text-xs text-slate-400 hover:bg-slate-600 transition-colors"
+              >
+                Şimdilik Atla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Release Notes Modal */}
+      {showReleaseNotes && versionInfo && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowReleaseNotes(false)}>
+          <div className="mx-4 rounded-2xl bg-[#0f172a] border border-slate-700 p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-white font-bold">v{versionInfo.latest_version} Yenilikleri</h2>
+              <button onClick={() => setShowReleaseNotes(false)} className="text-slate-500 hover:text-white text-xl leading-none">×</button>
+            </div>
+            <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">{versionInfo.release_notes}</p>
+            <button
+              onClick={() => { setShowReleaseNotes(false); setShowSplash(false); }}
+              className="mt-4 w-full rounded-xl bg-orange-500 py-2.5 text-sm font-bold text-white hover:bg-orange-400 transition-colors"
+            >
+              Harika! Başla
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -119,36 +119,27 @@ export const fetchLineStops = async (code: string, type: string): Promise<Transi
     }
 };
 
-export const fetchLineVehicles = async (code: string, type?: string): Promise<Vehicle[]> => {
+export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
     try {
-        let endpoint = `${API_BASE}/api/hat/arac/${code}`;
-        if (type === "samair") {
-            endpoint = `${API_BASE}/api/proxy_samair_araclar`;
-        } else if (type === "odak") {
-            endpoint = `${API_BASE}/api/proxy_odak_araclar?hatid=${code}`;
-        }
-
-        const res = await fetch(endpoint);
+        const res = await fetch(`${API_BASE}/api/hat/arac/${code}`);
         if (!res.ok) return [];
 
-        const rawData = await res.json();
-        const data: any[] = type === "odak" ? (rawData.vehicles || []) : rawData;
-
+        const data: any[] = await res.json();
         return data.map(v => ({
             id: v.kodu || v.id || v.plate || "v1",
-            plate: v.plate || v.plaka || v.Plaka || "Bilinmeyen",
+            plate: v.plate || v.plaka || "Bilinmeyen",
             line: code,
-            speed: parseFloat(v.hiz || v.speed || v.Hizi || "0"),
-            lat: parseFloat(v.lat || v.enlem || v.Enlem || "0"),
-            lng: parseFloat(v.lon || v.boylam || v.Boylam || "0"),
+            speed: parseFloat(v.hiz || v.speed || "0"),
+            lat: parseFloat(v.enlem || v.lat),
+            lng: parseFloat(v.boylam || v.lon),
             status: "active" as const,
             heading: parseFloat(v.yon || v.heading || "0"),
             yakin: v.yakin || "",
             hasilat: v.hasilat || v.hasila || v.gunluk_hasilat || undefined
-        })).filter(v => !isNaN(v.lat) && !isNaN(v.lng) && v.lat > 0 && v.lng > 0);
+        })).filter(v => !isNaN(v.lat) && !isNaN(v.lng));
 
     } catch (error) {
-        console.error(`Failed to fetch vehicles for ${code}:`, error);
+        // some lines (odak, samair) might not have live vehicles, ignore error
         return [];
     }
 };
@@ -174,63 +165,195 @@ export const fetchAllStops = async (): Promise<TransitStop[]> => {
     }
 };
 
+// ─── Durak Ara ─────────────────────────────────────────────────────────────
+export const searchStops = async (query: string): Promise<{ kod: string; ad: string; lat: number; lon: number }[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/durak_ara?q=${encodeURIComponent(query)}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch { return []; }
+};
+
+// ─── Durak Panel (Canlı ETA) ───────────────────────────────────────────────
+export const fetchStopPanel = async (kod: string): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/durak_panel/${encodeURIComponent(kod)}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch { return []; }
+};
+
+// ─── Rota ─────────────────────────────────────────────────────────────────
+export interface RouteResult {
+    segments?: Array<{
+        type: string;
+        line?: string;
+        from?: string;
+        to?: string;
+        duration?: number;
+        stops?: number;
+        fare?: number;
+        color?: string;
+    }>;
+    total_duration?: number;
+    total_fare?: number;
+    transfers?: number;
+    error?: string;
+}
+
+export const fetchRoute = async (params: {
+    lat1?: number; lon1?: number; lat2?: number; lon2?: number;
+    start?: string; end?: string;
+}): Promise<RouteResult | null> => {
+    try {
+        const q = new URLSearchParams();
+        if (params.lat1 !== undefined) q.set("lat1", params.lat1.toString());
+        if (params.lon1 !== undefined) q.set("lon1", params.lon1.toString());
+        if (params.lat2 !== undefined) q.set("lat2", params.lat2.toString());
+        if (params.lon2 !== undefined) q.set("lon2", params.lon2.toString());
+        if (params.start) q.set("start", params.start);
+        if (params.end) q.set("end", params.end);
+        const res = await fetch(`${API_BASE}/api/rota?${q.toString()}`);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch { return null; }
+};
+
+// ─── Mekanlar (Keşfet / POI) ──────────────────────────────────────────────
 export const fetchPlaces = async (): Promise<any[]> => {
     try {
         const res = await fetch(`${API_BASE}/api/mekanlar`);
         if (!res.ok) return [];
         return await res.json();
-    } catch (error) {
-        console.error("Failed to fetch places:", error);
-        return [];
-    }
+    } catch { return []; }
 };
 
-export interface RouteEndpointParams {
-    start?: string;
-    lat1?: number;
-    lon1?: number;
-    end?: string;
-    lat2?: number;
-    lon2?: number;
+// ─── Hat Detayları (info + fiyat + sefer + eşleş) ─────────────────────────
+export interface LineFullDetail {
+    info?: any;
+    fiyat?: { tam_fiyat?: number; indirimli_fiyat?: number };
+    sefer?: any[];
+    esles?: { code?: string };
 }
 
-export const fetchRoute = async (params: RouteEndpointParams): Promise<any[]> => {
+export const fetchLineFullDetail = async (code: string): Promise<LineFullDetail> => {
     try {
-        const queryParams = new URLSearchParams();
-        if (params.start) queryParams.append("start", params.start);
-        if (params.lat1) queryParams.append("lat1", params.lat1.toString());
-        if (params.lon1) queryParams.append("lon1", params.lon1.toString());
-        if (params.end) queryParams.append("end", params.end);
-        if (params.lat2) queryParams.append("lat2", params.lat2.toString());
-        if (params.lon2) queryParams.append("lon2", params.lon2.toString());
-
-        const res = await fetch(`${API_BASE}/api/rota?${queryParams.toString()}`);
-        if (!res.ok) return [];
-        return await res.json();
-    } catch (error) {
-        console.error("Failed to fetch route:", error);
-        return [];
-    }
+        const [infoRes, fiyatRes, seferRes, eslesRes] = await Promise.allSettled([
+            fetch(`${API_BASE}/api/hat/info/${code}`),
+            fetch(`${API_BASE}/api/hat/fiyat/${code}`),
+            fetch(`${API_BASE}/api/hat/sefer/${code}`),
+            fetch(`${API_BASE}/api/hat/esles/${code}`),
+        ]);
+        return {
+            info: infoRes.status === "fulfilled" && infoRes.value.ok ? await infoRes.value.json() : undefined,
+            fiyat: fiyatRes.status === "fulfilled" && fiyatRes.value.ok ? await fiyatRes.value.json() : undefined,
+            sefer: seferRes.status === "fulfilled" && seferRes.value.ok ? await seferRes.value.json() : undefined,
+            esles: eslesRes.status === "fulfilled" && eslesRes.value.ok ? await eslesRes.value.json() : undefined,
+        };
+    } catch { return {}; }
 };
 
-export const fetchAppVersion = async (): Promise<any> => {
+// ─── Hat Yönleri (/api/hat/{code}/yonler) ─────────────────────────────────
+export const fetchHatYonler = async (code: string): Promise<{ yon_id: string; yon_adi: string }[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/hat/${encodeURIComponent(code)}/yonler`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch { return []; }
+};
+
+// ─── Proxy: SmartStations (Tram İstasyonuna Yaklaşan Araçlar) ─────────────
+export const fetchSmartStation = async (stationId: string | number): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy/smart_stations?stationId=${stationId}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: RealTimeData (Ham ASIS Hat Araçları) ──────────────────────────
+export const fetchRealtimeRaw = async (lineCode: string): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy/realtime?lineCode=${encodeURIComponent(lineCode)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: StopsStations (ASIS Hat Durakları) ───────────────────────────
+export const fetchStopsStations = async (lineCode: string): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy/stops_stations?lineCode=${encodeURIComponent(lineCode)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: LineDirections (ASIS Hat Yönleri) ────────────────────────────
+export const fetchLineDirections = async (lineCode: string): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy/line_directions?lineCode=${encodeURIComponent(lineCode)}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── Proxy: Schedules (ASIS Resmi Tarife / Sefer Saatleri) ───────────────
+export interface ScheduleItem {
+    saat?: string;
+    yon?: string;
+    gun?: string;
+    departureTime?: string;
+    directionId?: string | number;
+}
+export const fetchSchedules = async (lineCode: string, scheduleDate?: string): Promise<ScheduleItem[]> => {
+    try {
+        const date = scheduleDate || new Date().toISOString().split('T')[0];
+        const res = await fetch(`${API_BASE}/api/proxy/schedules?lineCode=${encodeURIComponent(lineCode)}&scheduleDate=${date}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
+};
+
+// ─── App Version (Sürüm Kontrolü + Force Update) ─────────────────────────
+export interface AppVersionInfo {
+    latest_version: string;
+    min_version: string;
+    release_notes: string;
+    download_url: string;
+    force_update: boolean;
+}
+export const fetchAppVersion = async (): Promise<AppVersionInfo | null> => {
     try {
         const res = await fetch(`${API_BASE}/api/app_version`);
         if (!res.ok) return null;
         return await res.json();
-    } catch (error) {
-        console.error("Failed to fetch app version:", error);
-        return null;
-    }
+    } catch { return null; }
 };
 
-export const fetchSamairSchedule = async (id: string): Promise<any> => {
+// ─── FCM Push Token Kayıt ─────────────────────────────────────────────────
+export const registerFcmToken = async (token: string, platform: string = "web"): Promise<boolean> => {
     try {
-        const res = await fetch(`${API_BASE}/api/samair/${id}/sefer`);
-        if (!res.ok) return null;
-        return await res.json();
-    } catch (error) {
-        console.error("Failed to fetch samair schedule:", error);
-        return null;
-    }
+        const res = await fetch(`${API_BASE}/api/fcm_token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, platform, version: "3.0.0", locale: "tr" }),
+        });
+        return res.ok;
+    } catch { return false; }
+};
+
+// ─── Proxy: Lines (ASIS Raw Hat Listesi) ─────────────────────────────────
+export const fetchProxyLines = async (): Promise<any[]> => {
+    try {
+        const res = await fetch(`${API_BASE}/api/proxy/lines`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data) ? data : [];
+    } catch { return []; }
 };

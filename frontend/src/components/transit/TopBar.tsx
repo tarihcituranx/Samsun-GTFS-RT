@@ -1,9 +1,12 @@
-import { Search, Settings, X } from "lucide-react";
+import { Search, Settings, X, RefreshCw } from "lucide-react";
 import { useTransit } from "@/contexts/TransitContext";
 import { APP_CONFIG } from "@/contexts/TransitContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WeatherWidget from "./WeatherWidget";
 import SettingsPanel from "./SettingsPanel";
+import { fetchAppVersion, type AppVersionInfo } from "@/lib/api";
+
+const CURRENT_VERSION = "3.0.0";
 
 interface TopBarProps {
   onOpenSettings?: () => void;
@@ -14,6 +17,19 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [updateBanner, setUpdateBanner] = useState<AppVersionInfo | null>(null);
+
+  // Version check on mount (once)
+  useEffect(() => {
+    fetchAppVersion().then((info) => {
+      if (!info) return;
+      const parseV = (v: string) => v.split(".").map(Number);
+      const latest = parseV(info.latest_version);
+      const current = parseV(CURRENT_VERSION);
+      const hasUpdate = latest[0] > current[0] || latest[1] > current[1] || latest[2] > current[2];
+      if (hasUpdate || info.force_update) setUpdateBanner(info);
+    });
+  }, []);
 
   const filtered = query.length > 1
     ? [
@@ -146,6 +162,27 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Güncelleme Banner */}
+      {updateBanner && (
+        <div className="bg-primary/10 border-t border-primary/20 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-primary font-semibold">
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span>Yeni sürüm mevcut: v{updateBanner.latest_version}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.open(updateBanner.download_url, "_blank")}
+              className="rounded-full bg-primary text-primary-foreground px-3 py-1 font-semibold"
+            >
+              Güncelle
+            </button>
+            <button onClick={() => setUpdateBanner(null)} className="text-muted-foreground hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </header>

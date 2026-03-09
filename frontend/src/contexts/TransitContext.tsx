@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 // transit context v2
 import { mockVehicles, type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
-import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops } from "@/lib/api";
+import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops, fetchProxyLines } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
 
 // ─── Uygulama yapılandırması (ileride şehir değişimi için altyapı) ──────────
@@ -138,6 +138,21 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ]);
       if (linesData && linesData.length > 0) {
         setLines(linesData);
+      } else {
+        // Fallback: /api/proxy/lines (ASIS raw) — map to TransitLine shape
+        const rawLines = await fetchProxyLines();
+        if (rawLines.length > 0) {
+          const mapped = rawLines.map((l: any) => ({
+            code: l.lineCode ?? l.code ?? "",
+            name: l.lineName ?? l.name ?? l.lineCode ?? "",
+            type: (l.kat ?? "otobus").toLowerCase() as any,
+            color: "#f97316",
+            stops: 0,
+            vehicles: 0,
+            fare: 0,
+          }));
+          setLines(mapped);
+        }
       }
       if (stopsData && stopsData.length > 0) {
         setGlobalStops(stopsData);
@@ -156,13 +171,13 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       fetchLineStops(selectedLine.code, selectedLine.type).then(data => setStops(data));
 
       // Initial vehicles fetch
-      fetchLineVehicles(selectedLine.code, selectedLine.type).then(data => setVehicles(data));
+      fetchLineVehicles(selectedLine.code).then(data => setVehicles(data));
 
       // Poll vehicles globally for the selected line
       let interval: NodeJS.Timeout | undefined;
       if (settings.autoRefresh) {
         interval = setInterval(async () => {
-          const liveData = await fetchLineVehicles(selectedLine.code, selectedLine.type);
+          const liveData = await fetchLineVehicles(selectedLine.code);
           setVehicles(liveData);
         }, 5000);
       }
