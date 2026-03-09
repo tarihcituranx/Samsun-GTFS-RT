@@ -39,6 +39,7 @@ const LineDetail = () => {
   // ASIS raw fallback state
   const [asisVehicles, setAsisVehicles] = useState<any[]>([]);
   const [asisStops, setAsisStops] = useState<any[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     if (!selectedLine) return;
@@ -50,8 +51,9 @@ const LineDetail = () => {
     setAsisVehicles([]);
     setAsisStops([]);
     setActiveYonIdx(0);
+    setDetailLoading(true);
 
-    Promise.all([
+    Promise.allSettled([
       fetchLineFullDetail(selectedLine.code).then(setLineDetail),
       // fetchHatYonler önce DB'den çeker; 0 döndüğünde fetchLineDirections (ASIS) ile fallback
       fetchHatYonler(selectedLine.code).then((data) => {
@@ -66,7 +68,7 @@ const LineDetail = () => {
           });
         }
       }),
-    ]);
+    ]).finally(() => setDetailLoading(false));
 
     // ASIS raw araç: context vehicles boşsa fallback
     fetchRealtimeRaw(selectedLine.code).then(setAsisVehicles);
@@ -148,18 +150,25 @@ const LineDetail = () => {
       {getSpecialInfo(selectedLine.name)}
 
       {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {[
-          { value: stops.length || selectedLine.stops, label: "Durak" },
-          { value: lineVehicles.length || selectedLine.vehicles, label: "Araç 🟢" },
-          { value: Math.round(tamFiyat), label: "Tam ₺" },
-        ].map((stat) => (
-          <div key={stat.label} className="glass-panel rounded-xl p-3 text-center">
-            <AnimatedNumber value={stat.value} />
-            <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
-          </div>
-        ))}
-      </div>
+      {detailLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin text-2xl mr-3">🔄</div>
+          <span className="text-sm text-muted-foreground font-medium">Hat bilgileri yükleniyor...</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {[
+            { value: stops.length || selectedLine.stops, label: "Durak" },
+            { value: lineVehicles.length || selectedLine.vehicles, label: "Araç 🟢" },
+            { value: Math.round(tamFiyat), label: "Tam ₺" },
+          ].map((stat) => (
+            <div key={stat.label} className="glass-panel rounded-xl p-3 text-center">
+              <AnimatedNumber value={stat.value} />
+              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Fiyat detail */}
       {tamFiyat > 0 && (
@@ -302,11 +311,11 @@ const LineDetail = () => {
           const displayStops = stops.length > 0
             ? stops
             : asisStops.map((s: any, i: number) => ({
-                id: s.stopId ?? s.stationId ?? i,
-                name: s.stopName ?? s.stationName ?? s.name ?? `Durak ${i + 1}`,
-                lat: s.lat ?? s.latitude ?? 0,
-                lng: s.lng ?? s.longitude ?? 0,
-              }));
+              id: s.stopId ?? s.stationId ?? i,
+              name: s.stopName ?? s.stationName ?? s.name ?? `Durak ${i + 1}`,
+              lat: s.lat ?? s.latitude ?? 0,
+              lng: s.lng ?? s.longitude ?? 0,
+            }));
 
           if (displayStops.length === 0) return (
             <p className="text-xs text-muted-foreground text-center py-4">Durak bilgisi yükleniyor…</p>
