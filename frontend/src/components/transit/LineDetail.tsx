@@ -32,6 +32,7 @@ const LineDetail = () => {
   const [lineDetail, setLineDetail] = useState<any>({});
   const [showSefer, setShowSefer] = useState(false);
   const [yonler, setYonler] = useState<{ yon_id: string; yon_adi: string }[]>([]);
+  const [activeYonIdx, setActiveYonIdx] = useState(0);   // ← hangi yön seçili
   const [officialSchedules, setOfficialSchedules] = useState<ScheduleItem[]>([]);
   const [showOfficial, setShowOfficial] = useState(false);
   const [scheduleLoading, setScheduleLoading] = useState(false);
@@ -49,6 +50,7 @@ const LineDetail = () => {
     setShowOfficial(false);
     setAsisVehicles([]);
     setAsisStops([]);
+    setActiveYonIdx(0);
 
     Promise.all([
       fetchLineFullDetail(selectedLine.code).then(setLineDetail),
@@ -113,18 +115,18 @@ const LineDetail = () => {
         {/* Gidiş/Dönüş button from real API */}
         {yonler.length > 1 && (
           <div className="flex gap-1">
-            {yonler.map((y) => {
-              const isActive = selectedLine.name?.includes(y.yon_adi) || yonler.indexOf(y) === 0;
-              return (
-                <button
-                  key={y.yon_id}
-                  onClick={() => setSelectedLine({ ...selectedLine, name: y.yon_adi })}
-                  className={`flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold border transition-colors ${isActive ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 border-primary/20 text-primary"}`}
-                >
-                  <ArrowRightLeft className="h-3 w-3" /> {y.yon_adi}
-                </button>
-              );
-            })}
+            {yonler.map((y, idx) => (
+              <button
+                key={y.yon_id}
+                onClick={() => {
+                  setActiveYonIdx(idx);
+                  setSelectedLine({ ...selectedLine, name: y.yon_adi });
+                }}
+                className={`flex items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold border transition-colors ${activeYonIdx === idx ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 border-primary/20 text-primary"}`}
+              >
+                <ArrowRightLeft className="h-3 w-3" /> {y.yon_adi}
+              </button>
+            ))}
           </div>
         )}
         {/* Fallback: esles-based switching when no yonler */}

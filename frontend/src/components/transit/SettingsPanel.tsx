@@ -29,10 +29,16 @@ const SettingsPanel = ({ open, onClose }: SettingsPanelProps) => {
   const { settings, setSetting, resetAll } = useSettings();
   const { toast } = useToast();
   const { toggleTheme } = useTransit();
-  const [notifEnabled, setNotifEnabled] = useState(() => Notification.permission === "granted");
+  const [notifEnabled, setNotifEnabled] = useState(() =>
+    typeof Notification !== "undefined" && Notification.permission === "granted"
+  );
   const [notifLoading, setNotifLoading] = useState(false);
 
   const handleNotificationToggle = async (enable: boolean) => {
+    if (typeof Notification === "undefined") {
+      toast({ title: "Desteklenmiyor", description: "Bu tarayıcı bildirim API'sini desteklemiyor." });
+      return;
+    }
     if (!enable) {
       setNotifEnabled(false);
       toast({ title: "Bildirimler kapatıldı", description: "Tarayıcı ayarlarından da kaldırabilirsiniz." });

@@ -6,7 +6,7 @@ import WeatherWidget from "./WeatherWidget";
 import SettingsPanel from "./SettingsPanel";
 import { fetchAppVersion, type AppVersionInfo } from "@/lib/api";
 
-const CURRENT_VERSION = "3.0.0";
+const CURRENT_VERSION = "2.5.0"; // Backend app_version ile eşleşmeli
 
 interface TopBarProps {
   onOpenSettings?: () => void;
@@ -174,10 +174,10 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.open(updateBanner.download_url, "_blank")}
-              className="rounded-full bg-primary text-primary-foreground px-3 py-1 font-semibold"
+              onClick={() => setUpdateBanner(null)}
+              className="rounded-full bg-primary text-primary-foreground px-3 py-1 font-semibold text-xs"
             >
-              Güncelle
+              Tamam
             </button>
             <button onClick={() => setUpdateBanner(null)} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
