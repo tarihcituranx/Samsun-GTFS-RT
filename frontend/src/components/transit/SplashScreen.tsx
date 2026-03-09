@@ -33,9 +33,7 @@ const SplashScreen = () => {
     const t1 = setTimeout(() => setPhase(1), 600);
     const t2 = setTimeout(() => setPhase(2), 1400);
     const t3 = setTimeout(() => setPhase(3), 2600);
-    const t4 = setTimeout(() => {
-      if (!versionInfo?.force_update) setShowSplash(false);
-    }, 3200);
+    const t4 = setTimeout(() => setShowSplash(false), 3200);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [setShowSplash, versionInfo]);
 
@@ -193,41 +191,7 @@ const SplashScreen = () => {
         </span>
       </div>
 
-      {/* Force Update Modal */}
-      {versionInfo?.force_update && phase >= 3 && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="mx-4 rounded-2xl bg-[#0f172a] border border-orange-500/30 p-6 max-w-sm w-full shadow-2xl">
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">🚀</div>
-              <h2 className="text-white font-bold text-lg">Güncelleme Gerekli</h2>
-              <p className="text-slate-400 text-sm mt-1">Yeni sürüm mevcut: v{versionInfo.latest_version}</p>
-            </div>
-            <div className="bg-slate-800/50 rounded-xl p-3 mb-4 text-left">
-              <p className="text-slate-300 text-[11px] leading-relaxed whitespace-pre-line">
-                {versionInfo.release_notes}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <a
-                href={versionInfo.download_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full rounded-xl bg-orange-500 py-3 text-center text-sm font-bold text-white hover:bg-orange-400 transition-colors"
-              >
-                Güncelle
-              </a>
-              <button
-                onClick={() => setShowSplash(false)}
-                className="w-full rounded-xl bg-slate-700 py-2 text-center text-xs text-slate-400 hover:bg-slate-600 transition-colors"
-              >
-                Şimdilik Atla
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Release Notes Modal */}
+      {/* Release Notes Modal (bilgi amaçlı, kapatılabilir) */}
       {showReleaseNotes && versionInfo && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowReleaseNotes(false)}>
           <div className="mx-4 rounded-2xl bg-[#0f172a] border border-slate-700 p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
