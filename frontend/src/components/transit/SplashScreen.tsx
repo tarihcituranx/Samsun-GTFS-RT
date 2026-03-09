@@ -148,15 +148,6 @@ const SplashScreen = () => {
               <span className="text-[11px] font-medium">tarihcituranx</span>
             </a>
           </div>
-          <a
-            href="https://samsunkesfet.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-slate-600 hover:text-orange-400 transition-colors duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            🏛️ samsunkesfet.com
-          </a>
         </div>
 
         {/* Yükleme çubuğu */}

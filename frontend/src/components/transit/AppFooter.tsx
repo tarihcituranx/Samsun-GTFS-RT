@@ -56,9 +56,6 @@ const AppFooter = () => {
         >
           <GitHubIcon className="w-3 h-3" /> tarihcituranx
         </a>
-        <a href="https://samsunkesfet.com" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground">
-          🏛️ samsunkesfet.com
-        </a>
         <button onClick={() => setShowKVKK(true)} className="text-[10px] text-muted-foreground hover:text-foreground">
           🔒 KVKK
         </button>
