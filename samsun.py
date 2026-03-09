@@ -899,6 +899,15 @@ class Collector:
         for d in data_lines:
             c = fix_turkish(str(d.get('lineCode','')).strip())
             name = fix_turkish(d.get('lineName', c))
+            
+            # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor
+            if len(c) > 6 and "EKSPRES" in c.upper():
+                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
+                if m_eks:
+                    c = m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
+            elif len(c) > 6 and " " in c:
+                c = c.split()[0]
+
             if c and c not in seen_codes:
                 seen_codes.add(c)
                 rows.append((c, name, d.get('tip','gidis'), self.kat(c, name), ''))
@@ -913,6 +922,16 @@ class Collector:
             c = fix_turkish(str(d.get('lineCode','')).strip())
             name = fix_turkish(d.get('lineName', c))
             
+            # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor, 
+            # bunu normalize edelim.
+            if len(c) > 6 and "EKSPRES" in c.upper():
+                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
+                if m_eks:
+                    c = m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
+            elif len(c) > 6 and " " in c:
+                # Eger "15/A BÜYÜK CAMİ..." gibi uzun bir şeysese ilk kısmı al
+                c = c.split()[0]
+                
             if not c:
                 continue
                 

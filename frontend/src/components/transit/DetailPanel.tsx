@@ -25,21 +25,10 @@ const AnimatedNumber = ({ value }: { value: number }) => {
 
 /* ── Line Detail ───────────────────────────────────────────────────────────── */
 const LineDetailContent = ({ line }: { line: TransitLine }) => {
-  const { vehicles, closeDetail } = useTransit();
+  const { vehicles, stops, closeDetail } = useTransit();
   const { settings } = useSettings();
   const lineVehicles = vehicles.filter((v) => v.line === line.code);
-
-  const realStops = lineStopNames[line.code] || [];
-  const stopCount = realStops.length > 0 ? realStops.length : Math.min(12, line.stops);
-
-  const stops = Array.from({ length: stopCount }, (_, i) => ({
-    name: realStops[i] || `Durak ${i + 1}`,
-    eta: Math.round(Math.random() * 15 + 1),
-    passed: i < 3,
-    isNext: i === 3,
-  }));
-
-  const specialBanner = line && line.name ? getSpecialInfo(line.name.toUpperCase()) : null;
+  const specialBanner = line ? getSpecialInfo(line) : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -63,9 +52,9 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 mb-4">
         {[
-          { value: line.stops, label: "Durak" },
-          { value: line.vehicles, label: "Araç 🟢" },
-          { value: line.fare, label: "Ücret ₺" },
+          { value: line.stops || stops.length, label: "Durak" },
+          { value: line.vehicles || lineVehicles.length, label: "Araç 🟢" },
+          { value: line.fare || 0, label: "Ücret ₺" },
         ].map((s) => (
           <div key={s.label} className="glass-panel rounded-xl p-3 text-center">
             <AnimatedNumber value={s.value} />
@@ -78,7 +67,7 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
       <h4 className="font-sora text-sm font-semibold text-foreground mb-2">Aktif Araçlar</h4>
       <div className="flex flex-col gap-1.5 mb-4">
         {lineVehicles.map((v) => (
-          <VehicleCard key={v.plate} vehicle={v} stops={realStops} showHasilat={settings.showHasilat} />
+          <VehicleCard key={v.plate} vehicle={v} stops={stops.map(s => s.name)} showHasilat={settings.showHasilat} />
         ))}
         {lineVehicles.length === 0 && (
           <p className="text-xs text-muted-foreground my-2 italic">Aktif araç bulunamadı.</p>
@@ -88,18 +77,28 @@ const LineDetailContent = ({ line }: { line: TransitLine }) => {
       {/* Timeline */}
       <h4 className="font-sora text-sm font-semibold text-foreground mb-2">Durak Sırası</h4>
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {stops.map((stop, i) => (
-          <div key={i} className="flex items-start gap-3 pb-1">
-            <div className="flex flex-col items-center">
-              <div className={`h-3 w-3 rounded-full border-2 ${stop.passed ? "border-muted-foreground/40 bg-muted-foreground/40" : stop.isNext ? "border-primary bg-primary animate-pulse" : "border-border bg-card"}`} />
-              {i < stops.length - 1 && <div className={`w-0.5 h-8 ${stop.passed ? "bg-muted-foreground/20" : "bg-border"}`} />}
+        {stops.map((stop, i) => {
+          const isPassed = false; // Logic for real passing could be added here
+          const isNext = i === 0;
+
+          return (
+            <div key={stop.id || i} className="flex items-start gap-3 pb-1">
+              <div className="flex flex-col items-center">
+                <div className={`h-3 w-3 rounded-full border-2 ${isPassed ? "border-muted-foreground/40 bg-muted-foreground/40" : isNext ? "border-primary bg-primary animate-pulse" : "border-border bg-card"}`} />
+                {i < stops.length - 1 && <div className={`w-0.5 h-8 ${isPassed ? "bg-muted-foreground/20" : "bg-border"}`} />}
+              </div>
+              <div className="pb-3 flex flex-1 items-start justify-between">
+                <div>
+                  <p className={`text-sm ${isNext ? "font-bold text-primary" : isPassed ? "text-muted-foreground" : "text-foreground"}`}>{stop.name}</p>
+                  {(stop as any).audio?.tr && (
+                    <p className="font-mono text-[10px] text-muted-foreground flex items-center gap-1 mt-1"><span>🔊</span> Sesli Anlatım Var</p>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="pb-3">
-              <p className={`text-sm ${stop.isNext ? "font-bold text-primary" : stop.passed ? "text-muted-foreground" : "text-foreground"}`}>{stop.name}</p>
-              {!stop.passed && <p className="font-mono text-xs text-muted-foreground">{stop.eta} dk</p>}
-            </div>
-          </div>
-        ))}
+          );
+        })}
+        {stops.length === 0 && <p className="text-xs text-muted-foreground italic">Durak verileri yükleniyor...</p>}
       </div>
     </div>
   );
@@ -167,7 +166,7 @@ const VehicleCard = ({ vehicle, stops, showHasilat }: { vehicle: Vehicle; stops:
         <span>🏎 Max:{maxHiz}</span>
         <span>📏 {mesafe}km</span>
         <span className="font-mono font-bold text-foreground">{Math.round(vehicle.speed)} km/h</span>
-        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
+        <span>{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
       </div>
 
       {showHasilat && (
@@ -395,9 +394,9 @@ const VehicleDetailContent = ({ vehicle }: { vehicle: Vehicle }) => {
           <p className="text-xs text-muted-foreground mt-1">km/h</p>
         </div>
         <div className="glass-panel rounded-xl p-3 text-center">
-          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "slow" ? "🟡" : "🔴"}</span>
+          <span className="text-2xl">{vehicle.status === "active" ? "🟢" : vehicle.status === "delayed" ? "🟡" : "🔴"}</span>
           <p className="text-xs text-muted-foreground mt-1">
-            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "slow" ? "Yavaş" : "Durdu"}
+            {vehicle.status === "active" ? "Çalışıyor" : vehicle.status === "delayed" ? "Yavaş" : "Durdu"}
           </p>
         </div>
       </div>

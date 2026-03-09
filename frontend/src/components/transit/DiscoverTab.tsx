@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTransit } from "@/contexts/TransitContext";
 import { fetchPlaces } from "@/lib/api";
 
@@ -8,6 +8,7 @@ const DiscoverTab = () => {
   const [cat, setCat] = useState("all");
   const [places, setPlaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPlace, setSelectedPlace] = useState<any | null>(null);
 
   useEffect(() => {
     fetchPlaces().then(data => {
@@ -25,8 +26,8 @@ const DiscoverTab = () => {
 
   const filtered = cat === "all" ? places : places.filter((p) => p.cat === cat);
 
-  const handleGoWithTransit = (placeName: string) => {
-    setRouteDestination(placeName);
+  const handleGoWithTransit = (lat: number, lon: number, title: string) => {
+    setRouteDestination(`${lat},${lon}`); // Passing coords as string
     setActiveTab("rota");
   };
 
@@ -51,6 +52,87 @@ const DiscoverTab = () => {
     ];
     return gradients[index % gradients.length];
   };
+
+  if (selectedPlace) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        className="flex flex-col space-y-4"
+      >
+        <button
+          onClick={() => setSelectedPlace(null)}
+          className="self-start rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/80"
+        >
+          ← Geri
+        </button>
+
+        <div className="overflow-hidden rounded-2xl bg-card shadow-sm border">
+          {selectedPlace.img && (
+            <img
+              src={selectedPlace.img}
+              alt={selectedPlace.title}
+              className="h-48 w-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/static/images/placeholder.png'; }}
+            />
+          )}
+          <div className="p-4">
+            <h2 className="font-sora text-xl font-bold">{selectedPlace.title}</h2>
+            <div className="mt-2 inline-block rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+              {selectedPlace.cat}
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              {selectedPlace.desc}
+            </p>
+
+            <div className="mt-4 flex gap-4">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-accent p-3 flex-1">
+                <span className="text-xl mb-1">🕐</span>
+                <span className="text-xs font-medium text-center">{selectedPlace.hours || "Bilinmiyor"}</span>
+              </div>
+              {selectedPlace.sections && (
+                <div className="flex flex-col items-center justify-center rounded-xl bg-accent p-3 flex-1">
+                  <span className="text-xl font-bold mb-1">{selectedPlace.sections}</span>
+                  <span className="text-xs font-medium">Bölüm</span>
+                </div>
+              )}
+            </div>
+
+            {selectedPlace.audio?.tr && (
+              <div className="mt-5">
+                <h3 className="mb-2 text-sm font-semibold flex items-center gap-2">
+                  <span>🔊</span> Sesli Anlatım
+                </h3>
+                <audio controls className="w-full h-10" preload="none">
+                  <source src={selectedPlace.audio.tr} type="audio/mpeg" />
+                  Tarayıcınız ses oynatmayı desteklemiyor.
+                </audio>
+              </div>
+            )}
+
+            <button
+              onClick={() => handleGoWithTransit(selectedPlace.lat, selectedPlace.lon, selectedPlace.title)}
+              className="mt-6 w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 flex items-center justify-center gap-2"
+            >
+              🗺️ İstikamet: Oraya Git
+            </button>
+
+            {selectedPlace.url && (
+              <a
+                href={selectedPlace.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 block w-full rounded-xl border border-border py-3 text-center text-sm font-semibold text-foreground transition-colors hover:bg-accent flex items-center justify-center gap-2"
+              >
+                🏛️ samsunkesfet.com'da Görüntüle
+              </a>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <div>
@@ -78,8 +160,8 @@ const DiscoverTab = () => {
                 key={c.id as string}
                 onClick={() => setCat(c.id as string)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-all ${cat === c.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-accent text-muted-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent text-muted-foreground"
                   }`}
               >
                 {c.label as string}
@@ -95,7 +177,8 @@ const DiscoverTab = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.06 }}
-                className={`group relative break-inside-avoid overflow-hidden rounded-2xl bg-gradient-to-br ${getGradientForIndex(i)} p-4 text-white shadow-md ${i % 3 === 0 ? "min-h-[180px]" : "min-h-[140px]"
+                onClick={() => setSelectedPlace(place)}
+                className={`group relative break-inside-avoid overflow-hidden rounded-2xl bg-gradient-to-br ${getGradientForIndex(i)} p-4 text-white shadow-md cursor-pointer ${i % 3 === 0 ? "min-h-[180px]" : "min-h-[140px]"
                   }`}
               >
                 {/* Optional background image overlay if image exists */}
@@ -106,16 +189,13 @@ const DiscoverTab = () => {
                   />
                 )}
 
-                <div className="relative z-10">
+                <div className="relative z-10 pointer-events-none">
                   <span className="text-3xl drop-shadow-sm">{getEmojiForCat(place.cat)}</span>
                   <h3 className="mt-2 font-sora text-sm font-bold leading-tight drop-shadow-sm">{place.title}</h3>
                   <p className="mt-1 text-xs opacity-90 line-clamp-2 drop-shadow-sm">{place.desc}</p>
-                  <button
-                    onClick={() => handleGoWithTransit(`${place.lat},${place.lon}`)}
-                    className="mt-3 rounded-full bg-black/20 px-3 py-1.5 text-[11px] font-semibold backdrop-blur-md hover:bg-black/40 transition-colors"
-                  >
-                    Toplu taşımayla git →
-                  </button>
+                  <div className="mt-3 inline-block rounded-full bg-black/20 px-3 py-1.5 text-[11px] font-semibold backdrop-blur-md">
+                    Detayları gör →
+                  </div>
                 </div>
               </motion.div>
             ))}

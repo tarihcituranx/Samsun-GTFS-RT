@@ -5,13 +5,12 @@ import { useTransit } from "@/contexts/TransitContext";
 import { fetchRoute } from "@/lib/api";
 
 const RoutePlannerTab = () => {
-  const { routeDestination, setRouteDestination, targetLocation, setTargetLocation } = useTransit();
+  const { routeDestination, setRouteDestination, targetLocation, setTargetLocation, plannedRoutes, setPlannedRoutes } = useTransit();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [planned, setPlanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [swapped, setSwapped] = useState(false);
-  const [routes, setRoutes] = useState<any[]>([]);
 
   // Auto-fill destination from Discover tab
   useEffect(() => {
@@ -39,7 +38,7 @@ const RoutePlannerTab = () => {
     if (!from && !to) return;
     setLoading(true);
     setPlanned(true);
-    setRoutes([]);
+    setPlannedRoutes([]);
 
     // Parse coordinates if they are in "lat, lon" format
     let params: any = {};
@@ -58,7 +57,7 @@ const RoutePlannerTab = () => {
     }
 
     const fetchedRoutes = await fetchRoute(params);
-    setRoutes(fetchedRoutes);
+    setPlannedRoutes(fetchedRoutes);
     setLoading(false);
   };
 
@@ -108,7 +107,7 @@ const RoutePlannerTab = () => {
       </div>
 
       <AnimatePresence>
-        {planned && !loading && routes.length === 0 && (
+        {planned && !loading && plannedRoutes.length === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-center text-sm text-muted-foreground">
             Uygun rota bulunamadı. Lütfen varış noktalarını kontrol edin.
           </motion.div>
@@ -120,13 +119,13 @@ const RoutePlannerTab = () => {
           </motion.div>
         )}
 
-        {planned && !loading && routes.length > 0 && (
+        {planned && !loading && plannedRoutes.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-4 flex flex-col gap-3 pb-24"
           >
-            {routes.map((route, i) => (
+            {plannedRoutes.map((route: any, i: number) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 12 }}

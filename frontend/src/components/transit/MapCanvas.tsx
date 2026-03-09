@@ -14,7 +14,7 @@ const typeToFilter: Record<string, string> = {
 };
 
 const MapCanvas = () => {
-  const { vehicles, stops, globalStops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine } = useTransit();
+  const { vehicles, stops, globalStops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine, plannedRoutes } = useTransit();
   const { settings } = useSettings();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +22,7 @@ const MapCanvas = () => {
   const routeLayerRef = useRef<L.Polyline | null>(null);
   const vehicleMarkersRef = useRef<L.Marker[]>([]);
   const stopMarkersRef = useRef<L.Marker[]>([]);
+  const plannedRouteLayersRef = useRef<L.Layer[]>([]);
   const [locationRetryVisible, setLocationRetryVisible] = useState(false);
 
   // Initialize map
@@ -245,6 +246,53 @@ const MapCanvas = () => {
     }
 
   }, [selectedLine, stops]);
+
+  // Planned Routes Drawing (from RoutePlannerTab)
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear previous planned routes layers
+    plannedRouteLayersRef.current.forEach(layer => layer.remove());
+    plannedRouteLayersRef.current = [];
+
+    if (!plannedRoutes || plannedRoutes.length === 0) return;
+
+    // We only draw the best/first route clearly to not clutter the map
+    const boundsLines: L.Polyline[] = [];
+
+    plannedRoutes.forEach((route, i) => {
+      // Draw main polyline
+      if (route.polyline && route.polyline.length > 1) {
+        const color = route.type === 'DIRECT' ? '#d946ef' : '#c2410c';
+        const opacity = i === 0 ? 0.85 : 0.4;
+        const weight = i === 0 ? 6 : 4;
+        const pl = L.polyline(route.polyline, { color, weight, opacity }).addTo(mapRef.current!);
+        plannedRouteLayersRef.current.push(pl);
+        if (i === 0) boundsLines.push(pl);
+      }
+
+      // Draw walk start
+      if (route.walk_start && route.walk_start.length > 1) {
+        const wl = L.polyline(route.walk_start, { color: '#06b6d4', weight: 4, opacity: i === 0 ? 0.9 : 0.4, dashArray: '8,6' }).addTo(mapRef.current!);
+        plannedRouteLayersRef.current.push(wl);
+        if (i === 0) boundsLines.push(wl);
+      }
+
+      // Draw walk end
+      if (route.walk_end && route.walk_end.length > 1) {
+        const wl = L.polyline(route.walk_end, { color: '#06b6d4', weight: 4, opacity: i === 0 ? 0.9 : 0.4, dashArray: '8,6' }).addTo(mapRef.current!);
+        plannedRouteLayersRef.current.push(wl);
+        if (i === 0) boundsLines.push(wl);
+      }
+    });
+
+    // Fit map to best route bounds
+    if (boundsLines.length > 0) {
+      const group = new L.FeatureGroup(boundsLines);
+      mapRef.current.fitBounds(group.getBounds(), { padding: [40, 40] });
+    }
+
+  }, [plannedRoutes]);
 
   const requestLocation = () => {
     navigator.geolocation.getCurrentPosition(

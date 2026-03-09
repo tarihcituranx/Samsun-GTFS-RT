@@ -208,7 +208,7 @@ export interface RouteResult {
 export const fetchRoute = async (params: {
     lat1?: number; lon1?: number; lat2?: number; lon2?: number;
     start?: string; end?: string;
-}): Promise<RouteResult | null> => {
+}): Promise<any[]> => {
     try {
         const q = new URLSearchParams();
         if (params.lat1 !== undefined) q.set("lat1", params.lat1.toString());
@@ -218,18 +218,21 @@ export const fetchRoute = async (params: {
         if (params.start) q.set("start", params.start);
         if (params.end) q.set("end", params.end);
         const res = await fetch(`${API_BASE}/api/rota?${q.toString()}`);
-        if (!res.ok) return null;
-        return await res.json();
-    } catch { return null; }
-};
-
-// ─── Mekanlar (Keşfet / POI) ──────────────────────────────────────────────
-export const fetchPlaces = async (): Promise<any[]> => {
-    try {
-        const res = await fetch(`${API_BASE}/api/mekanlar`);
         if (!res.ok) return [];
         return await res.json();
     } catch { return []; }
+};
+
+// ─── Mekanlar (Keşfet / POI) ──────────────────────────────────────────────
+export async function fetchPlaces(): Promise<any[]> {
+    try {
+        const res = await fetch(`${API_BASE}/api/mekanlar`);
+        if (!res.ok) throw new Error("Mekanlar verisi çekilemedi");
+        return res.json();
+    } catch (error) {
+        console.error("fetchPlaces Hatası:", error);
+        return [];
+    }
 };
 
 // ─── Hat Detayları (info + fiyat + sefer + eşleş) ─────────────────────────

@@ -59,6 +59,8 @@ interface TransitContextType {
   setShowKVKK: (v: boolean) => void;
   showCookie: boolean;
   setShowCookie: (v: boolean) => void;
+  plannedRoutes: any[];
+  setPlannedRoutes: (routes: any[]) => void;
 }
 
 const TransitContext = createContext<TransitContextType | null>(null);
@@ -101,6 +103,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [targetLocation, setTargetLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showKVKK, setShowKVKK] = useState(false);
   const [showCookie, setShowCookie] = useState(false);
+  const [plannedRoutes, setPlannedRoutes] = useState<any[]>([]);
 
   const closeDetail = useCallback(() => {
     setDetailItem(null);
@@ -222,6 +225,8 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setShowKVKK,
         showCookie,
         setShowCookie,
+        plannedRoutes,
+        setPlannedRoutes,
       }}
     >
       {children}

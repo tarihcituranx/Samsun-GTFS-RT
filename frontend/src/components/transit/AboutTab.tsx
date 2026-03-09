@@ -106,6 +106,22 @@ const AboutTab = () => {
             📞 0362 431 10 12
           </a>
         </div>
+        <div className="flex flex-col gap-2 mt-4">
+          <a href="https://samsulas.com.tr/" target="_blank" className="flex items-center gap-2 rounded-xl border border-border/30 bg-accent/20 px-4 py-3 text-sm text-foreground hover:bg-accent/40 transition-colors text-left">
+            <span>🚃</span>
+            <div>
+              <p className="font-medium">Samulaş Resmi Web Sitesi</p>
+              <p className="text-xs text-muted-foreground">samsulas.com.tr</p>
+            </div>
+          </a>
+          <a href="https://samsunkesfet.com/" target="_blank" className="flex items-center gap-2 rounded-xl border border-border/30 bg-accent/20 px-4 py-3 text-sm text-foreground hover:bg-accent/40 transition-colors text-left">
+            <span>🗺️</span>
+            <div>
+              <p className="font-medium">Samsun Keşfet</p>
+              <p className="text-xs text-muted-foreground">samsunkesfet.com</p>
+            </div>
+          </a>
+        </div>
       </section>
 
       {/* Yasal */}
