@@ -1,153 +1,141 @@
-# 🚌 Samsun GTFS & GTFS-RT
+# 🚌 Kentli — Samsun Ulaşım Uygulaması
 
-Samsun Büyükşehir Belediyesi toplu taşıma verileri — **GTFS Static** ve **GTFS Realtime** formatında.
+Samsun Büyükşehir Belediyesi toplu taşıma verileri için gerçek zamanlı web uygulaması.
 
-> ⚠️ Bu proje Samsun Büyükşehir Belediyesi veya Samulaş A.Ş. ile resmi bağlantılı değildir. Veriler açık kaynaklardan sağlanmaktadır.
+> ⚠️ Bu proje Samsun Büyükşehir Belediyesi veya Samulaş A.Ş. ile resmi bağlantılı değildir.
 
 ---
 
-## 📊 Veri Kapsamı
+## 📐 Proje Mimarisi
 
-| Metrik | Sayı |
+```
+Samsun-GTFS-RT/
+├── samsun.py          # FastAPI backend (tek dosya, tüm API endpointleri)
+├── samsun_v26.db      # SQLite veritabanı (ANA VERİ KAYNAĞI)
+├── samsun.db          # BOŞ — kullanılmaz, ignore edilebilir
+├── frontend/          # React + TypeScript + Vite frontend
+│   ├── src/
+│   │   ├── lib/api.ts                  # Tüm API çağrıları
+│   │   ├── contexts/TransitContext.tsx  # Global state (selectedLine, vehicles, stops...)
+│   │   ├── components/transit/
+│   │   │   ├── LinesTab.tsx            # Hat listesi → setSelectedLine() ile açar
+│   │   │   ├── LineDetail.tsx          # Hat detayı (gerçek API verisi)
+│   │   │   ├── TabContent.tsx          # Tab router + selectedLine → LineDetail yönlendirme
+│   │   │   ├── DetailPanel.tsx         # Sağ panel (sadece durak/araç, hat DEĞİL)
+│   │   │   ├── MapCanvas.tsx           # Leaflet harita
+│   │   │   └── ...
+│   │   └── pages/Index.tsx             # Ana layout
+│   └── dist/                           # npm run build çıktısı (backend serve eder)
+├── static/            # Leaflet CSS/JS + görseller
+└── requirements.txt
+```
+
+---
+
+## 🗄️ Veritabanı
+
+**Ana DB:** `samsun_v26.db` — kod içinde `DB = "samsun_v26.db"`
+
+| Tablo | İçerik |
 |---|---|
-| 🚌 Hatlar (Routes) | 108 |
-| 📍 Duraklar (Stops) | 1530 |
-| 🕐 Seferler (Trips) | 3773 |
-| ✈️ Havalimanı Servisleri | 4 (H1-H4) |
-| 🎯 Turistik Hatlar (Odak) | 11 |
-| 🚠 Teleferik | 1 |
-| 🛥️ Tekne/Feribot | 3 |
+| `hat` | 108 hat (otobüs/tramvay/ekspres...) |
+| `durak` | 1630 durak |
+| `hat_durak` | Hat-durak ilişkileri (4444 kayıt) |
+| `sefer` | Sefer saatleri |
+| `fiyat` | Hat ücretleri |
+| `odak` | 11 turistik hat |
+| `samair` | 5 havayolu hattı |
+| `hat_yon` | Hat yönleri (gidiş/dönüş) |
 
-## 🏗️ Mimari
+---
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   VERİ KAYNAKLARI                    │
-├──────────┬──────────────┬──────────┬────────────────┤
-│ ASİS API │ YBS API      │ Samulaş  │ Samulaş Web    │
-│ (Hat/    │ (Samair/     │ V1 API   │ (Fiyat         │
-│ Durak/   │ Odak/        │ (Short   │ Scraping)      │
-│ Sefer)   │ Token)       │ Names)   │                │
-└────┬─────┴──────┬───────┴────┬─────┴────────┬───────┘
-     │            │            │              │
-     ▼            ▼            ▼              ▼
-┌─────────────────────────────────────────────────────┐
-│              samsun.py (Master Pipeline)             │
-│                                                     │
-│  • fix_turkish() — Encoding düzeltme                │
-│  • sanitize_id() — Türkçe→ASCII ID                  │
-│  • title_case_tr() — GTFS Mixed Case                │
-│  • extract_short_name() — ≤12 char                  │
-│  • clean_long_name() — Prefix temizleme             │
-└──────────────────────┬──────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────┐
-│           SQLite DB (samsun_v25.db)                  │
-│                                                     │
-│  hat:  code + gtfs_route_id, gtfs_route_short_name  │
-│  durak: id  + gtfs_stop_id, gtfs_stop_name          │
-│  sefer: id  + gtfs_trip_id, gtfs_route_id           │
-└──────────┬───────────────────────┬──────────────────┘
-           │                       │
-           ▼                       ▼
-   ┌───────────────┐      ┌───────────────────┐
-   │ GTFS Static   │      │ GTFS Realtime     │
-   │ (.zip)        │      │ (Protobuf)        │
-   │               │      │                   │
-   │ • agency.txt  │      │ • Vehicle         │
-   │ • routes.txt  │      │   Positions       │
-   │ • stops.txt   │      │ • Occupancy       │
-   │ • trips.txt   │      │ • Bearing         │
-   │ • stop_times  │      │                   │
-   │ • calendar    │      │                   │
-   │ • feed_info   │      │                   │
-   └───────────────┘      └───────────────────┘
+## 🚀 Lokal Çalıştırma
+
+```bash
+# Backend
+pip install -r requirements.txt
+python samsun.py          # → http://localhost:8000
+
+# Frontend (dev, ayrı terminal)
+cd frontend
+npm install
+npm run dev               # → http://localhost:8080 (/api proxy → :8000)
 ```
 
-## 🗄️ GTFS-Uyumlu Veritabanı
+---
 
-DB tablolarında hem **orijinal API alan adları** hem **GTFS karşılıkları** saklanır:
+## 🌐 Render Deployment
 
-### `hat` tablosu (Routes)
-| Orijinal Alan | GTFS Karşılığı | Açıklama |
-|---|---|---|
-| `code` | `gtfs_route_id` | ASCII-safe ID (`İ→I, Ş→S`) |
-| `short_name` | `gtfs_route_short_name` | Max 12 karakter |
-| `name` | `gtfs_route_long_name` | Title Case, prefix temizlenmiş |
-| `tip` | `gtfs_route_type` | 0=Tramvay, 3=Otobüs, 4=Tekne, 6=Teleferik |
-| `kat` | `gtfs_route_color` | Hex renk kodu |
+**Build Command:**
+```
+pip install -r requirements.txt && cd frontend && npm install && npm run build
+```
 
-### `durak` tablosu (Stops)
-| Orijinal Alan | GTFS Karşılığı | Açıklama |
-|---|---|---|
-| `id` | `gtfs_stop_id` | ASCII-safe ID |
-| `ad` | `gtfs_stop_name` | Türkçe Title Case |
+**Start Command:**
+```
+uvicorn samsun:app --host 0.0.0.0 --port $PORT
+```
 
-### `sefer` tablosu (Trips)
-| Orijinal Alan | GTFS Karşılığı | Açıklama |
-|---|---|---|
-| `id` | `gtfs_trip_id` | `T_{id}` formatında ASCII-safe |
-| `hat` | `gtfs_route_id` | Route ile eşleşme |
-| `gun` | `gtfs_service_id` | 1=Hİ, 2=CMT, 3=PZR, 4=HerGün |
+> `samsun_v26.db` repo'da bulunmalıdır. `samsun.db` boş bir dosyadır, silinebilir.
 
-## 🛠️ GTFS Validator Uyumluluğu
+---
 
-[MobilityData GTFS Validator](https://gtfs-validator.mobilitydata.org/) ile test edilmiştir.
-
-### Uygulanan Düzeltmeler
-
-| Uyarı | Durum | Açıklama |
-|---|---|---|
-| `missing_recommended_file` | ✅ | `feed_info.txt` eklendi |
-| `non_ascii_or_non_printable_char` | ✅ | `sanitize_id()` ile tüm ID'ler ASCII |
-| `mixed_case_recommended_field` | ✅ | `title_case_tr()` ile Mixed Case |
-| `route_long_name_contains_short_name` | ✅ | `clean_long_name()` ile prefix temizleme |
-| `route_short_name_too_long` | ✅ | `extract_short_name()` ile max 12 char |
-| `stop_without_stop_time` | ✅ | Kullanılmayan duraklar filtrelendi |
-| `unusable_trip` | ✅ | Tek duraklı trip'ler atlandı |
-| `missing_feed_contact_email_and_url` | ✅ | `feed_contact_email/url` eklendi |
-
-## 📡 API Endpoints
-
-Uygulama çalışırken erişilebilir:
+## 📡 API Endpointleri
 
 | Endpoint | Açıklama |
 |---|---|
-| `GET /` | Web harita arayüzü |
-| `GET /gtfs/static.zip` | GTFS Static feed (ZIP) |
+| `GET /api/hat` | Tüm hatlar (durak_sayisi + tam_fiyat dahil) |
+| `GET /api/hat/info/{code}` | Tek hat bilgisi |
+| `GET /api/hat/durak/{code}` | Hattın durakları |
+| `GET /api/hat/arac/{code}` | Canlı araçlar |
+| `GET /api/hat/sefer/{code}` | Sefer saatleri |
+| `GET /api/hat/fiyat/{code}` | Ücret bilgisi |
+| `GET /api/hat/{code}/yonler` | Gidiş/Dönüş yönleri |
+| `GET /api/odak` | Odak (turistik) hatlar |
+| `GET /api/samair` | Samair hatları |
+| `GET /api/tum_duraklar` | Tüm duraklar (harita) |
+| `GET /api/durak_ara?q=` | Durak arama |
+| `GET /api/durak_panel/{kod}` | Durağa yaklaşan araçlar (ETA) |
+| `GET /api/rota?lat1&lon1&lat2&lon2` | Rota planlama |
+| `GET /api/hava` | Hava durumu |
+| `GET /api/health` | Sağlık kontrolü |
+| `GET /api/proxy/schedules` | Resmi tarife |
+| `GET /api/proxy/smart_stations` | Tramvay istasyon verisi |
+| `GET /api/proxy/realtime` | ASIS canlı araç |
+| `GET /gtfs/static.zip` | GTFS Static paketi |
 | `GET /gtfs-rt/vehicle-positions` | GTFS Realtime (Protobuf) |
-| `GET /gtfs-rt/vehicle-positions.json` | GTFS Realtime (JSON debug) |
-| `GET /api/hat` | Tüm hatlar |
-| `GET /api/yakin?lat=&lon=` | Yakın duraklar |
-| `GET /api/rota?lat1=&lon1=&lat2=&lon2=` | Akıllı rota |
-| `GET /api/health` | Sistem durumu |
-
-## 🚀 Kurulum
-
-```bash
-pip install fastapi uvicorn requests beautifulsoup4 gtfs-realtime-bindings
-python samsun.py
-```
-
-## 📋 GTFS Dosya Yapısı
-
-```
-samsun_gtfs_v25.zip
-├── agency.txt          # Samulaş A.Ş. bilgileri
-├── feed_info.txt       # Feed meta bilgileri + contact
-├── routes.txt          # 108 hat (ASCII ID, Title Case)
-├── stops.txt           # 1530 durak (filtrelenmiş)
-├── trips.txt           # 3773 sefer (unusable filtered)
-├── stop_times.txt      # Mesafeye dayalı gerçekçi saatler
-└── calendar.txt        # Hİ/CMT/PZR/HerGün servisleri
-```
-
-## 📝 Lisans
-
-Bu proje eğitim ve araştırma amaçlıdır. Veriler Samsun Büyükşehir Belediyesi açık API'lerinden sağlanmaktadır.
 
 ---
 
-**Geliştirici:** Turan KAYA  
-**İletişim:** [GitHub](https://github.com/tarihcituranx)
+## 🐛 Düzeltilen Hatalar
+
+### v26.1 — Frontend/Backend Senkronizasyonu
+
+| # | Hata | Nerede | Düzeltme |
+|---|---|---|---|
+| 1 | Hat seçince **siyah ekran** | `LinesTab.tsx` | `setDetailItem` → `setSelectedLine` olarak değiştirildi |
+| 2 | `LineDetail.tsx` **hiç render edilmiyordu** | `TabContent.tsx` | `selectedLine` varsa `LineDetail` göster eklendi |
+| 3 | Desktop panel **mock/rastgele veri** gösteriyordu | `DetailPanel.tsx` | Hat tipi için sağ panel devre dışı; `LineDetail` sol panelde gösteriliyor |
+| 4 | Hat listesinde **0 durak / ₺0** | `samsun.py` + `api.ts` | `/api/hat` artık `durak_sayisi` ve `tam_fiyat` döndürüyor; `api.ts` okuyor |
+| 5 | Hat renkleri **yanlış** | `api.ts` | Backend'den gelen `renk` hex alanı artık kullanılıyor |
+
+---
+
+## 📊 Veri Özeti
+
+| | Sayı |
+|---|---|
+| 🚌 Hatlar | 108 |
+| 📍 Duraklar | 1630 |
+| 🎯 Odak Hatları | 11 |
+| ✈️ Samair | 5 |
+
+---
+
+## ⚙️ Teknolojiler
+
+- **Backend:** Python 3.11, FastAPI, SQLite3, uvicorn
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Leaflet, Framer Motion, shadcn/ui
+- **State:** React Context API
+- **Harita:** Leaflet.js (CartoDB dark/light tiles)
+- **Canlı Veri:** ASIS API, YBS API, Odak API

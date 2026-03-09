@@ -46,14 +46,17 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
             else if (cat.includes("vapur")) type = "vapur";
             else if (cat.includes("teleferik")) type = "teleferik";
 
+            // renk: backend'den gelen hex rengi kullan, yoksa tipten hesapla
+            const color = item.renk ? `#${item.renk}` : getColorForType(type);
+
             lines.push({
                 code: item.code,
                 name: item.name,
                 type,
-                color: getColorForType(type),
-                vehicles: 0, // Will be populated by real-time if needed
-                fare: 0,     // We can fetch it or just mock it as 24
-                stops: 0,    // Will be populated when loaded
+                color,
+                vehicles: 0,                              // Canlı veriden doldurulacak
+                fare: item.tam_fiyat ?? 0,                // Backend'den gelen fiyat
+                stops: item.durak_sayisi ?? 0,            // Backend'den gelen durak sayısı
             });
         });
 

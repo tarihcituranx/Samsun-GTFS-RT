@@ -427,9 +427,13 @@ const VehicleDetailContent = ({ vehicle }: { vehicle: Vehicle }) => {
 const DetailPanel = () => {
   const { detailItem } = useTransit();
 
+  // Hat detayı TabContent/LineDetail tarafından sol panelde gösteriliyor.
+  // Sağ panel (DetailPanel) sadece durak ve araç detayı için açılır.
+  const shouldShow = detailItem && detailItem.type !== "line";
+
   return (
     <AnimatePresence>
-      {detailItem && (
+      {shouldShow && (
         <motion.div
           key="detail-panel"
           initial={{ x: "100%", opacity: 0 }}
@@ -438,7 +442,6 @@ const DetailPanel = () => {
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className="fixed right-0 top-0 z-30 hidden h-full w-[420px] overflow-y-auto glass-panel border-l border-border/30 p-5 pt-20 scrollbar-hide md:block"
         >
-          {detailItem.type === "line" && <LineDetailContent line={detailItem.data} />}
           {detailItem.type === "stop" && <StopDetailContent stop={detailItem.data} />}
           {detailItem.type === "vehicle" && <VehicleDetailContent vehicle={detailItem.data} />}
         </motion.div>

@@ -6,6 +6,7 @@ import DiscoverTab from "./DiscoverTab";
 import AboutTab from "./AboutTab";
 import OdakView from "./tabs/OdakView";
 import SamairView from "./tabs/SamairView";
+import LineDetail from "./LineDetail";
 const MapQuickStats = () => {
   const { vehicles } = useTransit();
   const activeCount = vehicles.length;
@@ -26,7 +27,12 @@ const MapQuickStats = () => {
 };
 
 const TabContent = () => {
-  const { activeTab } = useTransit();
+  const { activeTab, selectedLine } = useTransit();
+
+  // Hat seçiliyse ve hatlar tabındaysa, LineDetail göster
+  if (selectedLine && activeTab === "hatlar") {
+    return <LineDetail />;
+  }
 
   switch (activeTab) {
     case "harita":

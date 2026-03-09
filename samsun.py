@@ -4582,16 +4582,62 @@ loadStats(); setInterval(loadStats, 10000);
         'teleferik': 'Teleferik', 'tekne': 'Deniz',
     }
 
-    def _enrich_hat(h):
-        """Hat objesine Flutter UI için renk ve tip_adi alanları ekle"""
+    def _enrich_hat(h, stop_counts=None, fiyat_map=None):
+        """Hat objesine Flutter UI için renk, tip_adi, durak_sayisi ve fiyat ekle"""
         d = dict(h)
         kat = (d.get('kat') or d.get('tip') or 'otobus').lower()
         # gtfs_route_color varsa öncelikli kullan, yoksa kat'a göre hesapla
         gtfs_color = (d.get('gtfs_route_color') or '').strip()
         d['renk'] = gtfs_color if gtfs_color and gtfs_color != '1877F2' else _HAT_RENK.get(kat, '1877F2')
         d['tip_adi'] = _HAT_TIP_ADI.get(kat, 'Otobüs')
+        # Durak sayısı
+        if stop_counts:
+            d['durak_sayisi'] = stop_counts.get(d['code'], 0)
+        # Varsayılan ücret (kat'a göre)
+        if fiyat_map:
+            fiyat_row = fiyat_map.get(d['code']) or fiyat_map.get(d.get('name', ''))
+            d['tam_fiyat'] = fiyat_row['tam_fiyat'] if fiyat_row else (
+                15.0 if kat == 'ekspres' else
+                50.0 if kat == 'samair' else
+                15.0 if kat == 'odak' else
+                20.0
+            )
         return d
 
+    @app.get("/api/hat")
+    async def get_hatlar():
+        hatlar = db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC")
+        # Durak sayılarını tek sorguda çek
+        stop_rows = db.get("SELECT hat, COUNT(*) cnt FROM hat_durak GROUP BY hat")
+        stop_counts = {r['hat']: r['cnt'] for r in stop_rows} if stop_rows else {}
+        # Fiyat haritası (hat_code ile eşleştir)
+        fiyat_rows = db.get("SELECT hat_code, hat_adi, tam_fiyat FROM fiyat")
+        fiyat_map = {}
+        for f in (fiyat_rows or []):
+            if f['hat_code']:
+                fiyat_map[f['hat_code']] = f
+            if f['hat_adi']:
+                fiyat_map[f['hat_adi']] = f
+        return JSONResponse([_enrich_hat(h, stop_counts, fiyat_map) for h in hatlar])
+    
+    @app.get("/api/hat/info/{code:path}")
+    async def api_hat_one(code: str):
+        c = urllib.parse.unquote(code).strip()
+        res = db.one("SELECT * FROM hat WHERE code=?", (c,))
+        if not res: res = db.one("SELECT * FROM hat WHERE code LIKE ?", (c+'%',))
+        if not res: return JSONResponse({})
+        stop_count_row = db.one("SELECT COUNT(*) cnt FROM hat_durak WHERE hat=?", (c,))
+        stop_counts = {c: stop_count_row['cnt'] if stop_count_row else 0}
+        fiyat_row = db.one("SELECT hat_code, hat_adi, tam_fiyat FROM fiyat WHERE hat_code=?", (c,))
+        fiyat_map = {c: fiyat_row} if fiyat_row else {}
+        return JSONResponse(_enrich_hat(res, stop_counts, fiyat_map))
+    
+    @app.get("/api/hat/durak/{code:path}")
+    async def api_durak(code: str):
+        c = urllib.parse.unquote(code).strip()
+        res = db.get("SELECT * FROM hat_durak WHERE hat=? ORDER BY sira", (c,))
+        if not res: res = db.get("SELECT * FROM hat_durak WHERE hat LIKE ? ORDER BY sira", (c+'%',))
+        
     @app.get("/api/hat")
     async def get_hatlar():
         hatlar = db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC")

@@ -22,7 +22,7 @@ const filterLabels: Record<FilterKey, string> = {
 };
 
 const LinesTab = () => {
-  const { setDetailItem, lines: contextLines, isLoading } = useTransit();
+  const { setDetailItem, setSelectedLine, lines: contextLines, isLoading } = useTransit();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const pillsRef = useRef<HTMLDivElement>(null);
@@ -109,7 +109,7 @@ const LinesTab = () => {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.02, duration: 0.2 }}
-              onClick={() => setDetailItem({ type: "line", data: line })}
+              onClick={() => setSelectedLine(line)}
               className="flex items-center gap-3 rounded-xl p-2.5 text-left transition-all hover:bg-accent/50 active:scale-[0.98] glass-panel"
             >
               <div
