@@ -1425,6 +1425,76 @@ def query_turksat(addr: Dict) -> Dict:
         return {**src, "_error_": str(e)}
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  NOTTE API
+# ═══════════════════════════════════════════════════════════════════════════
+def query_notte(bbk: str, addr: Dict) -> Dict:
+    src = {"_source_": "Notte API", "_bbk_": bbk, "_addr_": addr}
+
+    def _tr_to_notte_corrupted(text: str) -> str:
+        # Notte (veya arkasındaki sales-gateway.turk.net) Türkçe karakterleri '??' olarak bozuyor.
+        # Bu yüzden API'ye "COBANLI" gönderildiğinde listesindeki "??OBANLI " ile eşleşmiyor. 
+        # API'nin beklediği bozuk string'i kendimiz yollamalıyız.
+        if not text:
+            return ""
+        
+        # Sadece büyük harflerle çalışıyoruz çünkü text.upper() yapılmış
+        tr_map = {
+            'Ç': '??', 'Ğ': '??', 'İ': '??', 'Ö': '??', 'Ş': '??', 'Ü': '??',
+            'ç': '??', 'ğ': '??', 'ı': '??', 'ö': '??', 'ş': '??', 'ü': '??'
+        }
+        text = text.upper()
+        for tr_char, corrupted in tr_map.items():
+            text = text.replace(tr_char, corrupted)
+        return text
+
+    # API'nin beklediği formatta il kodu
+    il_kodu = str(addr.get("IL_KODU") or "55")
+    
+    # İlçe
+    ilce_raw = str(addr.get("ILCE", "")).strip()
+    ilce = _tr_to_notte_corrupted(ilce_raw)
+    
+    # Mahalle isminden "MAH. " gibi ekleri ayıklamak iyi olabilir.
+    mah_raw = str(addr.get("MAHALLE", "")).upper().replace("MAH.", "").replace("MAH", "").replace("  ", " ").strip()
+    
+    # Notte'nin listesindeki mahalle isimlerinin sonunda bazen boşluk kalıyor ("??OBANLI " gibi)
+    # Biz de orijinal halinin bozulmuş şeklini (eğer gerekirse sonuna boşluk ekleyerek) yollayalım.
+    mahalle = _tr_to_notte_corrupted(mah_raw)
+    
+    # Bazı API'ler tam string eşleşmesi yapmıyorsa diye sonuna boşluk da ekleyerek deneyelim:
+    if addr.get("MAHALLE", "").endswith(" "):
+         mahalle += " "
+         
+    # "Çobanlı" özel örneği kontrolü
+    if "OBANLI" in mahalle and not mahalle.endswith(" "):
+        mahalle += " " # Hata mesajındaki 'available' listesinde "??OBANLI " olarak geçtiği için
+
+    sok_raw = str(addr.get("SOKAK", "")).strip()
+    sokak = _tr_to_notte_corrupted(sok_raw)
+    
+    # Bina ve daire bilgisini birleştirelim
+    daire_no = str(addr.get("DAIRE", "")).strip()
+    bina_adi = str(addr.get("BINA", "")).strip()
+
+    try:
+        from notte_sdk import NotteClient
+        log.info(f"    [Notte API] Calling function.run() with: {il_kodu}, {ilce}, {mahalle}, {sokak}, {bina_adi}")
+        client = NotteClient(api_key="sk-notte-1a61311d-c0d2-40d2-bbca-831b3364bff7")
+        function = client.Function("60f7b5a1-3122-40d8-a5de-0a0e6ff7cc33")
+        res = function.run(
+            province_code=il_kodu,
+            county_name=ilce,
+            neighborhood_name=mahalle,
+            street_name=sokak,
+            building_name=bina_adi
+        )
+        log.info(f"    [Notte API] Result: {res}")
+        return {**src, "result": res}
+    except Exception as e:
+        log.error(f"  [Notte API] Hata: {e}")
+        return {**src, "_error_": str(e)}
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  PARSERS — LOSSLESS / NO GUESS
 # ═══════════════════════════════════════════════════════════════════════════
 def parse_dsmart_result(data: Dict) -> Dict:
@@ -1911,8 +1981,12 @@ def run_bbk_test(bbk: str, attempt: int) -> Dict:
     report["downstream"]["turksat"] = query_turksat(addr)
     _sleep(1.0)
     
-    log.info("[4/4] Turknet...")
+    log.info("[4/5] Turknet...")
     report["downstream"]["turknet"] = query_turknet(bbk, addr)
+    _sleep()
+
+    log.info("[5/5] Notte API...")
+    report["downstream"]["notte"] = query_notte(bbk, addr)
     _sleep()
 
     tt_raw = report["downstream"].get("turksat", {})

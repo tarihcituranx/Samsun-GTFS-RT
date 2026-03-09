@@ -2,7 +2,7 @@
   {
     "bbk": "50937281",
     "attempt": 1,
-    "ts": "2026-03-08T18:10:45.434108",
+    "ts": "2026-03-08T20:48:52.680724",
     "bbk_queries": {
       "iss_araclari": {
         "status": true,
@@ -42,7 +42,7 @@
               "FTTXTYPE": "1",
               "FTTX1GB": "-2",
               "CRDTYP": "N/A",
-              "SVUID": "21670673031",
+              "SVUID": "21671221243",
               "STTKIP": "1",
               "MPLSBGL": "1",
               "DSLT11": "",
@@ -85,7 +85,7 @@
               "FTTXTYPE": "1",
               "FTTX1GB": "-1",
               "CRDTYP": "",
-              "SVUID": "21670673053"
+              "SVUID": "21671221250"
             },
             "central_name": "ATAKUM-149",
             "directorate": "ILKADIM"
@@ -124,7 +124,7 @@
               "FTTXTYPE": "1",
               "FTTX1GB": "-1",
               "CRDTYP": "",
-              "SVUID": "21670673071",
+              "SVUID": "21671224161",
               "BSPRTADSL": "0"
             },
             "central_name": "ATAKUM-149",
@@ -197,7 +197,7 @@
             "Ad": "",
             "Durum": 0,
             "SurumNo": 0,
-            "GuncellemeZamani": "2026-03-08T15:10:55.609Z",
+            "GuncellemeZamani": "2026-03-08T17:49:01.990Z",
             "returnCode": 102,
             "returnMessage": "TTAdres query uzak cagrida hata! Activity Status : FAILURE -> Detay : Aradığınız kriterlere uygun adres nesnesi (BELEDIYE) bulunamadı."
           }
@@ -316,7 +316,7 @@
             },
             {
               "name": "SVUID",
-              "value": "21670669008"
+              "value": "21671221334"
             },
             {
               "name": "BSPRTADSL",
@@ -434,7 +434,7 @@
             },
             {
               "name": "SVUID",
-              "value": "21670673414"
+              "value": "21671224226"
             }
           ],
           "FiberVeriler": [
@@ -544,7 +544,7 @@
             },
             {
               "name": "SVUID",
-              "value": "21670673424"
+              "value": "21671224231"
             },
             {
               "name": "STTKIP",
@@ -7363,14 +7363,14 @@
           "formType": 4,
           "buttonDisabled": false,
           "infrastructure_day": [
-            "2026-03-15T15:11:30+00:00",
+            "2026-03-15T17:49:36+00:00",
             {
               "type": "illuminate",
               "s": "cbn"
             }
           ],
           "infrastructure_check_service_day": [
-            "2026-04-07T15:11:30+00:00",
+            "2026-04-07T17:49:36+00:00",
             {
               "type": "illuminate",
               "s": "cbn"
@@ -7396,12 +7396,22 @@
         }
       },
       "turknet": {
-        "_source_": "Turknet",
-        "sale_key": "bb7b16d3-e42f-49c1-824d-90e6202e2f36",
-        "resolved_city_id": 55,
-        "resolved_county_id": 2072,
-        "resolved_neighborhood_id": 61794,
-        "offer_status": 400
+        "_error_": "Hiçbir yöntemle token alınamadı",
+        "_source_": "Turknet"
+      },
+      "notte": {
+        "_source_": "Notte API",
+        "_bbk_": "50937281",
+        "_addr_": {
+          "IL": "SAMSUN",
+          "ILCE": "ATAKUM",
+          "MAHALLE": "ÇOBANLI  MAH. ",
+          "SOKAK": "AYDINLIK CAD. ",
+          "BINA": "117 AA",
+          "DAIRE": "34",
+          "BINA_KODU": 28547025
+        },
+        "result": "function_id='60f7b5a1-3122-40d8-a5de-0a0e6ff7cc33' function_run_id='73aa1caf-da0b-4c02-bda9-563183beca0f' session_id='d2172f18-e8f3-4e42-b065-f139bcfc9750' result={'error': 'District not found: ??OBANLI ', 'available': ['AKALAN', 'AKSU', 'ALANLI', 'ASLANDAMI', 'ATAKENT', 'ATATEPE', 'AYVALI', 'BALAÇ', 'BEYPINAR', 'BÜYÜKKOLPINAR', 'BÜYÜKOYUMCA', 'CAMİİ', 'CUMHURIYET ', 'ÇAKIRLAR ', 'ÇAKIRLAR YALI ', 'ÇAMLIYAZI', 'ÇATMAOLUK', 'ÇOBANLI ', 'ÇOBANÖZÜ ', 'DENİZEVLERİ ', 'ELMAÇUKURU', 'ERİKLİ', 'ESENEVLER ', 'GÜNEYKÖY', 'GÜZELYALI ', 'GÜZELYURT ', 'İNCESU ', 'İNCESU YALI ', 'İSTİKLAL ', 'KABADÜZ', 'KAMALI', 'KARAKAVUK', 'KARAOYUMCA', 'KASNAKÇIMERMER', 'KAYAGÜNEY', 'KESİLİ', 'KÖRFEZ ', 'KÖSELİ', 'KULACADAĞ', 'KURUGÖKÇE', 'KÜÇÜKKOLPINAR', 'MEVLANA ', 'MEYVALI', 'MİMARSİNAN ', 'ÖZÖREN', 'SARAYKÖY', 'SARIIŞIK', 'SARITAŞ', 'SARIYUSUF', 'ŞENYURT', 'TAFLAN MERKEZ ', 'YALI ', 'YENİMAHALLE ', 'YEŞİLDERE', 'YEŞİLTEPE', 'YEŞİLYURT ', 'YUKARIAKSU']} status='closed' workflow_id='60f7b5a1-3122-40d8-a5de-0a0e6ff7cc33' workflow_run_id='73aa1caf-da0b-4c02-bda9-563183beca0f'"
       }
     },
     "downstream_parsed": {
@@ -7540,7 +7550,7 @@
       },
       "turknet": {
         "provider": "turknet",
-        "query_success": true,
+        "query_success": false,
         "match_success": false,
         "service_available": null,
         "technology": "",
@@ -7551,16 +7561,12 @@
         "kampanya": "",
         "price": null,
         "message": "",
-        "error": "",
+        "error": "Hiçbir yöntemle token alınamadı",
         "raw_keys": [
-          "_source_",
-          "sale_key",
-          "resolved_city_id",
-          "resolved_county_id",
-          "resolved_neighborhood_id",
-          "offer_status"
+          "_error_",
+          "_source_"
         ],
-        "raw_excerpt": "{\"_source_\": \"Turknet\", \"sale_key\": \"bb7b16d3-e42f-49c1-824d-90e6202e2f36\", \"resolved_city_id\": 55, \"resolved_county_id\": 2072, \"resolved_neighborhood_id\": 61794, \"offer_status\": 400}"
+        "raw_excerpt": "{\"_error_\": \"Hiçbir yöntemle token alınamadı\", \"_source_\": \"Turknet\"}"
       }
     },
     "final_decision": {
@@ -7703,7 +7709,7 @@
         },
         "turknet": {
           "provider": "turknet",
-          "query_success": true,
+          "query_success": false,
           "match_success": false,
           "service_available": null,
           "technology": "",
@@ -7714,16 +7720,12 @@
           "kampanya": "",
           "price": null,
           "message": "",
-          "error": "",
+          "error": "Hiçbir yöntemle token alınamadı",
           "raw_keys": [
-            "_source_",
-            "sale_key",
-            "resolved_city_id",
-            "resolved_county_id",
-            "resolved_neighborhood_id",
-            "offer_status"
+            "_error_",
+            "_source_"
           ],
-          "raw_excerpt": "{\"_source_\": \"Turknet\", \"sale_key\": \"bb7b16d3-e42f-49c1-824d-90e6202e2f36\", \"resolved_city_id\": 55, \"resolved_county_id\": 2072, \"resolved_neighborhood_id\": 61794, \"offer_status\": 400}"
+          "raw_excerpt": "{\"_error_\": \"Hiçbir yöntemle token alınamadı\", \"_source_\": \"Turknet\"}"
         }
       }
     }
