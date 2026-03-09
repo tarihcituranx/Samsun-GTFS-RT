@@ -4765,8 +4765,11 @@ loadStats(); setInterval(loadStats, 10000);
         # Önce Samair hattı mı kontrol et
         samair_hat = None
         for hid, hat_info in SAMAIR_HATLAR.items():
+            if str(c) == str(hid):
+                samair_hat = hat_info['asis'][0] if hat_info['asis'] else None
+                break
             for tam_ad in hat_info['asis']:
-                if c in tam_ad or tam_ad in c:
+                if c == tam_ad:
                     samair_hat = tam_ad
                     break
             if samair_hat:
