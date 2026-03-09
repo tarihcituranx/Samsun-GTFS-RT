@@ -30,6 +30,13 @@ interface OdakArac {
   lon?: number;
 }
 
+const normalizeVehicles = (payload: any): OdakArac[] => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.vehicles)) return payload.vehicles;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 const OdakView = () => {
   const [hatlar, setHatlar] = useState<OdakHat[]>([]);
   const [selectedHat, setSelectedHat] = useState<OdakHat | null>(null);
@@ -69,7 +76,7 @@ const OdakView = () => {
       }
       if (aracRes.ok) {
         const a = await aracRes.json();
-        setAraclar(a.vehicles || []);
+        setAraclar(normalizeVehicles(a));
       }
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" });
@@ -93,7 +100,7 @@ const OdakView = () => {
         const res = await fetch(`/api/proxy_odak_araclar?hatid=${selectedHat.id}`);
         if (res.ok) {
           const data = await res.json();
-          setAraclar(data.vehicles || []);
+          setAraclar(normalizeVehicles(data));
         }
       } catch {}
     }, 5000);
@@ -147,7 +154,7 @@ const OdakView = () => {
                   <div key={i} className="glass-panel flex items-center gap-3 rounded-xl px-3 py-2">
                     <span className="font-mono text-xs font-bold" style={{ color: "#16a34a" }}>{plaka}</span>
                     <div className="flex-1" />
-                    <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(hiz)).toFixed(0)} km/s</span>
+                    <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(hiz)).toFixed(0)} km/h</span>
                   </div>
                 );
               })}

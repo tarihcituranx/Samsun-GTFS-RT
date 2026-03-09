@@ -25,6 +25,13 @@ interface SeferItem {
   ucak_saat: string;
 }
 
+const normalizeVehicles = (payload: any): any[] => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.vehicles)) return payload.vehicles;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 const SamairView = () => {
   const [hatlar, setHatlar] = useState<SamairHat[]>([]);
   const [selectedHat, setSelectedHat] = useState<SamairHat | null>(null);
@@ -70,7 +77,7 @@ const SamairView = () => {
       }
       if (aracRes.ok) {
         const a = await aracRes.json();
-        setAraclar(a.vehicles || a.data || []);
+        setAraclar(normalizeVehicles(a));
       }
     } catch (err: any) {
       toast({ title: "Hata", description: err.message, variant: "destructive" });
@@ -85,7 +92,7 @@ const SamairView = () => {
         const res = await fetch(`/api/hat/arac/${selectedHat.kod}`);
         if (res.ok) {
           const data = await res.json();
-          setAraclar(data.vehicles || data.data || []);
+          setAraclar(normalizeVehicles(data));
         }
       } catch {}
     }, 5000);
@@ -137,7 +144,7 @@ const SamairView = () => {
                 <div key={i} className="glass-panel flex items-center gap-3 rounded-xl px-3 py-2">
                   <span className="font-mono text-xs font-bold" style={{ color: "#9333ea" }}>{a.Plaka || a.plate || "?"}</span>
                   <div className="flex-1" />
-                  <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(a.Hizi || a.speed || 0)).toFixed(0)} km/s</span>
+                  <span className="font-mono text-xs text-muted-foreground">{parseFloat(String(a.Hizi || a.speed || 0)).toFixed(0)} km/h</span>
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 // transit context v2
-import { mockVehicles, type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
+import { type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
 import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops, fetchProxyLines } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
 
