@@ -14,7 +14,7 @@ const typeToFilter: Record<string, string> = {
 };
 
 const MapCanvas = () => {
-  const { vehicles, stops, globalStops, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine, plannedRoutes } = useTransit();
+  const { vehicles, stops, globalStops, places, lines, isDark, mapFilters, setDetailItem, setActiveTab, setTargetLocation, selectedLine, plannedRoutes } = useTransit();
   const { settings } = useSettings();
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +22,7 @@ const MapCanvas = () => {
   const routeLayerRef = useRef<L.Polyline | null>(null);
   const vehicleMarkersRef = useRef<L.Marker[]>([]);
   const stopMarkersRef = useRef<L.Marker[]>([]);
+  const placeMarkersRef = useRef<L.Marker[]>([]);
   const plannedRouteLayersRef = useRef<L.Layer[]>([]);
   const [locationRetryVisible, setLocationRetryVisible] = useState(false);
 
@@ -151,7 +152,56 @@ const MapCanvas = () => {
 
       stopMarkersRef.current.push(marker);
     });
-  }, [mapFilters, stops, globalStops, selectedLine, setDetailItem]);
+  }, [mapFilters, stops, globalStops, selectedLine, setDetailItem, settings.showAllStops, settings.showLabels]);
+
+  // Place markers
+  useEffect(() => {
+    if (!mapRef.current) return;
+    placeMarkersRef.current.forEach((m) => m.remove());
+    placeMarkersRef.current = [];
+
+    // Tümü filtresi veya POI filtresi eklenebilir, şu an her zaman çizilecek (Turistik Mekanlar)
+    places.forEach((place) => {
+      if (!place.lat || !place.lon) return;
+
+      const emoji = place.category?.toLowerCase().includes("tarih") ? "🏛️" :
+        place.category?.toLowerCase().includes("müze") ? "🖼️" :
+          place.category?.toLowerCase().includes("doga") ? "🌲" : "📍";
+
+      const icon = L.divIcon({
+        className: "",
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        html: `
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;transition:transform 0.2s;">
+            <div style="position:absolute;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.7);backdrop-filter:blur(4px);box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+            <div style="font-size:18px;position:relative;z-index:2;line-height:1;">${place.emoji || emoji}</div>
+          </div>
+        `,
+      });
+
+      const marker = L.marker([parseFloat(place.lat), parseFloat(place.lon)], { icon }).addTo(mapRef.current!);
+      // Click on map place routes to DiscoverTab optionally, or show simple popup
+      marker.bindPopup(
+        `<div style="font-family:'DM Sans',sans-serif;font-size:13px;text-align:center;max-width:200px;">
+          <b style="font-family:'Sora',sans-serif;color:#f97316;">${place.name || place.title}</b><br/>
+          <span style="font-size:11px;color:#64748b;">${place.category || place.cat}</span>
+        </div>`
+      );
+
+      if (settings.showLabels) {
+        marker.bindTooltip(place.name || place.title, {
+          direction: 'top',
+          offset: [0, -14],
+          className: 'font-sora text-[10px] font-bold py-0.5 px-1.5 border-border/50 shadow-sm rounded',
+          permanent: true,
+          opacity: 0.7
+        });
+      }
+
+      placeMarkersRef.current.push(marker);
+    });
+  }, [places, settings.showLabels]);
 
   // Vehicle markers
   useEffect(() => {
@@ -204,15 +254,16 @@ const MapCanvas = () => {
     if (!selectedLine || stops.length < 2 || !settings.showRoute) return;
 
     const drawRouteOSRM = async (coords: [number, number][], color: string) => {
+      // If there are too many stops, skip OSRM to prevent block/failures, draw direct precise line
+      if (coords.length > 20) {
+        const pl = L.polyline(coords, { color: color, weight: 6, opacity: 0.7, lineJoin: 'round', lineCap: 'round' }).addTo(mapRef.current!);
+        routeLayerRef.current = pl;
+        mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
+        return;
+      }
+
       try {
         let pts = coords;
-        if (pts.length > 25) {
-          const step = Math.ceil(pts.length / 24);
-          const sampled = [pts[0]];
-          for (let i = step; i < pts.length - 1; i += step) sampled.push(pts[i]);
-          sampled.push(pts[pts.length - 1]);
-          pts = sampled;
-        }
         const wp = pts.map(c => c[1] + ',' + c[0]).join(';');
         const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${wp}?overview=full&geometries=geojson`);
         if (!res.ok) throw new Error("OSRM fetching failed");
@@ -220,13 +271,13 @@ const MapCanvas = () => {
         const data = await res.json();
         if (data.routes && data.routes[0]) {
           const geo = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
-          const pl = L.polyline(geo, { color: color, weight: 5, opacity: 0.8 }).addTo(mapRef.current!);
+          const pl = L.polyline(geo, { color: color, weight: 6, opacity: 0.8 }).addTo(mapRef.current!);
           routeLayerRef.current = pl;
           mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
         }
       } catch (e) {
         console.warn('OSRM route error, falling back to direct line:', e);
-        const pl = L.polyline(coords, { color: color, weight: 5, opacity: 0.8, dashArray: '8,6' }).addTo(mapRef.current!);
+        const pl = L.polyline(coords, { color: color, weight: 6, opacity: 0.7, lineJoin: 'round', lineCap: 'round' }).addTo(mapRef.current!);
         routeLayerRef.current = pl;
         mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
       }
@@ -237,7 +288,7 @@ const MapCanvas = () => {
 
     if (coords.length > 1) {
       if (isDirectLine) {
-        const pl = L.polyline(coords, { color: selectedLine.color, weight: 5, opacity: 0.8, dashArray: '8,6' }).addTo(mapRef.current!);
+        const pl = L.polyline(coords, { color: selectedLine.color, weight: 6, opacity: 0.7, dashArray: '10,8', lineJoin: 'round', lineCap: 'round' }).addTo(mapRef.current!);
         routeLayerRef.current = pl;
         mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
       } else {

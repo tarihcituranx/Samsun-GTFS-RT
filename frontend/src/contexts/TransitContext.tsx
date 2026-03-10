@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 // transit context v2
 import { type Vehicle, type TransitLine, type TransitStop } from "@/data/mockData";
-import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops, fetchProxyLines } from "@/lib/api";
+import { fetchAllLines, fetchLineStops, fetchLineVehicles, fetchAllStops, fetchProxyLines, fetchPlaces } from "@/lib/api";
 import { useSettings } from "@/hooks/useSettings";
 
 // ─── Uygulama yapılandırması (ileride şehir değişimi için altyapı) ──────────
@@ -42,6 +42,7 @@ interface TransitContextType {
   lines: TransitLine[];
   stops: TransitStop[];
   globalStops: TransitStop[];
+  places: any[];
   vehicles: Vehicle[];
   isLoading: boolean;
   showSplash: boolean;
@@ -91,6 +92,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [lines, setLines] = useState<TransitLine[]>([]);
   const [stops, setStops] = useState<TransitStop[]>([]);
   const [globalStops, setGlobalStops] = useState<TransitStop[]>([]);
+  const [places, setPlaces] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,9 +138,10 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
-      const [linesData, stopsData] = await Promise.all([
+      const [linesData, stopsData, placesData] = await Promise.all([
         fetchAllLines(),
-        fetchAllStops()
+        fetchAllStops(),
+        fetchPlaces()
       ]);
       if (linesData && linesData.length > 0) {
         setLines(linesData);
@@ -160,6 +163,9 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       if (stopsData && stopsData.length > 0) {
         setGlobalStops(stopsData);
+      }
+      if (placesData && placesData.length > 0) {
+        setPlaces(placesData);
       }
       setIsLoading(false);
     };
@@ -208,6 +214,7 @@ export const TransitProvider: React.FC<{ children: React.ReactNode }> = ({ child
         lines,
         stops,
         globalStops,
+        places,
         vehicles,
         isLoading,
         showSplash,
