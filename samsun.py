@@ -548,10 +548,10 @@ class Database:
         self.durak_coords = {}
 
     def connect(self):
-        master_db_url = os.environ.get('SUPABASE_DB_URL')
-        self.conn = psycopg2.connect(master_db_url)
+        self.supabase_url = os.environ.get('SUPABASE_URL')
+        self.supabase_key = os.environ.get('SUPABASE_KEY')
         
-        log.info(f"📀 Supabase (Postgres) DB'ye bağlanıldı.")
+        log.info(f"📀 Supabase (REST API RPC) DB'ye bağlanıldı.")
         self._load_durak_coords()
         self._load_tram_csv_corrections()
         return False
@@ -701,21 +701,104 @@ class Database:
         log.info("   🗑️ Veritabanı temizlendi")
 
     def guncelleme_tamamlandi(self): self.set_meta('son_guncelleme', datetime.now().strftime("%Y-%m-%d"))
+    def _fmt(self, q):
+        import re
+        q = re.sub(r'\?', '%s', q)
+        if "last_insert_rowid()" in q:
+            q = q.replace("last_insert_rowid()", "lastval()")
+        if "INSERT OR REPLACE INTO meta" in q:
+            return "INSERT INTO meta(key,value) VALUES(%s,%s) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value"
+        if "INSERT OR REPLACE INTO hat(" in q:
+            return "INSERT INTO hat(code, name, tip, kat, alias) VALUES(%s,%s,%s,%s,%s) ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, tip=EXCLUDED.tip, kat=EXCLUDED.kat, alias=EXCLUDED.alias"
+        if "INSERT OR REPLACE INTO durak(id,kod,ad,lat,lon,gtfs_stop_id,gtfs_stop_name)" in q:
+            return "INSERT INTO durak(id,kod,ad,lat,lon,gtfs_stop_id,gtfs_stop_name) VALUES(%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (id) DO UPDATE SET kod=EXCLUDED.kod, ad=EXCLUDED.ad, lat=EXCLUDED.lat, lon=EXCLUDED.lon, gtfs_stop_id=EXCLUDED.gtfs_stop_id, gtfs_stop_name=EXCLUDED.gtfs_stop_name"
+        if "INSERT OR REPLACE INTO durak(id, kod, ad, lat, lon)" in q:
+            return "INSERT INTO durak(id, kod, ad, lat, lon) VALUES(%s,%s,%s,%s,%s) ON CONFLICT (id) DO UPDATE SET kod=EXCLUDED.kod, ad=EXCLUDED.ad, lat=EXCLUDED.lat, lon=EXCLUDED.lon"
+        if "INSERT OR REPLACE INTO odak " in q or "INSERT OR REPLACE INTO odak VALUES" in q:
+            return "INSERT INTO odak(id, ad, kod, gunler) VALUES(%s,%s,%s,%s) ON CONFLICT (id) DO UPDATE SET ad=EXCLUDED.ad, kod=EXCLUDED.kod, gunler=EXCLUDED.gunler"
+        if "INSERT OR REPLACE INTO fiyat(" in q:
+            q = q.replace("INSERT OR REPLACE INTO fiyat", "INSERT INTO fiyat")
+        if "INSERT OR REPLACE INTO samair VALUES" in q:
+            return "INSERT INTO samair(id, ad, kod) VALUES(%s,%s,%s) ON CONFLICT (id) DO UPDATE SET ad=EXCLUDED.ad, kod=EXCLUDED.kod"
+        if "INSERT OR REPLACE INTO samair_sefer(" in q:
+            return "INSERT INTO samair_sefer(id,hat,saat,varis,firma,ucak_saat,tarih,gun_format) VALUES(%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (id) DO UPDATE SET hat=EXCLUDED.hat, saat=EXCLUDED.saat, varis=EXCLUDED.varis, firma=EXCLUDED.firma, ucak_saat=EXCLUDED.ucak_saat, tarih=EXCLUDED.tarih, gun_format=EXCLUDED.gun_format"
+        if "INSERT OR REPLACE INTO app_config(" in q:
+            return "INSERT INTO app_config(key,value) VALUES(%s,%s) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value"
+        return q
+
+    def _bind(self, q, p):
+        if not p: return q
+        def _escape_val(v):
+            if v is None: return "NULL"
+            if isinstance(v, (int, float)): return str(v)
+            s = str(v).replace("'", "''")
+            return f"'{s}'"
+
+        parts = q.split('%s')
+        res = ""
+        for i, part in enumerate(parts[:-1]):
+            res += part + _escape_val(p[i])
+        res += parts[-1]
+        return res
+
+    def _rpc(self, sql):
+        import requests
+        try:
+            r = requests.post(
+                f"{self.supabase_url}/rest/v1/rpc/exec_sql",
+                headers={
+                    'apikey': self.supabase_key,
+                    'Authorization': f'Bearer {self.supabase_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={'query_text': sql},
+                timeout=15
+            )
+            if r.status_code == 200:
+                try:
+                    return r.json()
+                except:
+                    return []
+            else:
+                log.error(f"SQL RPC Hatasi ({r.status_code}): {r.text} | Sorgu: {sql[:150]}")
+                return []
+        except Exception as e:
+            log.error(f"SQL RPC Ag Hatasi: {e}")
+            return []
+
     def ex(self, q, p=()):
-        with self._lk: self.conn.execute(q, p); self.conn.commit()
+        with self._lk:
+            q_fmt = self._fmt(q)
+            sql = self._bind(q_fmt, p)
+            self._rpc(sql)
+
     def exm(self, q, d):
-        with self._lk: self.conn.executemany(q, d); self.conn.commit()
+        with self._lk:
+            q_fmt = self._fmt(q)
+            for p in d:
+                sql = self._bind(q_fmt, p)
+                self._rpc(sql)
+
     def get(self, q, p=()):
-        with self._lk: return [dict(r) for r in self.conn.execute(q, p).fetchall()]
+        with self._lk:
+            q_fmt = self._fmt(q)
+            sql = self._bind(q_fmt, p)
+            return self._rpc(sql)
+
     def one(self, q, p=()):
         with self._lk:
-            r = self.conn.execute(q, p).fetchone()
-            return dict(r) if r else None
+            q_fmt = self._fmt(q)
+            sql = self._bind(q_fmt, p)
+            if "LIMIT 1" not in sql.upper():
+                sql = f"SELECT * FROM ({sql}) AS subquery LIMIT 1"
+            res = self._rpc(sql)
+            return res[0] if res else None
+
     def cnt(self, t):
-        try:
-            return self.one(f"SELECT COUNT(*) c FROM {t}")['c']
-        except Exception as e:
-            log.warning(f"Tablo sayım hatası ({t}): {e}")
+        with self._lk:
+            res = self._rpc(f"SELECT COUNT(*) FROM {t}")
+            if res and len(res) > 0 and 'count' in res[0]:
+                return int(res[0]['count'])
             return 0
 
 # --- VERİ TOPLAYICI (COLLECTOR) ---
@@ -4862,7 +4945,7 @@ loadStats(); setInterval(loadStats, 10000);
                     return JSONResponse([{
                         'yon_id': str(y.get('directionId', '')),
                         'yon_adi': fix_turkish(y.get('directionName', ''))
-                    } for y in yonler_api])
+                    } for y in yonler_api if str(y.get('lineCode', '')).strip() == c])
             except:
                 pass
         
