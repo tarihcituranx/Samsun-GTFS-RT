@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { fetchSamairSchedule } from "@/lib/api";
 
 /* ── SAMSUNUM-1 Banner ─────────────────────────────────────────────────────── */
 export const SamsuNum1Banner = () => (
@@ -208,11 +209,9 @@ export const SamairScheduleBanner = ({ lineCode }: { lineCode: string }) => {
   const [schedule, setSchedule] = useState<any[]>([]);
 
   useEffect(() => {
-    import("@/lib/api").then(({ fetchSamairSchedule }) => {
-      fetchSamairSchedule(lineCode).then((data) => {
-        if (data?.data) setSchedule(data.data || []);
-        else if (Array.isArray(data)) setSchedule(data);
-      });
+    fetchSamairSchedule(lineCode).then((data) => {
+      if (data?.data) setSchedule(data.data || []);
+      else if (Array.isArray(data)) setSchedule(data);
     });
   }, [lineCode]);
 
