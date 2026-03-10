@@ -85,7 +85,8 @@ const LineDetail = () => {
   const indFiyat = lineDetail.fiyat?.indirimli_fiyat;
   const eslesCode = lineDetail.esles?.code;
   const sefer: any[] = Array.isArray(lineDetail.sefer) ? lineDetail.sefer : [];
-  const isGidis = selectedLine.name?.toLowerCase().includes("gidiş") || !selectedLine.name?.toLowerCase().includes("dönüş");
+  const safeName = String(selectedLine.name || "").toLowerCase();
+  const isGidis = safeName.includes("gidiş") || !safeName.includes("dönüş");
 
   return (
     <motion.div
@@ -147,7 +148,7 @@ const LineDetail = () => {
       </div>
 
       {/* Special Line Details (Alerts, Timetables) */}
-      {getSpecialInfo(selectedLine.name)}
+      {getSpecialInfo(selectedLine)}
 
       {/* Stats grid */}
       {detailLoading ? (

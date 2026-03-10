@@ -46,8 +46,8 @@ const LinesTab = () => {
       const q = query.toLowerCase();
       lines = lines.filter(
         (l) =>
-          l.code.toLowerCase().includes(q) ||
-          l.name.toLowerCase().includes(q)
+          String(l.code).toLowerCase().includes(q) ||
+          String(l.name).toLowerCase().includes(q)
       );
     }
 
@@ -88,8 +88,8 @@ const LinesTab = () => {
               key={key}
               onClick={() => setActiveFilter(key as FilterKey)}
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 backdrop-blur-md border whitespace-nowrap ${isActive
-                  ? "bg-primary border-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--transit-orange)/0.4)]"
-                  : "glass-panel border-border/30 text-foreground hover:border-primary/50"
+                ? "bg-primary border-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--transit-orange)/0.4)]"
+                : "glass-panel border-border/30 text-foreground hover:border-primary/50"
                 }`}
             >
               {config ? `${config.emoji} ` : ""}{filterLabels[key as FilterKey]}

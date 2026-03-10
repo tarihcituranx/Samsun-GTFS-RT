@@ -33,8 +33,8 @@ const TopBar = ({ onOpenSettings }: TopBarProps) => {
 
   const filtered = query.length > 1
     ? [
-      ...lines.filter((l) => l.name.toLowerCase().includes(query.toLowerCase()) || l.code.toLowerCase().includes(query.toLowerCase())).map(l => ({ id: l.code, name: l.name, type: 'line', code: l.code })),
-      ...stops.filter((s) => s.name.toLowerCase().includes(query.toLowerCase())).map(s => ({ id: s.id, name: s.name, type: 'stop', code: '' }))
+      ...lines.filter((l) => String(l.name || "").toLowerCase().includes(query.toLowerCase()) || String(l.code || "").toLowerCase().includes(query.toLowerCase())).map(l => ({ id: String(l.code), name: String(l.name), type: 'line', code: String(l.code) })),
+      ...stops.filter((s) => String(s.name || "").toLowerCase().includes(query.toLowerCase())).map(s => ({ id: String(s.id), name: String(s.name), type: 'stop', code: '' }))
     ].slice(0, 5)
     : [];
 

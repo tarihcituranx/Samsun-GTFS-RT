@@ -148,6 +148,16 @@ export const fetchLineVehicles = async (code: string): Promise<Vehicle[]> => {
     }
 };
 
+export const fetchSamairSchedule = async (lineCode: string) => {
+    try {
+        const res = await fetch(`/api/samair/saatler?hat=${lineCode}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) {
+        return [];
+    }
+};
+
 export const fetchAllStops = async (): Promise<TransitStop[]> => {
     try {
         const res = await fetch(`${API_BASE}/api/tum_duraklar`);
