@@ -187,83 +187,81 @@ const LineDetail = () => {
         </div>
       )}
 
-      {/* Sefer (Basit) toggle */}
-      {sefer.length > 0 && (
-        <div className="mb-3">
-          <button
-            onClick={() => setShowSefer((v) => !v)}
-            className="w-full glass-panel rounded-xl px-4 py-2 text-sm font-semibold text-foreground text-left flex items-center justify-between"
-          >
-            <span>🕐 Sefer Saatleri ({sefer.length})</span>
-            <span className="text-muted-foreground">{showSefer ? "▲" : "▼"}</span>
-          </button>
-          {showSefer && (
-            <div className="mt-1 glass-panel rounded-xl p-3 max-h-48 overflow-y-auto scrollbar-hide">
-              {sefer.map((s: any, i: number) => (
-                <div key={i} className="flex items-center justify-between py-1 border-b border-border/40 last:border-0 text-sm">
-                  <span className="font-mono text-foreground">{s.saat || s.departure || s.time || JSON.stringify(s)}</span>
-                  {s.gun && <span className="text-xs text-muted-foreground">{s.gun}</span>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Resmi Tarife (proxy/schedules) */}
+      {/* Unified Sefer Saatleri / Resmi Tarife */}
       <div className="mb-3">
         <button
           onClick={async () => {
-            if (!showOfficial && officialSchedules.length === 0) {
+            if (!showSefer && sefer.length === 0 && officialSchedules.length === 0) {
               setScheduleLoading(true);
               const data = await fetchSchedules(selectedLine.code, selectedDate);
               setOfficialSchedules(data);
               setScheduleLoading(false);
             }
-            setShowOfficial((v) => !v);
+            setShowSefer((v) => !v);
           }}
-          className="w-full glass-panel rounded-xl px-4 py-2 text-sm font-semibold text-foreground text-left flex items-center justify-between"
+          className="w-full glass-panel rounded-xl px-4 py-3 text-sm font-semibold text-foreground text-left flex items-center justify-between transition-colors hover:bg-accent/50"
         >
-          <span>📅 Resmi Tarife {scheduleLoading ? "⏳" : `(${officialSchedules.length || "?"})`}</span>
-          <span className="text-muted-foreground">{showOfficial ? "▲" : "▼"}</span>
+          <div className="flex items-center gap-2">
+            <span>🕐</span>
+            <span>Sefer Saatleri {scheduleLoading && !sefer.length ? "⏳" : ""}</span>
+          </div>
+          <span className="text-muted-foreground">{showSefer ? "▼" : "▶"}</span>
         </button>
-        {showOfficial && (
+
+        {showSefer && (
           <div className="mt-1 glass-panel rounded-xl p-3">
-            {/* Date picker */}
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={async (e) => {
-                setSelectedDate(e.target.value);
-                setScheduleLoading(true);
-                const data = await fetchSchedules(selectedLine.code, e.target.value);
-                setOfficialSchedules(data);
-                setScheduleLoading(false);
-              }}
-              className="w-full mb-2 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {scheduleLoading ? (
-              <div className="flex justify-center py-3"><span className="animate-spin text-lg">⏳</span></div>
-            ) : officialSchedules.length > 0 ? (
-              <div className="max-h-52 overflow-y-auto scrollbar-hide">
-                {/* Group by yon */}
-                {Array.from(new Set(officialSchedules.map((s) => s.yon || "Tümü"))).map((yon) => (
-                  <div key={yon} className="mb-3">
-                    <p className="text-xs font-semibold text-primary mb-1 sticky top-0 bg-card/80 py-0.5">🚌 {yon}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {officialSchedules
-                        .filter((s) => (s.yon || "Tümü") === yon)
-                        .map((s, i) => (
-                          <span key={i} className="font-mono text-xs bg-accent rounded-lg px-2 py-1 text-foreground">
-                            {s.saat || s.departureTime || "—"}
-                          </span>
-                        ))}
-                    </div>
+            {sefer.length > 0 ? (
+              // Özel / DB Tarife
+              <div className="max-h-48 overflow-y-auto scrollbar-hide">
+                {sefer.map((s: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0 text-sm">
+                    <span className="font-mono text-foreground">{s.saat || s.departure || s.time || JSON.stringify(s)}</span>
+                    {s.gun && <span className="text-xs text-muted-foreground bg-accent/30 px-2 py-0.5 rounded">{s.gun}</span>}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground text-center py-2">Tarife bulunamadı</p>
+              // Resmi Tarife (Proxy)
+              <>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={async (e) => {
+                    setSelectedDate(e.target.value);
+                    setScheduleLoading(true);
+                    const data = await fetchSchedules(selectedLine.code, e.target.value);
+                    setOfficialSchedules(data);
+                    setScheduleLoading(false);
+                  }}
+                  className="w-full mb-3 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {scheduleLoading ? (
+                  <div className="flex justify-center py-4"><span className="animate-spin text-xl text-primary">⏳</span></div>
+                ) : officialSchedules.length > 0 ? (
+                  <div className="max-h-52 overflow-y-auto scrollbar-hide">
+                    {Array.from(new Set(officialSchedules.map((s) => s.yon || "Tümü"))).map((yon) => (
+                      <div key={yon} className="mb-4 last:mb-0">
+                        <p className="text-xs font-bold text-primary mb-2 sticky top-0 bg-card/90 backdrop-blur pb-1 z-10 border-b border-border/30">
+                          {yon.length > 25 ? yon.substring(0, 25) + '...' : yon} Yönü
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {officialSchedules
+                            .filter((s) => (s.yon || "Tümü") === yon)
+                            .map((s, i) => (
+                              <span key={i} className="font-mono text-xs bg-accent/40 border border-border/50 rounded-lg px-2 py-1 text-foreground shadow-sm">
+                                {s.saat || s.departureTime || "—"}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm border border-dashed border-border/50 rounded-xl bg-accent/10 text-muted-foreground text-center py-4">
+                    Bu tarihe ait sefer bulunamadı.
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}

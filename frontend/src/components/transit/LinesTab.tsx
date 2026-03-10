@@ -113,13 +113,15 @@ const LinesTab = () => {
               className="flex items-center gap-3 rounded-xl p-2.5 text-left transition-all hover:bg-accent/50 active:scale-[0.98] glass-panel"
             >
               <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-sora text-xs font-bold text-primary-foreground"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-sora text-[11px] font-bold text-primary-foreground text-center overflow-hidden leading-tight px-1"
                 style={{ backgroundColor: line.color }}
               >
-                {line.code}
+                {String(line.code).length > 4 ? String(line.code).substring(0, 4) : line.code}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{line.name}</p>
+                <p className="truncate text-[13px] font-semibold text-foreground capitalize" title={line.name}>
+                  {String(line.name).toLocaleLowerCase("tr-TR")}
+                </p>
                 <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-transit-green" />

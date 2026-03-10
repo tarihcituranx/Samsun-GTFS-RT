@@ -39,12 +39,14 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
             const cat = (item.kat || "").toLowerCase();
             const code = item.code || "";
 
-            // Not: Yeni backend'de bazı "T" kodlu hatlar otobüs; yalnızca kat=tramvay ise tramvay kabul et.
+            const lowerName = String(item.name || "").toLowerCase();
+            const lowerCode = String(item.code || "").toLowerCase();
+
             if (cat.includes("ekspres") || code.startsWith("E")) type = "ekspres";
             else if (cat.includes("tramvay")) type = "tramvay";
             else if (cat.includes("ring") || code.startsWith("R")) type = "ring";
-            else if (cat.includes("vapur")) type = "vapur";
-            else if (cat.includes("teleferik")) type = "teleferik";
+            else if (cat.includes("vapur") || lowerName.includes("vapur") || lowerName.includes("samsunum") || lowerName.includes("feribot")) type = "vapur";
+            else if (cat.includes("teleferik") || lowerName.includes("teleferik")) type = "teleferik";
 
             // renk: backend'den gelen hex rengi kullan, yoksa tipten hesapla
             const color = item.renk ? `#${item.renk}` : getColorForType(type);
