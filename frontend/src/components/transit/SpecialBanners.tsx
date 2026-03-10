@@ -240,8 +240,8 @@ export const SamairScheduleBanner = ({ lineCode }: { lineCode: string }) => {
 
 /* ── getSpecialInfo helper ─────────────────────────────────────────────────── */
 export const getSpecialInfo = (line: import("@/data/mockData").TransitLine | undefined | null) => {
-  if (!line || typeof line.name !== "string") return null;
-  const hatAdi = line.name.toUpperCase();
+  if (!line || !line.name) return null;
+  const hatAdi = String(line.name).toUpperCase();
   if (hatAdi.includes("SAMSUNUM-1")) return <SamsuNum1Banner />;
   if (hatAdi.includes("SAMSUNUM-2")) return <SamsuNum2Banner />;
   if (hatAdi.includes("SAMSUNUM-3")) return <SamsuNum3Banner />;
