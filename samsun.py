@@ -12,7 +12,11 @@
 import asyncio
 import httpx
 import os
-import sqlite3
+import psycopg2
+import psycopg2.extras
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import unicodedata
 import threading
 import time
@@ -544,15 +548,13 @@ class Database:
         self.durak_coords = {}
 
     def connect(self):
-        yeni = not os.path.exists(DB)
-        self.conn = sqlite3.connect(DB, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        self._create_tables()
-        if yeni: log.info(f"📀 Yeni DB: {DB}")
-        else: log.info(f"📀 Mevcut DB: {DB}")
+        master_db_url = os.environ.get('SUPABASE_DB_URL')
+        self.conn = psycopg2.connect(master_db_url)
+        
+        log.info(f"📀 Supabase (Postgres) DB'ye bağlanıldı.")
         self._load_durak_coords()
         self._load_tram_csv_corrections()
-        return yeni
+        return False
 
     def _load_tram_csv_corrections(self):
         """CSV'den tramvay durak düzeltmelerini yükle (DB'yi bozmadan)"""
@@ -968,7 +970,7 @@ class Collector:
                         basarili_short += 1
                 
                 # Kalan (V1'de olmayan) hatlar için Regex Fallback
-                self.db.ex("UPDATE hat SET short_name = SUBSTR(code, 1, INSTR(code, ' ') - 1) WHERE short_name = '' AND code LIKE '% %' AND (code LIKE 'H%' OR code LIKE 'R%' OR code LIKE 'E%')")
+                self.db.ex("UPDATE hat SET short_name = substring(code from 1 for position(' ' in code) - 1) WHERE short_name = '' AND code LIKE '% %' AND (code LIKE 'H%' OR code LIKE 'R%' OR code LIKE 'E%')")
                 self.db.ex("UPDATE hat SET short_name = code WHERE short_name = ''")
                 
                 log.info(f"      ✅ Yeni Samulaş V1'den {basarili_short} short_name çekildi. Kalanlar otomatik atandı.")
