@@ -3706,6 +3706,10 @@ def create_app(db, col):
 
     @app.get("/api/durak_panel/{kod}")
     async def api_durak_panel(kod: str):
+        # GECE MODU KONTROLU (00:00 - 06:00 arası durak panelleri API'yi yormasın)
+        saat = datetime.now().hour
+        if 0 <= saat < 6:
+            return JSONResponse([])
         return JSONResponse(col.durak_bilgi(kod))
 
     @app.get("/api/tum_duraklar")
@@ -4783,6 +4787,11 @@ loadStats(); setInterval(loadStats, 10000);
                 araclar = []
             duraklar = db.get("SELECT * FROM samair_durak WHERE hat IN (SELECT id FROM samair WHERE kod LIKE ?) ORDER BY sira", (f'%{c}%',))
         else:
+            # GECE MODU KONTROLU (00:00 - 06:00 arası normal hatlar çalışmaz, API'yi yormayalım)
+            saat = datetime.now().hour
+            if 0 <= saat < 6:
+                return JSONResponse([])
+                
             # Normal hat
             try:
                 araclar = await asyncio.wait_for(asyncio.to_thread(col.canli, c), timeout=4.0)
