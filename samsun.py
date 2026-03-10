@@ -3588,6 +3588,18 @@ def create_app(db, col):
         if os.path.exists(path): return FileResponse(path)
         return HTMLResponse(status_code=404)
 
+    # Dinamik PWA ve Workbox Root Dosyaları yakalayıcı (Vite-PWA için kritik)
+    @app.get("/{filename:path}")
+    async def get_root_files(filename: str):
+        # Eğer dosya kök dizindeyse (sw.js, manifest.webmanifest, workbox-*.js) geri döndür.
+        if "/" not in filename and filename.endswith((".js", ".webmanifest", ".json", ".txt", ".svg")):
+            from fastapi.responses import FileResponse
+            path = os.path.join("frontend/dist", filename)
+            if os.path.exists(path):
+                return FileResponse(path)
+        # Bulunamadıysa veya tehlikeli bir şeyse Fastapi'ye pasla, o da 404 döner
+        return HTMLResponse(status_code=404)
+
     @app.get("/api/yakin")
     async def api_yakin(lat: float, lon: float):
         """Yakındaki durakları döner — her durak için hangi hatların geçtiği dahil (Flutter Tab 3)"""
