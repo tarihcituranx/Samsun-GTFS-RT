@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import VersionBlocker from "@/components/transit/VersionBlocker";
+import PWAPrompt from "@/components/transit/PWAPrompt";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <VersionBlocker />
+      <PWAPrompt />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
