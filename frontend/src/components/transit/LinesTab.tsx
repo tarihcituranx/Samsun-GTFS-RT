@@ -5,7 +5,7 @@ import { useTransit } from "@/contexts/TransitContext";
 import { useState, useMemo, useRef } from "react";
 import { SkeletonList } from "./Skeletons";
 
-const typeOrder = ["all", "ekspres", "otobus", "ring", "tramvay", "teleferik", "odak", "samair"] as const;
+const typeOrder = ["all", "ekspres", "otobus", "ring", "tramvay", "teleferik", "ilce", "tekne", "havalimani", "odak", "samair"] as const;
 
 type FilterKey = TransitLine["type"] | "all";
 
@@ -15,7 +15,9 @@ const filterLabels: Record<FilterKey, string> = {
   otobus: "Otobüs",
   tramvay: "Tramvay",
   ring: "Ring",
-  vapur: "Vapur",
+  tekne: "Tekne",
+  ilce: "İlçe",
+  havalimani: "Havalimanı",
   odak: "Odak",
   teleferik: "Teleferik",
   samair: "Samair",

@@ -8,7 +8,9 @@ const getColorForType = (type: string) => {
         case 'ekspres': return '#f97316';
         case 'tramvay': return '#22c55e';
         case 'otobus': return '#0ea5e9';
-        case 'vapur': return '#0ea5e9';
+        case 'tekne': return '#3498db';
+        case 'ilce': return '#1abc9c';
+        case 'havalimani': return '#e74c3c';
         case 'teleferik': return '#a855f7';
         case 'samair': return '#64748b';
         case 'ring': return '#eab308';
@@ -42,11 +44,29 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
             const lowerName = String(item.name || "").toLowerCase();
             const lowerCode = String(item.code || "").toLowerCase();
 
-            if (cat.includes("ekspres") || code.startsWith("E")) type = "ekspres";
-            else if (cat.includes("tramvay")) type = "tramvay";
-            else if (cat.includes("ring") || code.startsWith("R")) type = "ring";
-            else if (cat.includes("vapur") || lowerName.includes("vapur") || lowerName.includes("samsunum") || lowerName.includes("feribot")) type = "vapur";
-            else if (cat.includes("teleferik") || lowerName.includes("teleferik")) type = "teleferik";
+            if (cat && cat !== "Tasnif Dışı" && cat !== "tasnif dışı") {
+                if (cat.includes("ekspres")) type = "ekspres";
+                else if (cat.includes("tramvay")) type = "tramvay";
+                else if (cat.includes("ring")) type = "ring";
+                else if (cat.includes("tekne") || cat.includes("vapur")) type = "tekne";
+                else if (cat.includes("teleferik")) type = "teleferik";
+                else if (cat.includes("ilce") || cat.includes("ilçe")) type = "ilce";
+                else if (cat.includes("havalimani") || cat.includes("havalimanı")) type = "havalimani";
+                else if (cat.includes("odak")) type = "odak";
+            }
+
+            // Eğer kategori hala güvenilir bulunamadıysa veya gelişmiş fallback isteniyorsa mobil uygulamanın mantığı devreye  girer
+            const c = code.toUpperCase();
+            const n = String(item.name || "").toUpperCase();
+
+            if (c.startsWith('R') && c.length > 1 && /\d/.test(c.charAt(1))) type = 'ring';
+            else if (c.includes('TRAMVAY') || n.includes('TRAMVAY')) type = 'tramvay';
+            else if (c.includes('TELEFERIK') || n.includes('TELEFERIK') || c.includes('TELEFERİK') || n.includes('TELEFERİK')) type = 'teleferik';
+            else if (['GEMİ', 'VAPUR', 'FERİBOT', 'TEKNE', 'SAMSUNUM'].some(x => c.includes(x) || n.includes(x))) type = 'tekne';
+            else if (c.startsWith('H') && c.length > 1 && /\d/.test(c.charAt(1))) type = 'havalimani';
+            else if ((c.startsWith('G') && c.length > 1 && /\d/.test(c.charAt(1))) || n.includes('KÜLTÜR YOLU') || n.includes('KULTUR YOLU')) type = 'odak';
+            else if (c.includes('EKSPRES') || (c.startsWith('E') && c.length > 1 && /\d/.test(c.charAt(1)))) type = 'ekspres';
+            else if (['TERME', 'ÇARŞAMBA', 'BAFRA', 'HAVZA', 'LADİK', 'KAVAK', 'ASARCIK', 'SALIPAZARI', 'TEKKEKÖY'].some(x => n.includes(x))) type = 'ilce';
 
             // renk: backend'den gelen hex rengi kullan, yoksa tipten hesapla
             const color = item.renk ? `#${item.renk}` : getColorForType(type);

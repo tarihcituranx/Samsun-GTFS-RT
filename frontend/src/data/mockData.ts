@@ -1,7 +1,7 @@
 export interface TransitLine {
   code: string;
   name: string;
-  type: "ekspres" | "tramvay" | "otobus" | "vapur" | "teleferik" | "samair" | "ring" | "odak";
+  type: "ekspres" | "tramvay" | "otobus" | "teleferik" | "samair" | "ring" | "odak" | "tekne" | "ilce" | "havalimani";
   color: string;
   vehicles: number;
   fare: number;
@@ -47,7 +47,7 @@ export const mockLines: TransitLine[] = [
   { code: "T2", name: "Tramvay 2 - Merkez ↔ Tekkeköy", type: "tramvay", color: "#22c55e", vehicles: 3, fare: 18, stops: 24 },
   { code: "19", name: "19 - Atakum ↔ Hançerli", type: "otobus", color: "#0ea5e9", vehicles: 12, fare: 24, stops: 55 },
   { code: "26", name: "26 - Mert ↔ Çarşamba", type: "otobus", color: "#0ea5e9", vehicles: 9, fare: 24, stops: 48 },
-  { code: "V1", name: "Vapur 1 - Samsun ↔ Amisos", type: "vapur", color: "#0ea5e9", vehicles: 2, fare: 35, stops: 5 },
+  { code: "V1", name: "Samsunum 1 - Samsun ↔ Amisos", type: "tekne", color: "#3498db", vehicles: 2, fare: 35, stops: 5 },
   { code: "OK1", name: "Odak 1 - Sahil Turu", type: "odak", color: "#10b981", vehicles: 2, fare: 15, stops: 12 },
   { code: "OK2", name: "Odak 2 - Tarihi Yerler", type: "odak", color: "#10b981", vehicles: 2, fare: 15, stops: 9 },
   { code: "TF1", name: "Teleferik 1 - Amisos Tepesi", type: "teleferik", color: "#a855f7", vehicles: 6, fare: 30, stops: 3 },
@@ -99,7 +99,9 @@ export const lineTypeConfig: Record<string, { label: string; emoji: string }> = 
   ekspres: { label: "Ekspres", emoji: "🚌" },
   tramvay: { label: "Tramvay", emoji: "🚃" },
   otobus: { label: "Otobüs", emoji: "🚌" },
-  vapur: { label: "Vapur", emoji: "⛴️" },
+  tekne: { label: "Tekne", emoji: "⛴️" },
+  ilce: { label: "İlçe", emoji: "🚐" },
+  havalimani: { label: "Havalimanı", emoji: "✈️" },
   odak: { label: "Odak", emoji: "🟢" },
   teleferik: { label: "Teleferik", emoji: "🚡" },
   samair: { label: "Samair", emoji: "✈️" },
