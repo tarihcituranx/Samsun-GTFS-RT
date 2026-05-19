@@ -697,7 +697,7 @@ class Database:
 
     def temizle(self):
         for t in ['hat', 'durak', 'hat_durak', 'sefer', 'odak', 'odak_durak', 'samair', 'samair_durak', 'samair_sefer']:
-            self.ex(f"DELETE FROM {t}")
+            self.ex(f"DELETE FROM {t} WHERE 1=1")
         log.info("   🗑️ Veritabanı temizlendi")
 
     def guncelleme_tamamlandi(self): self.set_meta('son_guncelleme', datetime.now().strftime("%Y-%m-%d"))
