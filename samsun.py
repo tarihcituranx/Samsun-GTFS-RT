@@ -26,6 +26,13 @@ import math
 import requests
 import urllib3
 import re
+try:
+    import cloudscraper
+    _CLOUDSCRAPER_OK = True
+except ImportError:
+    _CLOUDSCRAPER_OK = False
+    log_tmp = logging.getLogger("SamsunTransit")
+    log_tmp.warning("⚠️ cloudscraper yüklü değil — Cloudflare korumalı sitelere erişilemeyebilir. pip install cloudscraper")
 import urllib.parse
 from pathlib import Path
 from requests.adapters import HTTPAdapter
@@ -125,6 +132,7 @@ SAMULAS_FIYAT_ESLESTIRME = {
 
 SAMAIR_HATLAR = {
     # Samair Hat ID Mapping (H1-H5 → YBS hatid)
+    # ASIS kodları hat_analiz_full.txt'den doğrulandı (20.05.2026)
     1: {
         'ad': 'H1 OMÜ - HAVALİMANI',
         'asis': ['H1 OMÜ - HAVALİMANI', 'H1 HAVALİMANI - OMÜ'],
@@ -137,18 +145,20 @@ SAMAIR_HATLAR = {
     },
     3: {
         'ad': 'H3 BAFRA - HAVALİMANI',
-        'asis': ['H3 BAFRA - HAVALİMANI', 'H3 HAVALİMANI - BAFRA'],
+        # ASIS'te "BAFRA (YAKAKENT)" şeklinde geçiyor — önceki "BAFRA" kodu eşleşmiyordu!
+        'asis': ['H3 BAFRA (YAKAKENT) - HAVALİMANI', 'H3 HAVALİMANI - BAFRA (YAKAKENT)'],
         'ybs_hatid': [5]
     },
     4: {
         'ad': 'H4 ÇARŞAMBA - HAVALİMANI',
-        'asis': ['H4 ÇARŞAMBA - HAVALİMANI', 'H4 HAVALİMANI - ÇARŞAMBA'],
+        # ASIS'te "ÇARŞAMBA (TERME)" şeklinde geçiyor — önceki "ÇARŞAMBA" kodu eşleşmiyordu!
+        'asis': ['H4 ÇARŞAMBA (TERME) - HAVALİMANI', 'H4 HAVALİMANI - ÇARŞAMBA (TERME)'],
         'ybs_hatid': [9]
     },
     5: {
         'ad': 'H5 HAVZA - HAVALİMANI',
         'asis': ['H5 HAVZA - HAVALİMANI', 'H5 HAVALİMANI - HAVZA'],
-        'ybs_hatid': []  # TODO: hat_kesi_sorgu.py çıktısından doldur
+        'ybs_hatid': []
     }
 }
 
@@ -451,6 +461,27 @@ class Http:
         else:
             log.warning("⚠️ Proxy ayarlanmamış! PROXY_HOST/PORT/USER env var eksik. Direkt bağlantı kullanılacak.")
         
+        # ============================================================
+        # ☁️ CLOUDSCRAPER — Cloudflare korumalı sitelere erişim
+        # odak.samsun.bel.tr/doit.php ve samair.samsun.bel.tr/api.php
+        # ============================================================
+        if _CLOUDSCRAPER_OK:
+            self.cs = cloudscraper.create_scraper(
+                browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False}
+            )
+            self.cs.headers.update({
+                'accept': 'application/json, text/javascript, */*; q=0.01',
+                'accept-language': 'tr',
+                'x-requested-with': 'XMLHttpRequest',
+            })
+            if proxy_host and proxy_port and proxy_user:
+                self.cs.proxies = {"http": proxy_url, "https": proxy_url}
+            log.info("☁️ Cloudscraper hazır (Cloudflare bypass)")
+        else:
+            # Fallback: regular session (Cloudflare'i atlatamaz ama en azından çalışır)
+            self.cs = self.s
+            log.warning("⚠️ Cloudscraper yok — Cloudflare korumalı ODAK/Samair API'leri çalışmayabilir!")
+        
         self.session = self.s  # Alias (proxy endpoint'leri self.session kullanıyor)
         
         self._tok = {}
@@ -511,15 +542,18 @@ class Http:
         with self._tok_lock:
             if 'ybs' in self._tok and time.time() - self._tok['ybs']['t'] < 200:
                 return self._tok['ybs']['v']
-        try:
-            r = self.session.get(f"{YBS}/?method=getGuestToken", timeout=10)
-            if r.ok:
-                tok = r.json().get('token')
-                with self._tok_lock:
-                    self._tok['ybs'] = {'v': tok, 't': time.time()}
-                return tok
-        except Exception as e:
-            log.warning(f"YBS token hatası: {type(e).__name__}: {e}")
+        # Cloudscraper önce dene (Cloudflare bypass), sonra normal session
+        for sess in [self.cs, self.session]:
+            try:
+                r = sess.get(f"{YBS}/?method=getGuestToken", timeout=10)
+                if r.ok:
+                    tok = r.json().get('token')
+                    if tok:
+                        with self._tok_lock:
+                            self._tok['ybs'] = {'v': tok, 't': time.time()}
+                        return tok
+            except Exception as e:
+                log.warning(f"YBS token hatası ({type(sess).__name__}): {type(e).__name__}: {e}")
         return None
 
     def ybs(self, method, submethod=None, **kw):
@@ -528,15 +562,92 @@ class Http:
         p = {'method': method, 'token': tok}
         if submethod: p['submethod'] = submethod
         p.update(kw)
-        try:
-            r = self.session.get(f"{YBS}/", params=p, timeout=30)
-            if r.ok:
-                res = r.json()
-                if isinstance(res, dict) and res.get('status') == 'SUCCESS':
+        # Cloudscraper önce dene, fallback normal session
+        for sess in [self.cs, self.session]:
+            try:
+                r = sess.get(f"{YBS}/", params=p, timeout=30)
+                if r.ok:
+                    res = r.json()
+                    if isinstance(res, dict) and res.get('status') == 'SUCCESS':
+                        return res.get('data', [])
                     return res.get('data', [])
-                return res.get('data', [])
+            except Exception as e:
+                log.warning(f"YBS {method}/{submethod} hatası ({type(sess).__name__}): {type(e).__name__}: {e}")
+        return []
+
+    def odak_direct(self, action, **params):
+        """
+        ODAK doğrudan API — odak.samsun.bel.tr/doit.php
+        Cloudflare korumalı. cloudscraper ile bypass edilir.
+        YBS API çalışmazsa bu fallback olarak kullanılır.
+        """
+        try:
+            p = {'action': action}
+            p.update(params)
+            r = self.cs.get(
+                'https://odak.samsun.bel.tr/doit.php',
+                params=p,
+                headers={
+                    'Referer': 'https://odak.samsun.bel.tr/',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'accept': 'application/json, text/javascript, */*; q=0.01',
+                    'accept-language': 'tr',
+                },
+                timeout=20
+            )
+            if not r.ok:
+                log.warning(f"ODAK direct API HTTP {r.status_code} ({action})")
+                return []
+            # Cloudflare HTML yanıtı mı?
+            ct = r.headers.get('content-type', '')
+            if 'text/html' in ct:
+                log.warning(f"ODAK direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action})")
+                return []
+            data = r.json()
+            # doit.php genelde düz liste döndürür
+            if isinstance(data, list):
+                return data
+            return data.get('data', data.get('root', data.get('result', [])))
         except Exception as e:
-            log.warning(f"YBS {method}/{submethod} hatası: {type(e).__name__}: {e}")
+            log.warning(f"ODAK direct API hatası ({action}): {type(e).__name__}: {e}")
+        return []
+
+    def samair_direct(self, action, **params):
+        """
+        Samair doğrudan API — samair.samsun.bel.tr/api.php
+        Cloudflare korumalı. cloudscraper ile bypass edilir.
+        YBS API çalışmazsa bu fallback olarak kullanılır.
+        Örnekler:
+          DuraklarList  → durak listesi
+          UcakSeferSaatleri&hatid=3 → sefer saatleri
+        """
+        try:
+            p = {'m': 'samair_public', 'a': action}
+            p.update(params)
+            r = self.cs.get(
+                'https://samair.samsun.bel.tr/api.php',
+                params=p,
+                headers={
+                    'Referer': 'https://samair.samsun.bel.tr/',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'accept': 'application/json, text/javascript, */*; q=0.01',
+                    'accept-language': 'tr',
+                },
+                timeout=20
+            )
+            if not r.ok:
+                log.warning(f"Samair direct API HTTP {r.status_code} ({action})")
+                return []
+            ct = r.headers.get('content-type', '')
+            if 'text/html' in ct:
+                log.warning(f"Samair direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action})")
+                return []
+            data = r.json()
+            if isinstance(data, list):
+                return data
+            return data.get('data', data.get('root', data.get('result', [])))
+        except Exception as e:
+            log.warning(f"Samair direct API hatası ({action}): {type(e).__name__}: {e}")
         return []
 
 # --- VERİTABANI ---
@@ -1226,20 +1337,28 @@ class Collector:
         log.info("   🚢 Tekne ve Teleferik seferleri eklendi.")
 
     def _odak(self):
-        """Odak Turistik Hatları - HatlarAllList ile tüm hatları çeker (Ladik, Şahinkaya dahil)"""
+        """Odak Turistik Hatları - Önce direct API, fallback YBS"""
         log.info("   📥 Odak Turistik Hatlar...")
-        # x.py'deki gibi HatlarAllList kullan (daha fazla hat getirir)
-        hatlar = self.http.ybs('odakSamsun_Crud', 'HatlarAllList', referer='https://odak.samsun.bel.tr/')
-        if not hatlar:
-            # Fallback: eski endpoint
-            hatlar = self.http.ybs('odakSamsun_Crud', 'HatlarList', referer='https://odak.samsun.bel.tr/')
-        if not hatlar:
-            log.info("      ⚠️ Odak hatları çekilemedi")
-            return
-        
-        # YBS API'den gelen Gidiş/Dönüş isimleri ters olabiliyor
-        # İlk durak TTTM ise Gidiş, değilse Dönüş
-        # Bu mapping ile düzeltiyoruz (API tutarsızlığı)
+
+        # ── 1. Doğrudan ODAK API (Cloudflare bypass) ──────────────────
+        hatlar = self.http.odak_direct('HatlarAllList')
+        api_kaynak = 'direct'
+        if hatlar:
+            log.info(f"      ✅ ODAK direct API: {len(hatlar)} hat")
+        else:
+            # ── 2. YBS API fallback ───────────────────────────────────
+            log.info("      ⚠️ ODAK direct API boş — YBS fallback deneniyor...")
+            hatlar = self.http.ybs('odakSamsun_Crud', 'HatlarAllList', referer='https://odak.samsun.bel.tr/')
+            api_kaynak = 'ybs'
+            if not hatlar:
+                hatlar = self.http.ybs('odakSamsun_Crud', 'HatlarList', referer='https://odak.samsun.bel.tr/')
+            if hatlar:
+                log.info(f"      ✅ YBS API: {len(hatlar)} hat")
+            else:
+                log.info("      ❌ Odak hatları çekilemedi (direct + YBS)")
+                return
+
+        # Gidiş/Dönüş isim düzeltmesi (API tutarsızlığı)
         ODAK_ISIM_DUZELTME = {
             '1': 'Dönüş',  # Şahinkaya -> TTTM (API'de Gidiş yazıyor)
             '2': 'Gidiş',  # TTTM -> Şahinkaya (API'de Dönüş yazıyor)
@@ -1248,29 +1367,40 @@ class Collector:
             '5': 'Dönüş',  # Ayvacık -> TTTM
             '6': 'Gidiş',  # TTTM -> Ayvacık
         }
-        
-        log.info(f"      📍 {len(hatlar)} turistik hat bulundu")
+
+        log.info(f"      📍 {len(hatlar)} turistik hat bulundu [{api_kaynak}]")
         for h in hatlar:
             hid = str(h.get('id', ''))
-            hat_adi = h.get('hat_adi', '')
-            
-            # Gidiş/Dönüş isim düzeltmesi (API tutarsızlığı)
+            # Direct API ve YBS farklı alan adı kullanabilir
+            hat_adi = h.get('hat_adi') or h.get('HatAdi') or h.get('ad') or h.get('name') or ''
+            hat_kod = h.get('hat_aciklama') or h.get('kod') or h.get('code') or ''
+            hat_gunler = h.get('hat_gunleri') or h.get('gunler') or h.get('days') or ''
+
+            # Gidiş/Dönüş isim düzeltmesi
             if hid in ODAK_ISIM_DUZELTME:
                 dogru_yon = ODAK_ISIM_DUZELTME[hid]
                 if 'Gidiş' in hat_adi or 'Dönüş' in hat_adi:
                     hat_adi = hat_adi.replace('Gidiş', 'TEMP').replace('Dönüş', 'TEMP')
                     hat_adi = hat_adi.replace('TEMP', dogru_yon)
-            
-            self.db.ex("INSERT OR REPLACE INTO odak VALUES(?,?,?,?)", (hid, hat_adi, h.get('hat_aciklama', ''), h.get('hat_gunleri', '')))
-            duraklar = self.http.ybs('odakSamsun_Crud', 'GetHatDuraklar', referer='https://odak.samsun.bel.tr/', id=hid)
-            # Batch insert (tek commit ile performans artışı)
+
+            self.db.ex("INSERT OR REPLACE INTO odak VALUES(?,?,?,?)", (hid, hat_adi, hat_kod, hat_gunler))
+
+            # ── Duraklar: direct önce, YBS fallback ──────────────────
+            duraklar = self.http.odak_direct('GetHatDuraklar', id=hid)
+            if not duraklar:
+                duraklar = self.http.ybs('odakSamsun_Crud', 'GetHatDuraklar', referer='https://odak.samsun.bel.tr/', id=hid)
+
             batch_data = []
             for i, d in enumerate(duraklar, 1):
-                dk, lat, lon = d.get('durak_kodu', ''), 0, 0
-                if dk in self.db.durak_coords: lat, lon = self.db.durak_coords[dk]
-                fiyat = clean_price(d.get('durak_fiyat', ''))
-                fiyat_ogr = clean_price(d.get('durak_fiyat_ogr', ''))
-                batch_data.append((hid, d.get('durak_adi', ''), dk, i, lat, lon, fiyat, fiyat_ogr))
+                # Alan adları farklı olabilir
+                dk = d.get('durak_kodu') or d.get('DurakKodu') or d.get('kod') or ''
+                d_ad = d.get('durak_adi') or d.get('DurakAdi') or d.get('ad') or ''
+                lat, lon = 0, 0
+                if dk in self.db.durak_coords:
+                    lat, lon = self.db.durak_coords[dk]
+                fiyat = clean_price(d.get('durak_fiyat') or d.get('Fiyat') or d.get('fiyat') or '')
+                fiyat_ogr = clean_price(d.get('durak_fiyat_ogr') or d.get('FiyatOgr') or d.get('fiyat_ogr') or '')
+                batch_data.append((hid, d_ad, dk, i, lat, lon, fiyat, fiyat_ogr))
             if batch_data:
                 self.db.exm("INSERT INTO odak_durak(hat,ad,kod,sira,lat,lon,fiyat,fiyat_ogr) VALUES(?,?,?,?,?,?,?,?)", batch_data)
 
@@ -1465,29 +1595,49 @@ class Collector:
 
 
     def _samair_duraklar(self):
-        """Samair durakları - Önce YBS API, sonra ASIS fallback"""
+        """Samair durakları - Önce direct API (Cloudflare bypass), sonra YBS + ASIS fallback"""
         log.info("   📥 Samair Durakları...")
         self.db.ex("DELETE FROM samair_durak")
-        
-        # YBS API ile dene (x.py'deki gibi - samair_duraklar_public)
-        try:
-            ybs_duraklar = self.http.ybs('samair_duraklar_public', 'DuraklarList')
-            if ybs_duraklar:
-                log.info(f"      ✅ YBS'den {len(ybs_duraklar)} Samair durağı çekildi")
-                # YBS durakları genel, hat bazlı değil - bunları kaydet
-                for i, d in enumerate(ybs_duraklar, 1):
-                    lat, lon = parse_float(d.get('lat', d.get('latitude', 0))), parse_float(d.get('lon', d.get('longitude', 0)))
-                    fiyat = clean_price(d.get('durak_fiyat', d.get('fiyat', '')))
-                    self.db.ex("INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
-                              (0, d.get('durak_adi', ''), d.get('durak_kodu', ''), i, lat, lon, fiyat))
-        except Exception as e:
-            log.info(f"      ⚠️ YBS Samair API hatası: {e}")
-        
-        # Her hat için ASIS üzerinden güzergah çek
+
+        ybs_duraklar = []
+
+        # ── 1. Doğrudan Samair API (Cloudflare bypass) ────────────────
+        direct_duraklar = self.http.samair_direct('DuraklarList')
+        if direct_duraklar:
+            log.info(f"      ✅ Samair direct API: {len(direct_duraklar)} durak")
+            ybs_duraklar = direct_duraklar  # fiyat lookup için sakla
+            for i, d in enumerate(direct_duraklar, 1):
+                lat = parse_float(d.get('lat') or d.get('latitude') or 0)
+                lon = parse_float(d.get('lon') or d.get('longitude') or 0)
+                fiyat = clean_price(d.get('durak_fiyat') or d.get('fiyat') or '')
+                self.db.ex(
+                    "INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
+                    (0, d.get('durak_adi') or d.get('ad') or '', d.get('durak_kodu') or d.get('kod') or '', i, lat, lon, fiyat)
+                )
+        else:
+            # ── 2. YBS API fallback ───────────────────────────────────
+            log.info("      ⚠️ Samair direct boş — YBS fallback deneniyor...")
+            try:
+                ybs_duraklar = self.http.ybs('samair_duraklar_public', 'DuraklarList')
+                if ybs_duraklar:
+                    log.info(f"      ✅ YBS'den {len(ybs_duraklar)} Samair durağı çekildi")
+                    for i, d in enumerate(ybs_duraklar, 1):
+                        lat = parse_float(d.get('lat', d.get('latitude', 0)))
+                        lon = parse_float(d.get('lon', d.get('longitude', 0)))
+                        fiyat = clean_price(d.get('durak_fiyat', d.get('fiyat', '')))
+                        self.db.ex(
+                            "INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
+                            (0, d.get('durak_adi', ''), d.get('durak_kodu', ''), i, lat, lon, fiyat)
+                        )
+            except Exception as e:
+                log.info(f"      ⚠️ YBS Samair API hatası: {e}")
+
+        # ── 3. ASIS üzerinden hat bazlı güzergah + samair tablosu ─────
+        # SAMAIR_HATLAR'daki düzeltilmiş ASIS kodları (H3/H4 yakakent/terme eklendi)
         for hid, hat_info in SAMAIR_HATLAR.items():
             ana_ad = hat_info['ad']
             self.db.ex("INSERT OR REPLACE INTO samair VALUES(?,?,?)", (hid, ana_ad, ana_ad))
-            
+
             toplam_durak = []
             for tam_ad in hat_info['asis']:
                 duraklar = self.http.asis('StopsStations', lineCode=tam_ad)
@@ -1505,50 +1655,67 @@ class Collector:
                                     'lat': lat,
                                     'lon': lon
                                 })
-            
+
             toplam_durak.sort(key=lambda x: x['sira'])
             for idx, d in enumerate(toplam_durak, 1):
                 price = '120.0'
-                if 'ybs_duraklar' in locals() and ybs_duraklar:
-                    for yd in ybs_duraklar:
-                        ykod = str(yd.get('durak_kodu', ''))
-                        if ykod and str(d['ad']).startswith(ykod + ' -'):
-                            price = clean_price(yd.get('durak_fiyat', '120.0'))
-                            if not price: price = '120.0'
-                            break
+                # Fiyatı ybs/direct'ten gelen durak listesinden eşleştir
+                for yd in ybs_duraklar:
+                    ykod = str(yd.get('durak_kodu', '') or yd.get('kod', ''))
+                    if ykod and str(d['ad']).startswith(ykod + ' -'):
+                        price = clean_price(yd.get('durak_fiyat') or yd.get('fiyat') or '120.0') or '120.0'
+                        break
 
-                self.db.ex("INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
-                          (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], price))
-            
-            log.info(f"      ✈️ H{hid} ({ana_ad}): {len(toplam_durak)} durak")
+                self.db.ex(
+                    "INSERT INTO samair_durak(hat,ad,kod,sira,lat,lon,fiyat) VALUES(?,?,?,?,?,?,?)",
+                    (hid, d['ad'], d['kod'], idx, d['lat'], d['lon'], price)
+                )
+
+            log.info(f"      ✈️ H{hid} ({ana_ad}): {len(toplam_durak)} durak [ASIS]")
 
     def samair_seferler_guncelle(self, force=False):
         if not force and not self.db.samair_guncelleme_gerekli(): return
         log.info("   ✈️ Samair Seferleri Güncelleniyor...")
         toplam = 0
         now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
-        
-        # Her UI hattı için YBS'deki karşılık gelen hatid'leri kullan
+
+        # Her UI hattı için YBS + direct API'deki karşılık gelen hatid'leri kullan
         for ui_hatid, hat_info in SAMAIR_HATLAR.items():
+            seferler = []
+
+            # 1. YBS API (cloudscraper ile denenecek)
             for ybs_hatid in hat_info['ybs_hatid']:
-                seferler = self.http.ybs('samair_ucaksefersaatleri_public', 'HatlarList', hatid=ybs_hatid)
-                if seferler:
-                    for sf in seferler:
-                        api_id = int(sf.get('id', 0))
-                        if api_id == 0: continue
-                        s, v = sf.get('saat', '') or '', sf.get('varis_saati', '') or ''
-                        
-                        # Tarih formatını düzenle
-                        tarih = sf.get('tarih', '')
-                        gun_format = sf.get('formatted_date', '')
-                        
-                        # 1. Eski kayıtları temizle (Dünden öncekiler)
-                        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-                        self.db.ex("DELETE FROM samair_sefer WHERE tarih < ?", (yesterday,))
-                        
-                        self.db.ex("INSERT OR REPLACE INTO samair_sefer(id,hat,saat,varis,firma,ucak_saat,tarih,gun_format) VALUES(?,?,?,?,?,?,?,?)",
-                                  (api_id, ui_hatid, s[:5], v[:5], sf.get('ucak_firmasi', ''), sf.get('ucak_saatleri', ''), tarih, gun_format))
-                        toplam += 1
+                ybs_seferler = self.http.ybs('samair_ucaksefersaatleri_public', 'HatlarList', hatid=ybs_hatid)
+                if ybs_seferler:
+                    seferler = ybs_seferler
+                    break
+
+            # 2. Direct API fallback (Samair api.php)
+            if not seferler:
+                for ybs_hatid in hat_info['ybs_hatid']:
+                    direct_sf = self.http.samair_direct('UcakSeferSaatleri', hatid=ybs_hatid)
+                    if direct_sf:
+                        seferler = direct_sf
+                        log.info(f"      ✈️ H{ui_hatid} direct API sefer: {len(direct_sf)} kayıt")
+                        break
+
+            if seferler:
+                for sf in seferler:
+                    api_id = int(sf.get('id', 0))
+                    if api_id == 0: continue
+                    s, v = sf.get('saat', '') or '', sf.get('varis_saati', '') or ''
+                    
+                    # Tarih formatını düzenle
+                    tarih = sf.get('tarih', '')
+                    gun_format = sf.get('formatted_date', '')
+                    
+                    # 1. Eski kayıtları temizle (Dünden öncekiler)
+                    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+                    self.db.ex("DELETE FROM samair_sefer WHERE tarih < ?", (yesterday,))
+                    
+                    self.db.ex("INSERT OR REPLACE INTO samair_sefer(id,hat,saat,varis,firma,ucak_saat,tarih,gun_format) VALUES(?,?,?,?,?,?,?,?)",
+                              (api_id, ui_hatid, s[:5], v[:5], sf.get('ucak_firmasi', ''), sf.get('ucak_saatleri', ''), tarih, gun_format))
+                    toplam += 1
         
         if toplam > 0:
             self.db.set_meta('samair_last_update', str(time.time()))
