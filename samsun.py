@@ -3652,7 +3652,7 @@ def create_app(db, col):
             
             await asyncio.sleep(interval)
 
- @app.get("/", response_class=HTMLResponse)
+    @app.get("/", response_class=HTMLResponse)
     async def home():
         # if os.path.exists("frontend/dist/index.html"):
         #     with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
