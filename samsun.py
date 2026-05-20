@@ -676,6 +676,17 @@ class Database:
         self.ex("INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)", (key, value))
 
     def guncelleme_gerekli(self):
+        # Aktif güncelleme kilidi kontrolü (restart döngüsünü önler)
+        kilit = self.get_meta('guncelleme_kilit')
+        if kilit:
+            try:
+                gecen_sn = time.time() - float(kilit)
+                if gecen_sn < 1800:  # 30 dakika içinde başlamışsa atla
+                    log.info(f"⏳ Güncelleme zaten devam ediyor ({int(gecen_sn)}sn önce başladı), atlanıyor...")
+                    return False
+            except Exception:
+                pass  # Bozuk kilit → görmezden gel
+
         if self.cnt('hat') == 0: return True
         son = self.get_meta('son_guncelleme')
         if not son: return True
@@ -834,37 +845,40 @@ class Collector:
 
     def veri_cek(self):
         if not self.db.guncelleme_gerekli():
-            log.info("📦 Ana veriler güncel.")
-            self._recompute_gtfs_columns()  # GTFS short name'leri her zaman güncel tut
-            self._inject_fixed_prices()
-            self._fix_tram_schedules()
-            self._fix_stop_coordinates()
-            self._inject_boat_teleferik_schedules()
-            
-            # GTFS Shapes kontrol et
+            log.info("📦 Ana veriler güncel, atlanıyor.")
             if self.db.cnt('gtfs_shape') == 0:
                 log.info("📐 GTFS Shapes eksik, oluşturuluyor...")
                 self.gtfs_generate_shapes()
-            
             return
+
+        # Güncelleme başlamadan kilidi Supabase'e yaz
+        self.db.set_meta('guncelleme_kilit', str(time.time()))
+
         log.info("📥 Ana Güncelleme Başladı...")
-        self.db.temizle()
+
+        if self.db.cnt('hat') > 0:
+            log.info("   ⚠️ Veritabanı dolu, hat/durak korunuyor, diğerleri yenileniyor...")
+            for t in ['hat_durak', 'sefer', 'odak', 'odak_durak', 'samair', 'samair_durak']:
+                self.db.ex(f"DELETE FROM {t} WHERE 1=1")
+            self.db.ex("DELETE FROM fiyat WHERE 1=1")
+        else:
+            self.db.temizle()
+
         self._hatlar()
         self._duraklar()
         self._hat_duraklari()
         self._seferler()
         self._odak()
         self._samair_duraklar()
-        self._samulas_fiyatlar()  # Samulaş web scraping
-        self._inject_fixed_prices() # Sabit fiyatlar (Tramvay max, Teleferik vb.)
-        self._fix_tram_schedules() # Tramvay seferlerini HTML'den düzelt
-        self._fix_stop_coordinates() # Hatalı durak koordinatlarını düzelt
-        self._inject_boat_teleferik_schedules() # Tekne ve Teleferik seferlerini ekle
-        
-        # YENİ: GTFS Shapes oluştur
+        self._samulas_fiyatlar()
+        self._inject_fixed_prices()
+        self._fix_tram_schedules()
+        self._fix_stop_coordinates()
+        self._inject_boat_teleferik_schedules()
         self.gtfs_generate_shapes()
-        
+
         self.db.guncelleme_tamamlandi()
+        self.db.set_meta('guncelleme_kilit', '')  # Kilidi kaldır
         self._ozet()
 
     def _ozet(self):
