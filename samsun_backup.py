@@ -4329,7 +4329,7 @@ loadStats(); setInterval(loadStats, 10000);
 
     @app.get("/api/hat")
     async def get_hatlar():
-        return JSONResponse(db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC"))
+        return JSONResponse(db.get("SELECT * FROM hat ORDER BY kat, LOWER(name) ASC"))
     
     @app.get("/api/hat/info/{code:path}")
     async def api_hat_one(code: str):

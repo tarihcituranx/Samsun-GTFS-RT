@@ -3654,10 +3654,10 @@ def create_app(db, col):
 
     @app.get("/", response_class=HTMLResponse)
     async def home():
-        if os.path.exists("frontend/dist/index.html"):
-            with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
-                return HTMLResponse(f.read())
-        return HTML
+    # if os.path.exists("frontend/dist/index.html"):
+    #     with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
+    #         return HTMLResponse(f.read())
+    return HTML
 
     @app.get("/favicon.ico")
     async def get_favicon():
@@ -4730,7 +4730,7 @@ loadStats(); setInterval(loadStats, 10000);
 
     @app.get("/api/hat")
     async def get_hatlar():
-        hatlar = db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC")
+        hatlar = db.get("SELECT * FROM hat ORDER BY kat, LOWER(name) ASC")
         # Durak sayılarını tek sorguda çek
         stop_rows = db.get("SELECT hat, COUNT(*) cnt FROM hat_durak GROUP BY hat")
         stop_counts = {r['hat']: r['cnt'] for r in stop_rows} if stop_rows else {}
@@ -4764,7 +4764,7 @@ loadStats(); setInterval(loadStats, 10000);
         
     @app.get("/api/hat")
     async def get_hatlar():
-        hatlar = db.get("SELECT * FROM hat ORDER BY kat, name COLLATE NOCASE ASC")
+        hatlar = db.get("SELECT * FROM hat ORDER BY kat, LOWER(name) ASC")
         return JSONResponse([_enrich_hat(h) for h in hatlar])
     
     @app.get("/api/hat/info/{code:path}")
