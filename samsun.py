@@ -774,7 +774,7 @@ class Database:
             except Exception:
                 pass  # Bozuk kilit → görmezden gel
 
-        if self.cnt('hat') == 0: return True
+        if self.cnt('hat') == 0 or self.cnt('odak') == 0 or self.cnt('samair') == 0: return True
         son = self.get_meta('son_guncelleme')
         if not son: return True
         try:
@@ -5128,16 +5128,52 @@ loadStats(); setInterval(loadStats, 10000);
     async def api_esles(code: str): return JSONResponse({"code": col.esles(urllib.parse.unquote(code))})
     
     @app.get("/api/odak")
-    async def api_odak(): return JSONResponse(db.get("SELECT * FROM odak ORDER BY kod"))
+    async def api_odak():
+        res = db.get("SELECT * FROM odak ORDER BY kod")
+        if not res:
+            try:
+                log.info("🔄 Odak verileri veritabanında bulunamadı. Dinamik olarak güncelleniyor...")
+                await asyncio.to_thread(col._odak)
+                res = db.get("SELECT * FROM odak ORDER BY kod")
+            except Exception as e:
+                log.error(f"On-demand Odak güncelleme hatası: {e}")
+        return JSONResponse(res or [])
     
     @app.get("/api/odak/{id}/durak")
-    async def api_odak_d(id: str): return JSONResponse(db.get("SELECT * FROM odak_durak WHERE hat=? ORDER BY sira", (id,)))
+    async def api_odak_d(id: str):
+        res = db.get("SELECT * FROM odak_durak WHERE hat=? ORDER BY sira", (id,))
+        if not res:
+            try:
+                log.info(f"🔄 Odak durakları bulunamadı (hat={id}). Dinamik olarak güncelleniyor...")
+                await asyncio.to_thread(col._odak)
+                res = db.get("SELECT * FROM odak_durak WHERE hat=? ORDER BY sira", (id,))
+            except Exception as e:
+                log.error(f"On-demand Odak durak güncelleme hatası: {e}")
+        return JSONResponse(res or [])
     
     @app.get("/api/samair")
-    async def api_samair(): return JSONResponse(db.get("SELECT * FROM samair ORDER BY id"))
+    async def api_samair():
+        res = db.get("SELECT * FROM samair ORDER BY id")
+        if not res:
+            try:
+                log.info("🔄 SamAir hatları veritabanında bulunamadı. Dinamik olarak güncelleniyor...")
+                await asyncio.to_thread(col._samair_duraklar)
+                res = db.get("SELECT * FROM samair ORDER BY id")
+            except Exception as e:
+                log.error(f"On-demand Samair güncelleme hatası: {e}")
+        return JSONResponse(res or [])
     
     @app.get("/api/samair/{id}/durak")
-    async def api_samair_durak(id: int): return JSONResponse(db.get("SELECT * FROM samair_durak WHERE hat=? ORDER BY sira", (id,)))
+    async def api_samair_durak(id: int):
+        res = db.get("SELECT * FROM samair_durak WHERE hat=? ORDER BY sira", (id,))
+        if not res:
+            try:
+                log.info(f"🔄 SamAir durakları bulunamadı (hat={id}). Dinamik olarak güncelleniyor...")
+                await asyncio.to_thread(col._samair_duraklar)
+                res = db.get("SELECT * FROM samair_durak WHERE hat=? ORDER BY sira", (id,))
+            except Exception as e:
+                log.error(f"On-demand Samair durak güncelleme hatası: {e}")
+        return JSONResponse(res or [])
     
     @app.get("/api/samair/{id}/sefer")
     async def api_samair_sefer(id: int):
