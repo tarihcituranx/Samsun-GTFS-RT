@@ -444,27 +444,45 @@ class Http:
             'Referer': 'https://samair.samsun.bel.tr/'
         })
         
-        # ============================================================
-        # 🌐 TÜRK PROXY — Credential'lar ENV VAR'dan okunur (GitHub'a sızmaz!)
-        # Render.com Dashboard > Environment > Aşağıdakileri ekle:
-        #   PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS
-        # ============================================================
+        # Proxy Pool Yükleme
+        self.proxies_pool = []
+        csv_path = "proxy_https_auth.csv"
+        if os.path.exists(csv_path):
+            try:
+                with open(csv_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line: continue
+                        if '@' in line:
+                            hp, up = line.split('@', 1)
+                            self.proxies_pool.append(f"http://{up}@{hp}")
+                        else:
+                            self.proxies_pool.append(f"http://{line}")
+                log.info(f"🌐 CSV dosyasından {len(self.proxies_pool)} yedek proxy yüklendi.")
+            except Exception as e:
+                log.error(f"Yedek proxy CSV okuma hatası: {e}")
+
+        # Default Proxy
         proxy_host = os.environ.get('PROXY_HOST')
         proxy_port = os.environ.get('PROXY_PORT')
         proxy_user = os.environ.get('PROXY_USER')
         proxy_pass = os.environ.get('PROXY_PASS')
         
+        proxy_url = None
         if proxy_host and proxy_port and proxy_user:
             proxy_url = f"http://{proxy_user}:{proxy_pass or ''}@{proxy_host}:{proxy_port}"
             self.s.proxies = {"http": proxy_url, "https": proxy_url}
-            log.info(f"🌐 Proxy aktif: {proxy_host}:{proxy_port} (Tüm API istekleri)")
+            log.info(f"🌐 Birincil Proxy aktif: {proxy_host}:{proxy_port} (Tüm API istekleri)")
+            if proxy_url not in self.proxies_pool:
+                self.proxies_pool.insert(0, proxy_url)
+        elif self.proxies_pool:
+            proxy_url = self.proxies_pool[0]
+            self.s.proxies = {"http": proxy_url, "https": proxy_url}
+            log.info(f"🌐 İlk yedek proxy birincil olarak seçildi: {proxy_url}")
         else:
-            log.warning("⚠️ Proxy ayarlanmamış! PROXY_HOST/PORT/USER env var eksik. Direkt bağlantı kullanılacak.")
+            log.warning("⚠️ Proxy ayarlanmamış! PROXY_HOST/PORT/USER env var eksik ve CSV bulunamadı. Direkt bağlantı kullanılacak.")
         
-        # ============================================================
-        # ☁️ CLOUDSCRAPER — Cloudflare korumalı sitelere erişim
-        # odak.samsun.bel.tr/doit.php ve samair.samsun.bel.tr/api.php
-        # ============================================================
+        # Cloudscraper bypass
         if _CLOUDSCRAPER_OK:
             self.cs = cloudscraper.create_scraper(
                 browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False}
@@ -474,19 +492,27 @@ class Http:
                 'accept-language': 'tr',
                 'x-requested-with': 'XMLHttpRequest',
             })
-            if proxy_host and proxy_port and proxy_user:
+            if proxy_url:
                 self.cs.proxies = {"http": proxy_url, "https": proxy_url}
             log.info("☁️ Cloudscraper hazır (Cloudflare bypass)")
         else:
-            # Fallback: regular session (Cloudflare'i atlatamaz ama en azından çalışır)
             self.cs = self.s
             log.warning("⚠️ Cloudscraper yok — Cloudflare korumalı ODAK/Samair API'leri çalışmayabilir!")
         
-        self.session = self.s  # Alias (proxy endpoint'leri self.session kullanıyor)
-        
+        self.session = self.s
         self._tok = {}
         self._tok_lock = threading.Lock()
         self._cache = {}
+        self.proxy_idx = 0
+
+    def get_next_proxy(self, attempt=1):
+        if attempt == 3:
+            return None
+        if not self.proxies_pool:
+            return None
+        proxy = self.proxies_pool[self.proxy_idx % len(self.proxies_pool)]
+        self.proxy_idx += 1
+        return {"http": proxy, "https": proxy}
 
     def asis(self, ep, **p):
         """
@@ -553,37 +579,39 @@ class Http:
         Cloudflare korumalı. cloudscraper ile bypass edilir.
         YBS API çalışmazsa bu fallback olarak kullanılır.
         """
-        try:
-            p = {'action': action}
-            p.update(params)
-            proxies = getattr(self.cs, 'proxies', None) or getattr(self.s, 'proxies', None)
-            r = self.cs.get(
-                'https://odak.samsun.bel.tr/doit.php',
-                params=p,
-                headers={
-                    'Referer': 'https://odak.samsun.bel.tr/',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'accept': 'application/json, text/javascript, */*; q=0.01',
-                    'accept-language': 'tr',
-                },
-                proxies=proxies,
-                timeout=20
-            )
-            if not r.ok:
-                log.warning(f"ODAK direct API HTTP {r.status_code} ({action})")
-                return []
-            # Cloudflare HTML yanıtı mı?
-            ct = r.headers.get('content-type', '')
-            if 'text/html' in ct:
-                log.warning(f"ODAK direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action})")
-                return []
-            data = r.json()
-            # doit.php genelde düz liste döndürür
-            if isinstance(data, list):
-                return data
-            return data.get('data', data.get('root', data.get('result', [])))
-        except Exception as e:
-            log.warning(f"ODAK direct API hatası ({action}): {type(e).__name__}: {e}")
+        p = {'action': action}
+        p.update(params)
+        for attempt in range(1, 4):
+            proxies = self.get_next_proxy(attempt)
+            proxy_str = list(proxies.values())[0] if proxies else "Direct"
+            log.info(f"🔄 ODAK direct API istek denemesi {attempt}/3 ({action}) - Proxy: {proxy_str}")
+            try:
+                r = self.cs.get(
+                    'https://odak.samsun.bel.tr/doit.php',
+                    params=p,
+                    headers={
+                        'Referer': 'https://odak.samsun.bel.tr/',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'accept': 'application/json, text/javascript, */*; q=0.01',
+                        'accept-language': 'tr',
+                    },
+                    proxies=proxies,
+                    timeout=20
+                )
+                if not r.ok:
+                    log.warning(f"ODAK direct API HTTP {r.status_code} ({action}) - Deneme {attempt}")
+                    continue
+                # Cloudflare HTML yanıtı mı?
+                ct = r.headers.get('content-type', '')
+                if 'text/html' in ct:
+                    log.warning(f"ODAK direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action}) - Deneme {attempt}")
+                    continue
+                data = r.json()
+                if isinstance(data, list):
+                    return data
+                return data.get('data', data.get('root', data.get('result', [])))
+            except Exception as e:
+                log.warning(f"ODAK direct API hatası ({action}) - Deneme {attempt}: {type(e).__name__}: {e}")
         return []
 
     def samair_direct(self, action, **params):
@@ -595,35 +623,38 @@ class Http:
           DuraklarList  → durak listesi
           UcakSeferSaatleri&hatid=3 → sefer saatleri
         """
-        try:
-            p = {'m': 'samair_public', 'a': action}
-            p.update(params)
-            proxies = getattr(self.cs, 'proxies', None) or getattr(self.s, 'proxies', None)
-            r = self.cs.get(
-                'https://samair.samsun.bel.tr/api.php',
-                params=p,
-                headers={
-                    'Referer': 'https://samair.samsun.bel.tr/',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'accept': 'application/json, text/javascript, */*; q=0.01',
-                    'accept-language': 'tr',
-                },
-                proxies=proxies,
-                timeout=20
-            )
-            if not r.ok:
-                log.warning(f"Samair direct API HTTP {r.status_code} ({action})")
-                return []
-            ct = r.headers.get('content-type', '')
-            if 'text/html' in ct:
-                log.warning(f"Samair direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action})")
-                return []
-            data = r.json()
-            if isinstance(data, list):
-                return data
-            return data.get('data', data.get('root', data.get('result', [])))
-        except Exception as e:
-            log.warning(f"Samair direct API hatası ({action}): {type(e).__name__}: {e}")
+        p = {'m': 'samair_public', 'a': action}
+        p.update(params)
+        for attempt in range(1, 4):
+            proxies = self.get_next_proxy(attempt)
+            proxy_str = list(proxies.values())[0] if proxies else "Direct"
+            log.info(f"🔄 Samair direct API istek denemesi {attempt}/3 ({action}) - Proxy: {proxy_str}")
+            try:
+                r = self.cs.get(
+                    'https://samair.samsun.bel.tr/api.php',
+                    params=p,
+                    headers={
+                        'Referer': 'https://samair.samsun.bel.tr/',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'accept': 'application/json, text/javascript, */*; q=0.01',
+                        'accept-language': 'tr',
+                    },
+                    proxies=proxies,
+                    timeout=20
+                )
+                if not r.ok:
+                    log.warning(f"Samair direct API HTTP {r.status_code} ({action}) - Deneme {attempt}")
+                    continue
+                ct = r.headers.get('content-type', '')
+                if 'text/html' in ct:
+                    log.warning(f"Samair direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action}) - Deneme {attempt}")
+                    continue
+                data = r.json()
+                if isinstance(data, list):
+                    return data
+                return data.get('data', data.get('root', data.get('result', [])))
+            except Exception as e:
+                log.warning(f"Samair direct API hatası ({action}) - Deneme {attempt}: {type(e).__name__}: {e}")
         return []
 
 # --- VERİTABANI ---
@@ -641,6 +672,50 @@ class Database:
         log.info(f"📀 Supabase (REST API RPC) DB'ye bağlanıldı.")
         self._load_durak_coords()
         self._load_tram_csv_corrections()
+
+        # Database Seed Entegrasyonu
+        try:
+            if self.cnt('odak') == 0:
+                seed_path = "db_seed.json"
+                if os.path.exists(seed_path):
+                    log.info("📀 Veritabanı boş, db_seed.json dosyasından otomatik seed ediliyor...")
+                    with open(seed_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    
+                    # odak tablosu seed
+                    odak_list = data.get('odak', [])
+                    if odak_list:
+                        rows = [(r['id'], r['ad'], r['kod'], r['gunler']) for r in odak_list]
+                        self.exm("INSERT INTO odak(id, ad, kod, gunler) VALUES(?, ?, ?, ?)", rows)
+                    
+                    # odak_durak tablosu seed
+                    od_list = data.get('odak_durak', [])
+                    if od_list:
+                        rows = [(r['id'], r['hat'], r['ad'], r['kod'], r['sira'], r['lat'], r['lon'], r['fiyat'], r['fiyat_ogr']) for r in od_list]
+                        self.exm("INSERT INTO odak_durak(id, hat, ad, kod, sira, lat, lon, fiyat, fiyat_ogr) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", rows)
+                    
+                    # samair tablosu seed
+                    samair_list = data.get('samair', [])
+                    if samair_list:
+                        rows = [(r['id'], r['ad'], r['kod']) for r in samair_list]
+                        self.exm("INSERT INTO samair(id, ad, kod) VALUES(?, ?, ?)", rows)
+                    
+                    # samair_durak tablosu seed
+                    sd_list = data.get('samair_durak', [])
+                    if sd_list:
+                        rows = [(r['id'], r['hat'], r['ad'], r['kod'], r['sira'], r['lat'], r['lon'], r['fiyat']) for r in sd_list]
+                        self.exm("INSERT INTO samair_durak(id, hat, ad, kod, sira, lat, lon, fiyat) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", rows)
+                    
+                    # samair_sefer tablosu seed
+                    ss_list = data.get('samair_sefer', [])
+                    if ss_list:
+                        rows = [(r['id'], r['hat'], r['saat'], r['varis'], r['firma'], r['ucak_saat'], r['tarih'], r['gun_format']) for r in ss_list]
+                        self.exm("INSERT INTO samair_sefer(id, hat, saat, varis, firma, ucak_saat, tarih, gun_format) VALUES(?, ?, ?, ?, ?, ?, ?, ?)", rows)
+                    
+                    log.info("📀 Veritabanı seed işlemi başarıyla tamamlandı.")
+        except Exception as e:
+            log.error(f"❌ Veritabanı seed hatası: {e}")
+
         return False
 
     def _load_tram_csv_corrections(self):
@@ -3797,9 +3872,9 @@ def create_app(db, col):
 
     @app.get("/", response_class=HTMLResponse)
     async def home():
-        # if os.path.exists("frontend/dist/index.html"):
-        #     with open("frontend/dist/index.html", "r", encoding="utf-8") as f:
-        #         return HTMLResponse(f.read())
+        if os.path.exists("test.html"):
+            with open("test.html", "r", encoding="utf-8") as f:
+                return HTMLResponse(f.read())
         return HTML
 
     @app.get("/favicon.ico")

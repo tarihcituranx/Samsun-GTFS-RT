@@ -1,0 +1,4345 @@
+{
+  "odak": [
+    {
+      "id": "2",
+      "ad": "Şahinkaya Kanyonu Gidiş",
+      "kod": "G1",
+      "gunler": "7"
+    },
+    {
+      "id": "4",
+      "ad": "Kızılırmak Deltası Gidiş",
+      "kod": "G2",
+      "gunler": "6"
+    },
+    {
+      "id": "5",
+      "ad": "Ayvacık Baraj Gölü Dönüş",
+      "kod": "G3",
+      "gunler": "7"
+    },
+    {
+      "id": "6",
+      "ad": "Ayvacık Baraj Gölü Gidiş",
+      "kod": "G3",
+      "gunler": "7"
+    },
+    {
+      "id": "9",
+      "ad": "Odak Samsun K1 (Terme - Çarşamba - Etkinlik Alanı)",
+      "kod": "K1",
+      "gunler": "1"
+    },
+    {
+      "id": "10",
+      "ad": "Odak Samsun K2 (Bafra - Etkinlik Alanı)",
+      "kod": "K2",
+      "gunler": "1"
+    },
+    {
+      "id": "11",
+      "ad": "Odak Samsun K3 (Kavak - Etkinlik Alanı)",
+      "kod": "K3",
+      "gunler": "1"
+    },
+    {
+      "id": "12",
+      "ad": "Ladik Akdağ Gidiş",
+      "kod": "G4",
+      "gunler": "6,7"
+    },
+    {
+      "id": "13",
+      "ad": "Ladik Akdağ Dönüş",
+      "kod": "G4",
+      "gunler": "6,7"
+    },
+    {
+      "id": "1",
+      "ad": "Şahinkaya Kanyonu Dönüş",
+      "kod": "G1",
+      "gunler": "7"
+    },
+    {
+      "id": "3",
+      "ad": "Kızılırmak Deltası Dönüş",
+      "kod": "G2",
+      "gunler": "6"
+    }
+  ],
+  "odak_durak": [
+    {
+      "id": 1,
+      "hat": "1",
+      "ad": "Şahinkaya Kanyonu",
+      "kod": "74022",
+      "sira": 1,
+      "lat": 41.278022,
+      "lon": 35.432297,
+      "fiyat": "115.0",
+      "fiyat_ogr": "92.0"
+    },
+    {
+      "id": 2,
+      "hat": "1",
+      "ad": "Vezirköprü Otogarı",
+      "kod": "74012",
+      "sira": 2,
+      "lat": 41.143543,
+      "lon": 35.468465,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 3,
+      "hat": "1",
+      "ad": "Havza Merkez",
+      "kod": "72021",
+      "sira": 3,
+      "lat": 40.968357,
+      "lon": 35.669213,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 4,
+      "hat": "1",
+      "ad": "Kavak",
+      "kod": "71022",
+      "sira": 4,
+      "lat": 41.0697,
+      "lon": 36.028965,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 5,
+      "hat": "1",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13832",
+      "sira": 5,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "0.0",
+      "fiyat_ogr": "0.0"
+    },
+    {
+      "id": 6,
+      "hat": "2",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13831",
+      "sira": 1,
+      "lat": 41.295224,
+      "lon": 36.334948,
+      "fiyat": "115.0",
+      "fiyat_ogr": "92.0"
+    },
+    {
+      "id": 7,
+      "hat": "2",
+      "ad": "Kavak",
+      "kod": "71021",
+      "sira": 2,
+      "lat": 41.070157,
+      "lon": 36.0287,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 8,
+      "hat": "2",
+      "ad": "Havza Merkez",
+      "kod": "72021",
+      "sira": 3,
+      "lat": 40.968357,
+      "lon": 35.669213,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 9,
+      "hat": "2",
+      "ad": "Vezirköprü Otogarı",
+      "kod": "74011",
+      "sira": 4,
+      "lat": 41.144686,
+      "lon": 35.468182,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 10,
+      "hat": "2",
+      "ad": "Şahinkaya Kanyonu",
+      "kod": "74021",
+      "sira": 5,
+      "lat": 41.277907,
+      "lon": 35.432211,
+      "fiyat": "0.0",
+      "fiyat_ogr": "0.0"
+    },
+    {
+      "id": 11,
+      "hat": "3",
+      "ad": "Kızılırmak Deltası",
+      "kod": "70132",
+      "sira": 1,
+      "lat": 41.594126,
+      "lon": 36.113411,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 12,
+      "hat": "3",
+      "ad": "Ballıca Kavşak",
+      "kod": "70082",
+      "sira": 2,
+      "lat": 41.492965,
+      "lon": 36.082623,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 13,
+      "hat": "3",
+      "ad": "Dereköy Yolu",
+      "kod": "70052",
+      "sira": 3,
+      "lat": 41.468745,
+      "lon": 36.106505,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 14,
+      "hat": "3",
+      "ad": "Taflan Un Fabrikası",
+      "kod": "30852",
+      "sira": 4,
+      "lat": 41.4336,
+      "lon": 36.1462,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 15,
+      "hat": "3",
+      "ad": "Polis Okulu",
+      "kod": "30762",
+      "sira": 5,
+      "lat": 41.4146,
+      "lon": 36.1733,
+      "fiyat": "55.0",
+      "fiyat_ogr": "45.0"
+    },
+    {
+      "id": 16,
+      "hat": "3",
+      "ad": "Çakırlar Korusu",
+      "kod": "30692",
+      "sira": 6,
+      "lat": 41.3995,
+      "lon": 36.1925,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 17,
+      "hat": "3",
+      "ad": "Turgut Özal Öğrenci Yurdu",
+      "kod": "30602",
+      "sira": 7,
+      "lat": 41.3792,
+      "lon": 36.2181,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 18,
+      "hat": "3",
+      "ad": "Eczaneler",
+      "kod": "30582",
+      "sira": 8,
+      "lat": 41.370967,
+      "lon": 36.227439,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 19,
+      "hat": "3",
+      "ad": "Pelitköy",
+      "kod": "30502",
+      "sira": 9,
+      "lat": 41.359671,
+      "lon": 36.233956,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 20,
+      "hat": "3",
+      "ad": "Tuğba Evleri",
+      "kod": "30462",
+      "sira": 10,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 21,
+      "hat": "3",
+      "ad": "Atakent",
+      "kod": "30412",
+      "sira": 11,
+      "lat": 41.344591,
+      "lon": 36.250101,
+      "fiyat": "75.0",
+      "fiyat_ogr": "60.0"
+    },
+    {
+      "id": 22,
+      "hat": "3",
+      "ad": "Ömürevleri",
+      "kod": "30352",
+      "sira": 12,
+      "lat": 41.3405427282437,
+      "lon": 36.2615680279913,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 23,
+      "hat": "3",
+      "ad": "Türkiş",
+      "kod": "30282",
+      "sira": 13,
+      "lat": 41.33611,
+      "lon": 36.274032,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 24,
+      "hat": "3",
+      "ad": "Dsi",
+      "kod": "30182",
+      "sira": 14,
+      "lat": 41.330177,
+      "lon": 36.290648,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 25,
+      "hat": "3",
+      "ad": "Atakum Endüstri Meslek Lisesi",
+      "kod": "30142",
+      "sira": 15,
+      "lat": 41.326001,
+      "lon": 36.302603,
+      "fiyat": "75.0",
+      "fiyat_ogr": "60.0"
+    },
+    {
+      "id": 26,
+      "hat": "3",
+      "ad": "Karayolları",
+      "kod": "30112",
+      "sira": 16,
+      "lat": 41.3238363849121,
+      "lon": 36.3085859321152,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 27,
+      "hat": "3",
+      "ad": "Fener",
+      "kod": "10111",
+      "sira": 17,
+      "lat": 41.3089,
+      "lon": 36.3346,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 28,
+      "hat": "3",
+      "ad": "Gençlik Parkı",
+      "kod": "10081",
+      "sira": 18,
+      "lat": 41.3045,
+      "lon": 36.3316,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 29,
+      "hat": "3",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13832",
+      "sira": 19,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 30,
+      "hat": "4",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13831",
+      "sira": 1,
+      "lat": 41.295224,
+      "lon": 36.334948,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 31,
+      "hat": "4",
+      "ad": "Gençlik Parkı",
+      "kod": "10082",
+      "sira": 2,
+      "lat": 41.3033,
+      "lon": 36.3315,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 32,
+      "hat": "4",
+      "ad": "Fener",
+      "kod": "10112",
+      "sira": 3,
+      "lat": 41.3089684270771,
+      "lon": 36.3350981608734,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 33,
+      "hat": "4",
+      "ad": "Saski",
+      "kod": "30111",
+      "sira": 4,
+      "lat": 41.324,
+      "lon": 36.3094,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 34,
+      "hat": "4",
+      "ad": "Atakum Endüstri Meslek Lisesi",
+      "kod": "30141",
+      "sira": 5,
+      "lat": 41.3268481912882,
+      "lon": 36.3010076942309,
+      "fiyat": "75.0",
+      "fiyat_ogr": "60.0"
+    },
+    {
+      "id": 35,
+      "hat": "4",
+      "ad": "Büyükşehir Sanat Merkezi",
+      "kod": "30181",
+      "sira": 6,
+      "lat": 41.330286,
+      "lon": 36.291434,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 36,
+      "hat": "4",
+      "ad": "Türkiş",
+      "kod": "30301",
+      "sira": 7,
+      "lat": 41.33719,
+      "lon": 36.271899,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 37,
+      "hat": "4",
+      "ad": "Ömürevleri",
+      "kod": "30351",
+      "sira": 8,
+      "lat": 41.3414,
+      "lon": 36.2601,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 38,
+      "hat": "4",
+      "ad": "Meteoroloji",
+      "kod": "30401",
+      "sira": 9,
+      "lat": 41.344569,
+      "lon": 36.251047,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 39,
+      "hat": "4",
+      "ad": "Vatan Kavşağı",
+      "kod": "30461",
+      "sira": 10,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 40,
+      "hat": "4",
+      "ad": "Çankaya",
+      "kod": "30491",
+      "sira": 11,
+      "lat": 41.358162,
+      "lon": 36.235634,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 41,
+      "hat": "4",
+      "ad": "Eczaneler",
+      "kod": "30581",
+      "sira": 12,
+      "lat": 41.37221,
+      "lon": 36.227265,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 42,
+      "hat": "4",
+      "ad": "Omtel Otel",
+      "kod": "30601",
+      "sira": 13,
+      "lat": 41.3786406516225,
+      "lon": 36.2196927108238,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 43,
+      "hat": "4",
+      "ad": "Çakırlar Korusu",
+      "kod": "30691",
+      "sira": 14,
+      "lat": 41.399902,
+      "lon": 36.192789,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 44,
+      "hat": "4",
+      "ad": "Polis Okulu",
+      "kod": "30761",
+      "sira": 15,
+      "lat": 41.4147,
+      "lon": 36.1737,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 45,
+      "hat": "4",
+      "ad": "Taflan Un Fabrikası",
+      "kod": "30851",
+      "sira": 16,
+      "lat": 41.4338,
+      "lon": 36.1465,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 46,
+      "hat": "4",
+      "ad": "Dereköy Yolu",
+      "kod": "70051",
+      "sira": 17,
+      "lat": 41.46944,
+      "lon": 36.106345,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 47,
+      "hat": "4",
+      "ad": "Ballıca Kavşak",
+      "kod": "70081",
+      "sira": 18,
+      "lat": 41.493164,
+      "lon": 36.082757,
+      "fiyat": "75.0",
+      "fiyat_ogr": "60.0"
+    },
+    {
+      "id": 48,
+      "hat": "4",
+      "ad": "Kızılırmak Deltası",
+      "kod": "70131",
+      "sira": 19,
+      "lat": 41.593987,
+      "lon": 36.113402,
+      "fiyat": "63.0",
+      "fiyat_ogr": "50.0"
+    },
+    {
+      "id": 49,
+      "hat": "5",
+      "ad": "Ayvacık Merkez",
+      "kod": "75012",
+      "sira": 1,
+      "lat": 40.98955,
+      "lon": 36.633053,
+      "fiyat": "130.0",
+      "fiyat_ogr": "105.0"
+    },
+    {
+      "id": 50,
+      "hat": "5",
+      "ad": "Beylerce",
+      "kod": "65352",
+      "sira": 2,
+      "lat": 41.207777,
+      "lon": 36.691045,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 51,
+      "hat": "5",
+      "ad": "Dikbıyık",
+      "kod": "65342",
+      "sira": 3,
+      "lat": 41.218987,
+      "lon": 36.611621,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 52,
+      "hat": "5",
+      "ad": "Irmaksırtı",
+      "kod": "65332",
+      "sira": 4,
+      "lat": 41.227185,
+      "lon": 36.586987,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 53,
+      "hat": "5",
+      "ad": "Çınarlık Yolu",
+      "kod": "65322",
+      "sira": 5,
+      "lat": 41.237237,
+      "lon": 36.542077,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 54,
+      "hat": "5",
+      "ad": "Tekkeköy Tramvay",
+      "kod": "60212",
+      "sira": 6,
+      "lat": 41.224848,
+      "lon": 36.452808,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 55,
+      "hat": "5",
+      "ad": "Lovelet Avm",
+      "kod": "50012",
+      "sira": 7,
+      "lat": 41.266026,
+      "lon": 36.380005,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 56,
+      "hat": "5",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13832",
+      "sira": 8,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "150.0",
+      "fiyat_ogr": "120.0"
+    },
+    {
+      "id": 57,
+      "hat": "6",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13831",
+      "sira": 1,
+      "lat": 41.295224,
+      "lon": 36.334948,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 58,
+      "hat": "6",
+      "ad": "Lovelet Avm",
+      "kod": "50011",
+      "sira": 2,
+      "lat": 41.2657,
+      "lon": 36.3799,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 59,
+      "hat": "6",
+      "ad": "Tekkeköy",
+      "kod": "60211",
+      "sira": 3,
+      "lat": 41.224368,
+      "lon": 36.452838,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 60,
+      "hat": "6",
+      "ad": "Çınarlık Yolu",
+      "kod": "65321",
+      "sira": 4,
+      "lat": 41.236941,
+      "lon": 36.541539,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 61,
+      "hat": "6",
+      "ad": "Irmaksırtı",
+      "kod": "65331",
+      "sira": 5,
+      "lat": 41.226944,
+      "lon": 36.586736,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 62,
+      "hat": "6",
+      "ad": "Dikbıyık",
+      "kod": "65341",
+      "sira": 6,
+      "lat": 41.218319,
+      "lon": 36.612289,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 63,
+      "hat": "6",
+      "ad": "Beylerce",
+      "kod": "65351",
+      "sira": 7,
+      "lat": 41.207222,
+      "lon": 36.691571,
+      "fiyat": "85.0",
+      "fiyat_ogr": "70.0"
+    },
+    {
+      "id": 64,
+      "hat": "6",
+      "ad": "Ayvacık Merkez",
+      "kod": "75011",
+      "sira": 8,
+      "lat": 40.989438,
+      "lon": 36.633034,
+      "fiyat": "130.0",
+      "fiyat_ogr": "105.0"
+    },
+    {
+      "id": 65,
+      "hat": "9",
+      "ad": "Terme Cumhuriyet Meydanı",
+      "kod": "00001",
+      "sira": 1,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 66,
+      "hat": "9",
+      "ad": "Çarşamba Vefa AVM",
+      "kod": "00002",
+      "sira": 2,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 67,
+      "hat": "10",
+      "ad": "Bafra Kent Meydanı",
+      "kod": "00004",
+      "sira": 1,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 68,
+      "hat": "11",
+      "ad": "Kavak Otogar",
+      "kod": "00003",
+      "sira": 1,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "45.0",
+      "fiyat_ogr": "37.0"
+    },
+    {
+      "id": 69,
+      "hat": "12",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13832",
+      "sira": 1,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "150.0",
+      "fiyat_ogr": "120.0"
+    },
+    {
+      "id": 70,
+      "hat": "12",
+      "ad": "Ladik",
+      "kod": "79051",
+      "sira": 2,
+      "lat": 40.876272,
+      "lon": 35.905734,
+      "fiyat": "150.0",
+      "fiyat_ogr": "120.0"
+    },
+    {
+      "id": 71,
+      "hat": "13",
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13832",
+      "sira": 1,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "150.0",
+      "fiyat_ogr": "120.0"
+    },
+    {
+      "id": 72,
+      "hat": "13",
+      "ad": "Ladik",
+      "kod": "79051",
+      "sira": 2,
+      "lat": 40.876272,
+      "lon": 35.905734,
+      "fiyat": "150.0",
+      "fiyat_ogr": "120.0"
+    }
+  ],
+  "samair": [
+    {
+      "id": 1,
+      "ad": "H1 OMÜ - HAVALİMANI",
+      "kod": "H1 OMÜ - HAVALİMANI"
+    },
+    {
+      "id": 2,
+      "ad": "H2 TTTM - HAVALİMANI",
+      "kod": "H2 TTTM - HAVALİMANI"
+    },
+    {
+      "id": 3,
+      "ad": "H3 BAFRA - HAVALİMANI",
+      "kod": "H3 BAFRA - HAVALİMANI"
+    },
+    {
+      "id": 4,
+      "ad": "H4 ÇARŞAMBA - HAVALİMANI",
+      "kod": "H4 ÇARŞAMBA - HAVALİMANI"
+    },
+    {
+      "id": 5,
+      "ad": "H5 HAVZA - HAVALİMANI",
+      "kod": "H5 HAVZA - HAVALİMANI"
+    }
+  ],
+  "samair_durak": [
+    {
+      "id": 1,
+      "hat": 0,
+      "ad": "Rektörlük Tramvay İstasyonu",
+      "kod": "31632",
+      "sira": 1,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 2,
+      "hat": 0,
+      "ad": "Turgut Özal Öğrenci Yurdu",
+      "kod": "30602",
+      "sira": 2,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 3,
+      "hat": 0,
+      "ad": "Eczaneler",
+      "kod": "30582",
+      "sira": 3,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 4,
+      "hat": 0,
+      "ad": "Pelitköy",
+      "kod": "30502",
+      "sira": 4,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 5,
+      "hat": 0,
+      "ad": "Tuğba Evleri",
+      "kod": "30462",
+      "sira": 5,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 6,
+      "hat": 0,
+      "ad": "Atakent",
+      "kod": "304123",
+      "sira": 6,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 7,
+      "hat": 0,
+      "ad": "Ömürevleri",
+      "kod": "30352",
+      "sira": 7,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 8,
+      "hat": 0,
+      "ad": "Türkiş",
+      "kod": "30282",
+      "sira": 8,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 9,
+      "hat": 0,
+      "ad": "Dsi",
+      "kod": "30182",
+      "sira": 9,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 10,
+      "hat": 0,
+      "ad": "Atakum Endüstri Meslek Lisesi",
+      "kod": "30142",
+      "sira": 10,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 11,
+      "hat": 0,
+      "ad": "Karayolları",
+      "kod": "30112",
+      "sira": 11,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 12,
+      "hat": 0,
+      "ad": "Fener",
+      "kod": "10111",
+      "sira": 12,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 13,
+      "hat": 0,
+      "ad": "Gençlik Parkı",
+      "kod": "10081",
+      "sira": 13,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 14,
+      "hat": 0,
+      "ad": "Defterdarlık",
+      "kod": "10031",
+      "sira": 14,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 15,
+      "hat": 0,
+      "ad": "Gar",
+      "kod": "10011",
+      "sira": 15,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 16,
+      "hat": 0,
+      "ad": "Kılıçdede",
+      "kod": "10001",
+      "sira": 16,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 17,
+      "hat": 0,
+      "ad": "Piazza Avm",
+      "kod": "50041",
+      "sira": 17,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 18,
+      "hat": 0,
+      "ad": "Lovelet Avm",
+      "kod": "50011",
+      "sira": 18,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 19,
+      "hat": 0,
+      "ad": "Tekkeköy",
+      "kod": "60211",
+      "sira": 19,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "85.0"
+    },
+    {
+      "id": 20,
+      "hat": 0,
+      "ad": "Çarşamba Havalimanı",
+      "kod": "65311",
+      "sira": 20,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "0.0"
+    },
+    {
+      "id": 21,
+      "hat": 0,
+      "ad": "Toplu Taşıma Transfer Merkezi",
+      "kod": "13831",
+      "sira": 21,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 22,
+      "hat": 0,
+      "ad": "30 Ağustos İöo",
+      "kod": "10301",
+      "sira": 22,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 23,
+      "hat": 0,
+      "ad": "Sait Bey",
+      "kod": "10251",
+      "sira": 23,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 24,
+      "hat": 0,
+      "ad": "Gürbüz Cami",
+      "kod": "10221",
+      "sira": 24,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 25,
+      "hat": 0,
+      "ad": "Lise Kavşağı",
+      "kod": "10211",
+      "sira": 25,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 26,
+      "hat": 0,
+      "ad": "İlim Yayma Vakfı",
+      "kod": "10191",
+      "sira": 26,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 27,
+      "hat": 0,
+      "ad": "Varol Sitesi",
+      "kod": "10721",
+      "sira": 27,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 28,
+      "hat": 0,
+      "ad": "Atasam Hastanesi",
+      "kod": "10471",
+      "sira": 28,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 29,
+      "hat": 0,
+      "ad": "Soğuksu",
+      "kod": "50111",
+      "sira": 29,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 30,
+      "hat": 0,
+      "ad": "Canik Belediyesi",
+      "kod": "50671",
+      "sira": 30,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 31,
+      "hat": 0,
+      "ad": "Belediye Evleri Aktarma",
+      "kod": "50681",
+      "sira": 31,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 32,
+      "hat": 0,
+      "ad": "Bafra Otogar",
+      "kod": "73012",
+      "sira": 32,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "230.0"
+    },
+    {
+      "id": 33,
+      "hat": 0,
+      "ad": "Karaköy",
+      "kod": "73022",
+      "sira": 33,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "230.0"
+    },
+    {
+      "id": 34,
+      "hat": 0,
+      "ad": "Ballıca Kavşak",
+      "kod": "70082",
+      "sira": 34,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 35,
+      "hat": 0,
+      "ad": "Dereköy Yolu",
+      "kod": "70052",
+      "sira": 35,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 36,
+      "hat": 0,
+      "ad": "Taflan Un Fabrikası",
+      "kod": "30852",
+      "sira": 36,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 37,
+      "hat": 0,
+      "ad": "Polis Okulu",
+      "kod": "30762",
+      "sira": 37,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 38,
+      "hat": 0,
+      "ad": "Çakırlar Korusu",
+      "kod": "30692",
+      "sira": 38,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 39,
+      "hat": 0,
+      "ad": "Pelitköy Bulvar",
+      "kod": "31602",
+      "sira": 39,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 40,
+      "hat": 0,
+      "ad": "Vatan Caddesi",
+      "kod": "31572",
+      "sira": 40,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 41,
+      "hat": 0,
+      "ad": "Gaffar Okkan Kavşağı",
+      "kod": "31522",
+      "sira": 41,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 42,
+      "hat": 0,
+      "ad": "Meltem",
+      "kod": "31482",
+      "sira": 42,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 43,
+      "hat": 0,
+      "ad": "Okullar Bölgesi",
+      "kod": "32162",
+      "sira": 43,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 44,
+      "hat": 0,
+      "ad": "Derecik Kavşağı",
+      "kod": "13122",
+      "sira": 44,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 45,
+      "hat": 0,
+      "ad": "Çarşamba Doğu Yakası",
+      "kod": "65372",
+      "sira": 45,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 46,
+      "hat": 0,
+      "ad": "Dörtyol",
+      "kod": "65362",
+      "sira": 46,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 47,
+      "hat": 0,
+      "ad": "Beylerce",
+      "kod": "65352",
+      "sira": 47,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 48,
+      "hat": 0,
+      "ad": "Dikbıyık",
+      "kod": "65342",
+      "sira": 48,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 49,
+      "hat": 0,
+      "ad": "Irmaksırtı",
+      "kod": "65332",
+      "sira": 49,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 50,
+      "hat": 0,
+      "ad": "Çınarlık Yolu",
+      "kod": "65322",
+      "sira": 50,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 51,
+      "hat": 0,
+      "ad": "Yakakent",
+      "kod": "74001",
+      "sira": 51,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "275.0"
+    },
+    {
+      "id": 52,
+      "hat": 0,
+      "ad": "Kozköy",
+      "kod": "74011",
+      "sira": 52,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "275.0"
+    },
+    {
+      "id": 53,
+      "hat": 0,
+      "ad": "Alaçam",
+      "kod": "75012",
+      "sira": 53,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "250.0"
+    },
+    {
+      "id": 54,
+      "hat": 0,
+      "ad": "Terme",
+      "kod": "55022",
+      "sira": 54,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 55,
+      "hat": 0,
+      "ad": "Gündoğdu",
+      "kod": "55012",
+      "sira": 55,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 56,
+      "hat": 0,
+      "ad": "Söğütlü",
+      "kod": "55002",
+      "sira": 56,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 57,
+      "hat": 0,
+      "ad": "Mimarsinan",
+      "kod": "30232",
+      "sira": 57,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 58,
+      "hat": 0,
+      "ad": "Kenan Şara Köprüsü",
+      "kod": "10131",
+      "sira": 58,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 59,
+      "hat": 0,
+      "ad": "Vural Akdeniz",
+      "kod": "70142",
+      "sira": 59,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 60,
+      "hat": 0,
+      "ad": "Yenimahalle",
+      "kod": "30452",
+      "sira": 60,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 61,
+      "hat": 0,
+      "ad": "Erenköy",
+      "kod": "70012",
+      "sira": 61,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 62,
+      "hat": 0,
+      "ad": "EMİRGAN PARKI",
+      "kod": "65382",
+      "sira": 62,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 63,
+      "hat": 0,
+      "ad": "İncesu Yalı Cami",
+      "kod": "30642",
+      "sira": 63,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 64,
+      "hat": 0,
+      "ad": "Samsun Otogar",
+      "kod": "13491",
+      "sira": 64,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 65,
+      "hat": 0,
+      "ad": "Emirgan Parkı",
+      "kod": "65382",
+      "sira": 65,
+      "lat": 0.0,
+      "lon": 0.0,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 66,
+      "hat": 1,
+      "ad": "31631 - ÜNİVERSİTE BATI GARAJI",
+      "kod": "5564",
+      "sira": 1,
+      "lat": 41.371911,
+      "lon": 36.225339,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 67,
+      "hat": 1,
+      "ad": "65312 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6424",
+      "sira": 2,
+      "lat": 41.257171,
+      "lon": 36.554943,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 68,
+      "hat": 1,
+      "ad": "30602 - TURGUT ÖZAL ÖĞRENCİ YURDU",
+      "kod": "5065",
+      "sira": 3,
+      "lat": 41.3792,
+      "lon": 36.2181,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 69,
+      "hat": 1,
+      "ad": "60212 - TEKKEKÖY TRAMVAY",
+      "kod": "5833",
+      "sira": 4,
+      "lat": 41.224848,
+      "lon": 36.452808,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 70,
+      "hat": 1,
+      "ad": "30582 - ECZANELER",
+      "kod": "5320",
+      "sira": 5,
+      "lat": 41.370967,
+      "lon": 36.227439,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 71,
+      "hat": 1,
+      "ad": "50012 - LOVELET AVM",
+      "kod": "4724",
+      "sira": 6,
+      "lat": 41.266026,
+      "lon": 36.380005,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 72,
+      "hat": 1,
+      "ad": "30502 - PELİTKÖY",
+      "kod": "5028",
+      "sira": 7,
+      "lat": 41.359671,
+      "lon": 36.233956,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 73,
+      "hat": 1,
+      "ad": "50042 - SAMSUNSPOR",
+      "kod": "6003",
+      "sira": 8,
+      "lat": 41.277453,
+      "lon": 36.354042,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 74,
+      "hat": 1,
+      "ad": "30452 - YENİMAHALLE",
+      "kod": "5325",
+      "sira": 9,
+      "lat": 41.351232,
+      "lon": 36.241855,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 75,
+      "hat": 1,
+      "ad": "10002 - KILIÇDEDE",
+      "kod": "5013",
+      "sira": 10,
+      "lat": 41.2812,
+      "lon": 36.3484,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 76,
+      "hat": 1,
+      "ad": "30412 - ATAKENT",
+      "kod": "5326",
+      "sira": 11,
+      "lat": 41.344591,
+      "lon": 36.250101,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 77,
+      "hat": 1,
+      "ad": "10012 - GAR",
+      "kod": "5014",
+      "sira": 12,
+      "lat": 41.2852,
+      "lon": 36.3426,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 78,
+      "hat": 1,
+      "ad": "30352 - ÖMÜREVLERİ",
+      "kod": "5032",
+      "sira": 13,
+      "lat": 41.3405427282437,
+      "lon": 36.2615680279913,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 79,
+      "hat": 1,
+      "ad": "10032 - CUMHURİYET MEYDANI",
+      "kod": "5015",
+      "sira": 14,
+      "lat": 41.2902008605917,
+      "lon": 36.336840373355,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 80,
+      "hat": 1,
+      "ad": "30282 - TÜRKİŞ",
+      "kod": "5328",
+      "sira": 15,
+      "lat": 41.33611,
+      "lon": 36.274032,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 81,
+      "hat": 1,
+      "ad": "10082 - GENÇLİK PARKI",
+      "kod": "5338",
+      "sira": 16,
+      "lat": 41.3033,
+      "lon": 36.3315,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 82,
+      "hat": 1,
+      "ad": "30232 - MİMAR SİNAN",
+      "kod": "5033",
+      "sira": 17,
+      "lat": 41.333528,
+      "lon": 36.280968,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 83,
+      "hat": 1,
+      "ad": "10112 - SAMSUN MÜZESİ",
+      "kod": "5339",
+      "sira": 18,
+      "lat": 41.3089684270771,
+      "lon": 36.3350981608734,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 84,
+      "hat": 1,
+      "ad": "30182 - DSİ",
+      "kod": "5295",
+      "sira": 19,
+      "lat": 41.330177,
+      "lon": 36.290648,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 85,
+      "hat": 1,
+      "ad": "30111 - SASKİ",
+      "kod": "5658",
+      "sira": 20,
+      "lat": 41.324,
+      "lon": 36.3094,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 86,
+      "hat": 1,
+      "ad": "30142 - ATAKUM ENDÜSTRİ MESLEK LİSESİ",
+      "kod": "5331",
+      "sira": 21,
+      "lat": 41.326001,
+      "lon": 36.302603,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 87,
+      "hat": 1,
+      "ad": "30141 - ATAKUM ENDÜSTRİ MESLEK LİSESİ",
+      "kod": "5017",
+      "sira": 22,
+      "lat": 41.3268481912882,
+      "lon": 36.3010076942309,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 88,
+      "hat": 1,
+      "ad": "30112 - KARAYOLLARI",
+      "kod": "5296",
+      "sira": 23,
+      "lat": 41.3238363849121,
+      "lon": 36.3085859321152,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 89,
+      "hat": 1,
+      "ad": "30181 - BÜYÜKŞEHİR SANAT MERKEZİ",
+      "kod": "5304",
+      "sira": 24,
+      "lat": 41.330286,
+      "lon": 36.291434,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 90,
+      "hat": 1,
+      "ad": "10131 - KENAN ŞARA KÖPRÜSÜ",
+      "kod": "5333",
+      "sira": 25,
+      "lat": 41.3208521719081,
+      "lon": 36.3215121078992,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 91,
+      "hat": 1,
+      "ad": "30301 - TÜRKİŞ",
+      "kod": "5341",
+      "sira": 26,
+      "lat": 41.33719,
+      "lon": 36.271899,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 92,
+      "hat": 1,
+      "ad": "10111 - SAMSUN MÜZESİ",
+      "kod": "5334",
+      "sira": 27,
+      "lat": 41.3089,
+      "lon": 36.3346,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 93,
+      "hat": 1,
+      "ad": "30351 - ÖMÜREVLERİ",
+      "kod": "5342",
+      "sira": 28,
+      "lat": 41.3414,
+      "lon": 36.2601,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 94,
+      "hat": 1,
+      "ad": "10081 - GENÇLİK PARKI",
+      "kod": "5335",
+      "sira": 29,
+      "lat": 41.3045,
+      "lon": 36.3316,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 95,
+      "hat": 1,
+      "ad": "30401 - METEOROLOJİ",
+      "kod": "5244",
+      "sira": 30,
+      "lat": 41.344569,
+      "lon": 36.251047,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 96,
+      "hat": 1,
+      "ad": "10031 - DEFTERDARLIK",
+      "kod": "5091",
+      "sira": 31,
+      "lat": 41.2922,
+      "lon": 36.3348,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 97,
+      "hat": 1,
+      "ad": "30451 - YENİMAHALLE",
+      "kod": "5659",
+      "sira": 32,
+      "lat": 41.351787,
+      "lon": 36.24187,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 98,
+      "hat": 1,
+      "ad": "10011 - GAR",
+      "kod": "5336",
+      "sira": 33,
+      "lat": 41.2847,
+      "lon": 36.3426,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 99,
+      "hat": 1,
+      "ad": "30491 - ÇANKAYA",
+      "kod": "5019",
+      "sira": 34,
+      "lat": 41.358162,
+      "lon": 36.235634,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 100,
+      "hat": 1,
+      "ad": "10001 - KILIÇDEDE",
+      "kod": "5337",
+      "sira": 35,
+      "lat": 41.28,
+      "lon": 36.3494,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 101,
+      "hat": 1,
+      "ad": "30581 - ECZANELER",
+      "kod": "5305",
+      "sira": 36,
+      "lat": 41.37221,
+      "lon": 36.227265,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 102,
+      "hat": 1,
+      "ad": "50041 - PİAZZA AVM",
+      "kod": "5034",
+      "sira": 37,
+      "lat": 41.277142,
+      "lon": 36.353944,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 103,
+      "hat": 1,
+      "ad": "50011 - LOVELET AVM",
+      "kod": "5699",
+      "sira": 38,
+      "lat": 41.2657,
+      "lon": 36.3799,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 104,
+      "hat": 1,
+      "ad": "60211 - TEKKEKÖY",
+      "kod": "5941",
+      "sira": 39,
+      "lat": 41.224368,
+      "lon": 36.452838,
+      "fiyat": "85.0"
+    },
+    {
+      "id": 105,
+      "hat": 1,
+      "ad": "65311 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6390",
+      "sira": 40,
+      "lat": 41.257285,
+      "lon": 36.554824,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 106,
+      "hat": 2,
+      "ad": "13491 - OTOGAR",
+      "kod": "4874",
+      "sira": 1,
+      "lat": 41.2876723173923,
+      "lon": 36.2885320151155,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 107,
+      "hat": 2,
+      "ad": "65312 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6424",
+      "sira": 2,
+      "lat": 41.257171,
+      "lon": 36.554943,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 108,
+      "hat": 2,
+      "ad": "13831 - TOPLU TAŞIMA TRANSFER MERKEZİ",
+      "kod": "6412",
+      "sira": 3,
+      "lat": 41.295224,
+      "lon": 36.334948,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 109,
+      "hat": 2,
+      "ad": "60212 - TEKKEKÖY TRAMVAY",
+      "kod": "5833",
+      "sira": 4,
+      "lat": 41.224848,
+      "lon": 36.452808,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 110,
+      "hat": 2,
+      "ad": "10301 - 30 AĞUSTOS İÖO",
+      "kod": "5380",
+      "sira": 5,
+      "lat": 41.29785371054,
+      "lon": 36.3289082274697,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 111,
+      "hat": 2,
+      "ad": "50012 - LOVELET AVM",
+      "kod": "4724",
+      "sira": 6,
+      "lat": 41.266026,
+      "lon": 36.380005,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 112,
+      "hat": 2,
+      "ad": "10251 - SAİT BEY",
+      "kod": "5383",
+      "sira": 7,
+      "lat": 41.290817177531,
+      "lon": 36.3283377471472,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 113,
+      "hat": 2,
+      "ad": "50682 - GÜLSAN SANAYİ KAVŞAĞI",
+      "kod": "5998",
+      "sira": 8,
+      "lat": 41.27111770156375,
+      "lon": 36.36310380980968,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 114,
+      "hat": 2,
+      "ad": "10221 - GÜRBÜZ CAMİ",
+      "kod": "5384",
+      "sira": 9,
+      "lat": 41.2804765237591,
+      "lon": 36.3348240308338,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 115,
+      "hat": 2,
+      "ad": "50672 - CANİK BELEDİYESİ",
+      "kod": "5999",
+      "sira": 10,
+      "lat": 41.26893440252534,
+      "lon": 36.35921527729034,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 116,
+      "hat": 2,
+      "ad": "10211 - LİSE KAVŞAĞI",
+      "kod": "5385",
+      "sira": 11,
+      "lat": 41.2792550827663,
+      "lon": 36.3363922502599,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 117,
+      "hat": 2,
+      "ad": "50112 - SOĞUKSU",
+      "kod": "5307",
+      "sira": 12,
+      "lat": 41.2663951482845,
+      "lon": 36.3500676739588,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 118,
+      "hat": 2,
+      "ad": "10191 - İLİM YAYMA VAKFI",
+      "kod": "5300",
+      "sira": 13,
+      "lat": 41.2763965341664,
+      "lon": 36.340905319356,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 119,
+      "hat": 2,
+      "ad": "10472 - ATASAM HASTANESİ",
+      "kod": "4729",
+      "sira": 14,
+      "lat": 41.2646,
+      "lon": 36.3392,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 120,
+      "hat": 2,
+      "ad": "10721 - VAROL SİTESİ",
+      "kod": "4946",
+      "sira": 15,
+      "lat": 41.2684398786036,
+      "lon": 36.3355031485191,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 121,
+      "hat": 2,
+      "ad": "10722 - VAROL SİTESİ",
+      "kod": "5632",
+      "sira": 16,
+      "lat": 41.268271207206,
+      "lon": 36.3355667849544,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 122,
+      "hat": 2,
+      "ad": "10471 - ATASAM HASTANESİ",
+      "kod": "5695",
+      "sira": 17,
+      "lat": 41.264449,
+      "lon": 36.340643,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 123,
+      "hat": 2,
+      "ad": "10192 - İLİM YAYMA VAKFI",
+      "kod": "4925",
+      "sira": 18,
+      "lat": 41.2762856039679,
+      "lon": 36.3415232905481,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 124,
+      "hat": 2,
+      "ad": "50111 - SOĞUKSU",
+      "kod": "6119",
+      "sira": 19,
+      "lat": 41.2661999574797,
+      "lon": 36.3503994890515,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 125,
+      "hat": 2,
+      "ad": "10212 - LİSE KAVŞAĞI",
+      "kod": "5585",
+      "sira": 20,
+      "lat": 41.2790742876388,
+      "lon": 36.3370792811697,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 126,
+      "hat": 2,
+      "ad": "50671 - CANİK BELEDİYESİ",
+      "kod": "5416",
+      "sira": 21,
+      "lat": 41.268956,
+      "lon": 36.360019,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 127,
+      "hat": 2,
+      "ad": "10222 - GÜRBÜZ CAMİ",
+      "kod": "6108",
+      "sira": 22,
+      "lat": 41.2805947887579,
+      "lon": 36.3349723734765,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 128,
+      "hat": 2,
+      "ad": "50681 - BELEDİYE EVLERİ AKTARMA",
+      "kod": "5068",
+      "sira": 23,
+      "lat": 41.271891,
+      "lon": 36.365458,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 129,
+      "hat": 2,
+      "ad": "10252 - SAİT BEY",
+      "kod": "5071",
+      "sira": 24,
+      "lat": 41.291212,
+      "lon": 36.32862,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 130,
+      "hat": 2,
+      "ad": "50011 - LOVELET AVM",
+      "kod": "5699",
+      "sira": 25,
+      "lat": 41.2657,
+      "lon": 36.3799,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 131,
+      "hat": 2,
+      "ad": "10302 - 30 AĞUSTOS İÖO",
+      "kod": "5587",
+      "sira": 26,
+      "lat": 41.2977983345008,
+      "lon": 36.3291775509386,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 132,
+      "hat": 2,
+      "ad": "60211 - TEKKEKÖY",
+      "kod": "5941",
+      "sira": 27,
+      "lat": 41.224368,
+      "lon": 36.452838,
+      "fiyat": "85.0"
+    },
+    {
+      "id": 133,
+      "hat": 2,
+      "ad": "13832 - TOPLU TAŞIMA TRANSFER MERKEZİ",
+      "kod": "6425",
+      "sira": 28,
+      "lat": 41.295239,
+      "lon": 36.335002,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 134,
+      "hat": 2,
+      "ad": "65311 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6390",
+      "sira": 29,
+      "lat": 41.257285,
+      "lon": 36.554824,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 135,
+      "hat": 3,
+      "ad": "77022 - YAKAKENT MERKEZ",
+      "kod": "6450",
+      "sira": 1,
+      "lat": 41.631045,
+      "lon": 35.531153,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 136,
+      "hat": 3,
+      "ad": "65312 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6424",
+      "sira": 2,
+      "lat": 41.257171,
+      "lon": 36.554943,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 137,
+      "hat": 3,
+      "ad": "77012 - KOZKÖY",
+      "kod": "6448",
+      "sira": 3,
+      "lat": 41.624112,
+      "lon": 35.554053,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 138,
+      "hat": 3,
+      "ad": "60212 - TEKKEKÖY TRAMVAY",
+      "kod": "5833",
+      "sira": 4,
+      "lat": 41.224848,
+      "lon": 36.452808,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 139,
+      "hat": 3,
+      "ad": "76012 - ALAÇAM",
+      "kod": "6446",
+      "sira": 5,
+      "lat": 41.616252,
+      "lon": 35.607419,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 140,
+      "hat": 3,
+      "ad": "50012 - LOVELET AVM",
+      "kod": "4724",
+      "sira": 6,
+      "lat": 41.266026,
+      "lon": 36.380005,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 141,
+      "hat": 3,
+      "ad": "73012 - BAFRA OTOGAR",
+      "kod": "6423",
+      "sira": 7,
+      "lat": 41.558626,
+      "lon": 35.905441,
+      "fiyat": "230.0"
+    },
+    {
+      "id": 142,
+      "hat": 3,
+      "ad": "10032 - CUMHURİYET MEYDANI",
+      "kod": "5015",
+      "sira": 8,
+      "lat": 41.2902008605917,
+      "lon": 36.336840373355,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 143,
+      "hat": 3,
+      "ad": "73022 - KARAKÖY",
+      "kod": "6431",
+      "sira": 9,
+      "lat": 41.517731,
+      "lon": 36.007467,
+      "fiyat": "230.0"
+    },
+    {
+      "id": 144,
+      "hat": 3,
+      "ad": "30301 - TÜRKİŞ",
+      "kod": "5341",
+      "sira": 10,
+      "lat": 41.33719,
+      "lon": 36.271899,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 145,
+      "hat": 3,
+      "ad": "70142 - VURAL AKDENİZ",
+      "kod": "8035",
+      "sira": 11,
+      "lat": 41.502223,
+      "lon": 36.056895,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 146,
+      "hat": 3,
+      "ad": "31471 - AYDINLIK CADDESİ KAVŞAĞI",
+      "kod": "4823",
+      "sira": 12,
+      "lat": 41.335624,
+      "lon": 36.254353,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 147,
+      "hat": 3,
+      "ad": "70082 - BALLICA KAVŞAK",
+      "kod": "6351",
+      "sira": 13,
+      "lat": 41.492965,
+      "lon": 36.082623,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 148,
+      "hat": 3,
+      "ad": "31521 - GAFFAR OKKAN KAVŞAĞI",
+      "kod": "4826",
+      "sira": 14,
+      "lat": 41.3427253896919,
+      "lon": 36.2424537590962,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 149,
+      "hat": 3,
+      "ad": "70052 - DEREKÖY YOLU",
+      "kod": "6345",
+      "sira": 15,
+      "lat": 41.468745,
+      "lon": 36.106505,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 150,
+      "hat": 3,
+      "ad": "31571 - VATAN CADDESİ",
+      "kod": "4830",
+      "sira": 16,
+      "lat": 41.349521,
+      "lon": 36.237297,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 151,
+      "hat": 3,
+      "ad": "70012 - ERENKÖY",
+      "kod": "6337",
+      "sira": 17,
+      "lat": 41.440529,
+      "lon": 36.137436,
+      "fiyat": "200.0"
+    },
+    {
+      "id": 152,
+      "hat": 3,
+      "ad": "31601 - PELİTKÖY BULVAR",
+      "kod": "5763",
+      "sira": 18,
+      "lat": 41.358319,
+      "lon": 36.233226,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 153,
+      "hat": 3,
+      "ad": "30852 - TAFLAN UN FABRİKASI",
+      "kod": "5048",
+      "sira": 19,
+      "lat": 41.4336,
+      "lon": 36.1462,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 154,
+      "hat": 3,
+      "ad": "31631 - ÜNİVERSİTE BATI GARAJI",
+      "kod": "5564",
+      "sira": 20,
+      "lat": 41.371911,
+      "lon": 36.225339,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 155,
+      "hat": 3,
+      "ad": "30762 - POLİS OKULU",
+      "kod": "5056",
+      "sira": 21,
+      "lat": 41.4146,
+      "lon": 36.1733,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 156,
+      "hat": 3,
+      "ad": "30601 - OMTEL OTEL",
+      "kod": "5252",
+      "sira": 22,
+      "lat": 41.3786406516225,
+      "lon": 36.2196927108238,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 157,
+      "hat": 3,
+      "ad": "30642 - İNCESU YALI CAMİ",
+      "kod": "5122",
+      "sira": 23,
+      "lat": 41.386,
+      "lon": 36.2076,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 158,
+      "hat": 3,
+      "ad": "30691 - ÇAKIRLAR KORUSU",
+      "kod": "5040",
+      "sira": 24,
+      "lat": 41.399902,
+      "lon": 36.192789,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 159,
+      "hat": 3,
+      "ad": "30692 - ÇAKIRLAR KORUSU",
+      "kod": "5060",
+      "sira": 25,
+      "lat": 41.3995,
+      "lon": 36.1925,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 160,
+      "hat": 3,
+      "ad": "30761 - POLİS OKULU",
+      "kod": "5354",
+      "sira": 26,
+      "lat": 41.4147,
+      "lon": 36.1737,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 161,
+      "hat": 3,
+      "ad": "30602 - TURGUT ÖZAL ÖĞRENCİ YURDU",
+      "kod": "5065",
+      "sira": 27,
+      "lat": 41.3792,
+      "lon": 36.2181,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 162,
+      "hat": 3,
+      "ad": "30851 - TAFLAN UN FABRİKASI",
+      "kod": "5360",
+      "sira": 28,
+      "lat": 41.4338,
+      "lon": 36.1465,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 163,
+      "hat": 3,
+      "ad": "31632 - REKTÖRLÜK TRAMVAY İSTASYONU",
+      "kod": "5565",
+      "sira": 29,
+      "lat": 41.3714698932411,
+      "lon": 36.2247750828158,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 164,
+      "hat": 3,
+      "ad": "70051 - DEREKÖY YOLU",
+      "kod": "6344",
+      "sira": 30,
+      "lat": 41.46944,
+      "lon": 36.106345,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 165,
+      "hat": 3,
+      "ad": "31602 - PELİTKÖY BULVAR",
+      "kod": "6326",
+      "sira": 31,
+      "lat": 41.35841,
+      "lon": 36.232732,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 166,
+      "hat": 3,
+      "ad": "70081 - BALLICA KAVŞAK",
+      "kod": "6350",
+      "sira": 32,
+      "lat": 41.493164,
+      "lon": 36.082757,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 167,
+      "hat": 3,
+      "ad": "31572 - VATAN CADDESİ",
+      "kod": "4840",
+      "sira": 33,
+      "lat": 41.34923,
+      "lon": 36.237153,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 168,
+      "hat": 3,
+      "ad": "73021 - KARAKÖY",
+      "kod": "6430",
+      "sira": 34,
+      "lat": 41.518157,
+      "lon": 36.007246,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 169,
+      "hat": 3,
+      "ad": "31522 - GAFFAR OKKAN KAVŞAĞI",
+      "kod": "4844",
+      "sira": 35,
+      "lat": 41.342716,
+      "lon": 36.242051,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 170,
+      "hat": 3,
+      "ad": "73011 - BAFRA OTOGAR",
+      "kod": "6413",
+      "sira": 36,
+      "lat": 41.558532,
+      "lon": 35.905421,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 171,
+      "hat": 3,
+      "ad": "31482 - MELTEM",
+      "kod": "5503",
+      "sira": 37,
+      "lat": 41.335882,
+      "lon": 36.253059,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 172,
+      "hat": 3,
+      "ad": "76011 - ALAÇAM",
+      "kod": "6445",
+      "sira": 38,
+      "lat": 41.616613,
+      "lon": 35.607536,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 173,
+      "hat": 3,
+      "ad": "30352 - ÖMÜREVLERİ",
+      "kod": "5032",
+      "sira": 39,
+      "lat": 41.3405427282437,
+      "lon": 36.2615680279913,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 174,
+      "hat": 3,
+      "ad": "77011 - KOZKÖY",
+      "kod": "6447",
+      "sira": 40,
+      "lat": 41.624614,
+      "lon": 35.553904,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 175,
+      "hat": 3,
+      "ad": "30282 - TÜRKİŞ",
+      "kod": "5328",
+      "sira": 41,
+      "lat": 41.33611,
+      "lon": 36.274032,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 176,
+      "hat": 3,
+      "ad": "77021 - YAKAKENT MERKEZ",
+      "kod": "6449",
+      "sira": 42,
+      "lat": 41.631506,
+      "lon": 35.530814,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 177,
+      "hat": 3,
+      "ad": "30182 - DSİ",
+      "kod": "5295",
+      "sira": 43,
+      "lat": 41.330177,
+      "lon": 36.290648,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 178,
+      "hat": 3,
+      "ad": "30142 - ATAKUM ENDÜSTRİ MESLEK LİSESİ",
+      "kod": "5331",
+      "sira": 44,
+      "lat": 41.326001,
+      "lon": 36.302603,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 179,
+      "hat": 3,
+      "ad": "30112 - KARAYOLLARI",
+      "kod": "5296",
+      "sira": 45,
+      "lat": 41.3238363849121,
+      "lon": 36.3085859321152,
+      "fiyat": "170.0"
+    },
+    {
+      "id": 180,
+      "hat": 3,
+      "ad": "10111 - SAMSUN MÜZESİ",
+      "kod": "5334",
+      "sira": 46,
+      "lat": 41.3089,
+      "lon": 36.3346,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 181,
+      "hat": 3,
+      "ad": "10081 - GENÇLİK PARKI",
+      "kod": "5335",
+      "sira": 47,
+      "lat": 41.3045,
+      "lon": 36.3316,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 182,
+      "hat": 3,
+      "ad": "10031 - DEFTERDARLIK",
+      "kod": "5091",
+      "sira": 48,
+      "lat": 41.2922,
+      "lon": 36.3348,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 183,
+      "hat": 3,
+      "ad": "10011 - GAR",
+      "kod": "5336",
+      "sira": 49,
+      "lat": 41.2847,
+      "lon": 36.3426,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 184,
+      "hat": 3,
+      "ad": "10001 - KILIÇDEDE",
+      "kod": "5337",
+      "sira": 50,
+      "lat": 41.28,
+      "lon": 36.3494,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 185,
+      "hat": 3,
+      "ad": "50041 - PİAZZA AVM",
+      "kod": "5034",
+      "sira": 51,
+      "lat": 41.277142,
+      "lon": 36.353944,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 186,
+      "hat": 3,
+      "ad": "60211 - TEKKEKÖY",
+      "kod": "5941",
+      "sira": 52,
+      "lat": 41.224368,
+      "lon": 36.452838,
+      "fiyat": "85.0"
+    },
+    {
+      "id": 187,
+      "hat": 3,
+      "ad": "65311 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6390",
+      "sira": 53,
+      "lat": 41.257285,
+      "lon": 36.554824,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 188,
+      "hat": 4,
+      "ad": "78032 - TERME MERKEZ",
+      "kod": "6456",
+      "sira": 1,
+      "lat": 41.212502,
+      "lon": 36.971648,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 189,
+      "hat": 4,
+      "ad": "65312 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6424",
+      "sira": 2,
+      "lat": 41.257171,
+      "lon": 36.554943,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 190,
+      "hat": 4,
+      "ad": "78022 - GÜNDOĞDU",
+      "kod": "6454",
+      "sira": 3,
+      "lat": 41.21638,
+      "lon": 36.92415,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 191,
+      "hat": 4,
+      "ad": "65321 - ÇINARLIK YOLU",
+      "kod": "6391",
+      "sira": 4,
+      "lat": 41.236941,
+      "lon": 36.541539,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 192,
+      "hat": 4,
+      "ad": "78012 - SÖĞÜTLÜ",
+      "kod": "6452",
+      "sira": 5,
+      "lat": 41.220607,
+      "lon": 36.864661,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 193,
+      "hat": 4,
+      "ad": "65331 - IRMAKSIRTI",
+      "kod": "6393",
+      "sira": 6,
+      "lat": 41.226944,
+      "lon": 36.586736,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 194,
+      "hat": 4,
+      "ad": "65372 - ÇARŞAMBA DOĞU YAKASI",
+      "kod": "6420",
+      "sira": 7,
+      "lat": 41.202675,
+      "lon": 36.729959,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 195,
+      "hat": 4,
+      "ad": "65341 - DİKBIYIK",
+      "kod": "6395",
+      "sira": 8,
+      "lat": 41.218319,
+      "lon": 36.612289,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 196,
+      "hat": 4,
+      "ad": "65382 - EMİRGAN PARKI",
+      "kod": "6475",
+      "sira": 9,
+      "lat": 41.200031,
+      "lon": 36.72328,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 197,
+      "hat": 4,
+      "ad": "65351 - BEYLERCE",
+      "kod": "6397",
+      "sira": 10,
+      "lat": 41.207222,
+      "lon": 36.691571,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 198,
+      "hat": 4,
+      "ad": "65362 - DÖRTYOL",
+      "kod": "6400",
+      "sira": 11,
+      "lat": 41.204208,
+      "lon": 36.720928,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 199,
+      "hat": 4,
+      "ad": "65361 - DÖRTYOL",
+      "kod": "6399",
+      "sira": 12,
+      "lat": 41.203741,
+      "lon": 36.722626,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 200,
+      "hat": 4,
+      "ad": "65352 - BEYLERCE",
+      "kod": "6398",
+      "sira": 13,
+      "lat": 41.207777,
+      "lon": 36.691045,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 201,
+      "hat": 4,
+      "ad": "65381 - EMİRGAN PARKI",
+      "kod": "6474",
+      "sira": 14,
+      "lat": 41.199759,
+      "lon": 36.723329,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 202,
+      "hat": 4,
+      "ad": "65342 - DİKBIYIK",
+      "kod": "6396",
+      "sira": 15,
+      "lat": 41.218987,
+      "lon": 36.611621,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 203,
+      "hat": 4,
+      "ad": "65371 - ÇARŞAMBA DOĞU YAKASI",
+      "kod": "6401",
+      "sira": 16,
+      "lat": 41.2026,
+      "lon": 36.729934,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 204,
+      "hat": 4,
+      "ad": "65332 - IRMAKSIRTI",
+      "kod": "6394",
+      "sira": 17,
+      "lat": 41.227185,
+      "lon": 36.586987,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 205,
+      "hat": 4,
+      "ad": "78011 - SÖĞÜTLÜ",
+      "kod": "6451",
+      "sira": 18,
+      "lat": 41.22032,
+      "lon": 36.864924,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 206,
+      "hat": 4,
+      "ad": "65322 - ÇINARLIK YOLU",
+      "kod": "6392",
+      "sira": 19,
+      "lat": 41.237237,
+      "lon": 36.542077,
+      "fiyat": "110.0"
+    },
+    {
+      "id": 207,
+      "hat": 4,
+      "ad": "78021 - GÜNDOĞDU",
+      "kod": "6453",
+      "sira": 20,
+      "lat": 41.216141,
+      "lon": 36.923046,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 208,
+      "hat": 4,
+      "ad": "65311 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6390",
+      "sira": 21,
+      "lat": 41.257285,
+      "lon": 36.554824,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 209,
+      "hat": 4,
+      "ad": "78031 - TERME MERKEZ",
+      "kod": "6455",
+      "sira": 22,
+      "lat": 41.212253,
+      "lon": 36.971533,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 210,
+      "hat": 5,
+      "ad": "72032 - HAVZA OTOGAR",
+      "kod": "6422",
+      "sira": 1,
+      "lat": 40.961338,
+      "lon": 35.666979,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 211,
+      "hat": 5,
+      "ad": "65312 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6424",
+      "sira": 2,
+      "lat": 41.257171,
+      "lon": 36.554943,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 212,
+      "hat": 5,
+      "ad": "72022 - HAVZA MERKEZ",
+      "kod": "6410",
+      "sira": 3,
+      "lat": 40.967069,
+      "lon": 35.669098,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 213,
+      "hat": 5,
+      "ad": "60212 - TEKKEKÖY TRAMVAY",
+      "kod": "5833",
+      "sira": 4,
+      "lat": 41.224848,
+      "lon": 36.452808,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 214,
+      "hat": 5,
+      "ad": "72012 - HAVZA MESLEK YÜKSEK OKULU",
+      "kod": "6408",
+      "sira": 5,
+      "lat": 40.988334,
+      "lon": 35.70935,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 215,
+      "hat": 5,
+      "ad": "50012 - LOVELET AVM",
+      "kod": "4724",
+      "sira": 6,
+      "lat": 41.266026,
+      "lon": 36.380005,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 216,
+      "hat": 5,
+      "ad": "71031 - DORUK MAHALLESİ",
+      "kod": "6406",
+      "sira": 7,
+      "lat": 41.011761,
+      "lon": 35.876593,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 217,
+      "hat": 5,
+      "ad": "13511 - KONTROL NOKTASI",
+      "kod": "6389",
+      "sira": 8,
+      "lat": 41.291274,
+      "lon": 36.273346,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 218,
+      "hat": 5,
+      "ad": "71022 - KAVAK",
+      "kod": "6405",
+      "sira": 9,
+      "lat": 41.0697,
+      "lon": 36.028965,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 219,
+      "hat": 5,
+      "ad": "71011 - MAHMUTLU",
+      "kod": "6402",
+      "sira": 10,
+      "lat": 41.182444,
+      "lon": 36.112695,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 220,
+      "hat": 5,
+      "ad": "71012 - MAHMUTLU",
+      "kod": "6403",
+      "sira": 11,
+      "lat": 41.182678,
+      "lon": 36.113341,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 221,
+      "hat": 5,
+      "ad": "71021 - KAVAK",
+      "kod": "6404",
+      "sira": 12,
+      "lat": 41.070157,
+      "lon": 36.0287,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 222,
+      "hat": 5,
+      "ad": "13512 - KONTROL NOKTASI",
+      "kod": "5183",
+      "sira": 13,
+      "lat": 41.290865,
+      "lon": 36.27298,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 223,
+      "hat": 5,
+      "ad": "50011 - LOVELET AVM",
+      "kod": "5699",
+      "sira": 14,
+      "lat": 41.2657,
+      "lon": 36.3799,
+      "fiyat": "145.0"
+    },
+    {
+      "id": 224,
+      "hat": 5,
+      "ad": "72011 - HAVZA MESLEK YÜKSEK OKULU",
+      "kod": "6407",
+      "sira": 15,
+      "lat": 40.989113,
+      "lon": 35.70977,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 225,
+      "hat": 5,
+      "ad": "60211 - TEKKEKÖY",
+      "kod": "5941",
+      "sira": 16,
+      "lat": 41.224368,
+      "lon": 36.452838,
+      "fiyat": "85.0"
+    },
+    {
+      "id": 226,
+      "hat": 5,
+      "ad": "72021 - HAVZA MERKEZ",
+      "kod": "6409",
+      "sira": 17,
+      "lat": 40.968357,
+      "lon": 35.669213,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 227,
+      "hat": 5,
+      "ad": "65311 - ÇARŞAMBA HAVALİMANI",
+      "kod": "6390",
+      "sira": 18,
+      "lat": 41.257285,
+      "lon": 36.554824,
+      "fiyat": "120.0"
+    },
+    {
+      "id": 228,
+      "hat": 5,
+      "ad": "72031 - HAVZA OTOGAR",
+      "kod": "6411",
+      "sira": 19,
+      "lat": 40.961358,
+      "lon": 35.666868,
+      "fiyat": "120.0"
+    }
+  ],
+  "samair_sefer": [
+    {
+      "id": 21999,
+      "hat": 4,
+      "saat": "05:00",
+      "varis": "05:30",
+      "firma": "SUNEXPRESS / PEGASUS / AJET",
+      "ucak_saat": "06:50 / 06:50 / 07:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22000,
+      "hat": 4,
+      "saat": "07:00",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:50 / 09:40",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22001,
+      "hat": 4,
+      "saat": "09:00",
+      "varis": "09:30",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22002,
+      "hat": 4,
+      "saat": "14:45",
+      "varis": "15:15",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22003,
+      "hat": 4,
+      "saat": "18:30",
+      "varis": "19:00",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "20:15 / 21:10",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22004,
+      "hat": 4,
+      "saat": "20:45",
+      "varis": "21:15",
+      "firma": "SUNEXPRESS / AJET",
+      "ucak_saat": "22:30 / 22:55 / 23:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22015,
+      "hat": 3,
+      "saat": "03:30",
+      "varis": "05:30",
+      "firma": "SUNEXPRESS / PEGASUS / AJET",
+      "ucak_saat": "06:50 / 06:50 / 07:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22016,
+      "hat": 3,
+      "saat": "05:30",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:50 / 09:40",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22017,
+      "hat": 3,
+      "saat": "07:30",
+      "varis": "09:30",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22018,
+      "hat": 3,
+      "saat": "13:15",
+      "varis": "15:15",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22019,
+      "hat": 3,
+      "saat": "16:30",
+      "varis": "18:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "20:15",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22020,
+      "hat": 3,
+      "saat": "17:30",
+      "varis": "19:30",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22021,
+      "hat": 3,
+      "saat": "19:30",
+      "varis": "21:30",
+      "firma": "SUNEXPRESS / AJET",
+      "ucak_saat": "22:30 / 22:55 / 23:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22033,
+      "hat": 2,
+      "saat": "04:45",
+      "varis": "06:00",
+      "firma": "AJET",
+      "ucak_saat": "07:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22034,
+      "hat": 2,
+      "saat": "06:15",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:50 / 09:40",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22035,
+      "hat": 2,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22036,
+      "hat": 2,
+      "saat": "13:45",
+      "varis": "15:00",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22037,
+      "hat": 2,
+      "saat": "17:00",
+      "varis": "18:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "20:15",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22038,
+      "hat": 2,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22039,
+      "hat": 2,
+      "saat": "20:00",
+      "varis": "21:15",
+      "firma": "SUNEXPRESS / AJET",
+      "ucak_saat": "22:30 / 22:55 / 23:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22040,
+      "hat": 2,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "06:50 / 06:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22051,
+      "hat": 1,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "06:50 / 06:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22052,
+      "hat": 1,
+      "saat": "04:45",
+      "varis": "06:00",
+      "firma": "AJET",
+      "ucak_saat": "07:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22053,
+      "hat": 1,
+      "saat": "06:15",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:50 / 09:40",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22054,
+      "hat": 1,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22055,
+      "hat": 1,
+      "saat": "13:45",
+      "varis": "15:00",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22056,
+      "hat": 1,
+      "saat": "17:00",
+      "varis": "18:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "20:15",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22057,
+      "hat": 1,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22058,
+      "hat": 1,
+      "saat": "20:00",
+      "varis": "21:15",
+      "firma": "SUNEXPRESS / AJET",
+      "ucak_saat": "22:30 / 22:55 / 23:25",
+      "tarih": "2026-03-08",
+      "gun_format": "08 Mart 2026 Pazar"
+    },
+    {
+      "id": 22059,
+      "hat": 4,
+      "saat": "02:15",
+      "varis": "02:45",
+      "firma": "AJET / THY",
+      "ucak_saat": "03:30 / 04:15",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22060,
+      "hat": 4,
+      "saat": "03:15",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:00",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22061,
+      "hat": 4,
+      "saat": "05:00",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22062,
+      "hat": 4,
+      "saat": "06:30",
+      "varis": "07:00",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "08:20 / 08:45",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22063,
+      "hat": 4,
+      "saat": "08:00",
+      "varis": "08:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22064,
+      "hat": 4,
+      "saat": "14:30",
+      "varis": "15:00",
+      "firma": "SUNEXPRESS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22065,
+      "hat": 4,
+      "saat": "17:30",
+      "varis": "18:00",
+      "firma": "PEGASUS",
+      "ucak_saat": "19:05 / 20:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22066,
+      "hat": 4,
+      "saat": "19:30",
+      "varis": "20:00",
+      "firma": "THY / AJET",
+      "ucak_saat": "21:10 / 22:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22067,
+      "hat": 4,
+      "saat": "02:15",
+      "varis": "02:45",
+      "firma": "AJET",
+      "ucak_saat": "03:55 / 05:00",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22068,
+      "hat": 4,
+      "saat": "05:00",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50 ",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22069,
+      "hat": 4,
+      "saat": "08:00",
+      "varis": "08:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22070,
+      "hat": 4,
+      "saat": "14:45",
+      "varis": "15:15",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22071,
+      "hat": 4,
+      "saat": "18:30",
+      "varis": "19:00",
+      "firma": "PEGASUS / AJET / THY",
+      "ucak_saat": "20:10 / 20:20 / 21:10",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22072,
+      "hat": 4,
+      "saat": "03:30",
+      "varis": "04:00",
+      "firma": "AJET",
+      "ucak_saat": "05:20",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22073,
+      "hat": 4,
+      "saat": "05:00",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22074,
+      "hat": 4,
+      "saat": "07:00",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:45 / 09:40",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22075,
+      "hat": 4,
+      "saat": "09:00",
+      "varis": "09:30",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22076,
+      "hat": 4,
+      "saat": "12:30",
+      "varis": "13:00",
+      "firma": "IRAQI AIRWAYS",
+      "ucak_saat": "14:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22077,
+      "hat": 4,
+      "saat": "14:30",
+      "varis": "15:00",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22078,
+      "hat": 4,
+      "saat": "19:30",
+      "varis": "20:00",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22079,
+      "hat": 4,
+      "saat": "20:30",
+      "varis": "21:00",
+      "firma": "AJET / SUNEXPRESS",
+      "ucak_saat": "22:15 / 22:55",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22080,
+      "hat": 3,
+      "saat": "00:30",
+      "varis": "02:30",
+      "firma": "AJET / THY",
+      "ucak_saat": "03:30 / 04:15",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22081,
+      "hat": 3,
+      "saat": "01:45",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:00",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22082,
+      "hat": 3,
+      "saat": "03:30",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22083,
+      "hat": 3,
+      "saat": "05:00",
+      "varis": "07:00",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "08:20 / 08:45",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22084,
+      "hat": 3,
+      "saat": "06:30",
+      "varis": "08:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22085,
+      "hat": 3,
+      "saat": "13:00",
+      "varis": "15:00",
+      "firma": "SUNEXPRESS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22086,
+      "hat": 3,
+      "saat": "16:00",
+      "varis": "18:00",
+      "firma": "PEGASUS",
+      "ucak_saat": "19:05 / 20:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22087,
+      "hat": 3,
+      "saat": "18:00",
+      "varis": "20:00",
+      "firma": "THY / AJET",
+      "ucak_saat": "21:10 / 22:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22088,
+      "hat": 3,
+      "saat": "00:30",
+      "varis": "02:30",
+      "firma": "AJET",
+      "ucak_saat": "03:55 / 05:00",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22089,
+      "hat": 3,
+      "saat": "03:30",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22090,
+      "hat": 3,
+      "saat": "06:30",
+      "varis": "08:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22091,
+      "hat": 3,
+      "saat": "12:30",
+      "varis": "14:30",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22092,
+      "hat": 3,
+      "saat": "16:30",
+      "varis": "18:30",
+      "firma": "PEGASUS / AJET",
+      "ucak_saat": "20:10 / 20:20",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22093,
+      "hat": 3,
+      "saat": "17:30",
+      "varis": "19:30",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22094,
+      "hat": 3,
+      "saat": "02:00",
+      "varis": "04:00",
+      "firma": "AJET",
+      "ucak_saat": "05:20",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22095,
+      "hat": 3,
+      "saat": "03:30",
+      "varis": "05:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22096,
+      "hat": 3,
+      "saat": "05:30",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:45 / 09:40",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22097,
+      "hat": 3,
+      "saat": "07:30",
+      "varis": "09:30",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22098,
+      "hat": 3,
+      "saat": "11:00",
+      "varis": "13:00",
+      "firma": "IRAQI AIRWAYS",
+      "ucak_saat": "14:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22099,
+      "hat": 3,
+      "saat": "13:00",
+      "varis": "15:00",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22100,
+      "hat": 3,
+      "saat": "17:30",
+      "varis": "19:30",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22101,
+      "hat": 3,
+      "saat": "18:45",
+      "varis": "20:45",
+      "firma": "AJET / SUNEXPRESS",
+      "ucak_saat": "22:15 / 22:55",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22102,
+      "hat": 2,
+      "saat": "01:00",
+      "varis": "02:15",
+      "firma": "AJET / THY",
+      "ucak_saat": "03:30 / 04:15",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22103,
+      "hat": 2,
+      "saat": "02:30",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:00",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22104,
+      "hat": 2,
+      "saat": "05:30",
+      "varis": "06:45",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "08:20 / 08:45",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22105,
+      "hat": 2,
+      "saat": "07:00",
+      "varis": "08:15",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22106,
+      "hat": 2,
+      "saat": "13:30",
+      "varis": "14:45",
+      "firma": "SUNEXPRESS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22107,
+      "hat": 2,
+      "saat": "16:15",
+      "varis": "17:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "19:05 / 20:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22108,
+      "hat": 2,
+      "saat": "18:15",
+      "varis": "19:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "21:10 / 22:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22109,
+      "hat": 2,
+      "saat": "01:30",
+      "varis": "02:45",
+      "firma": "AJET",
+      "ucak_saat": "03:55 / 05:00",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22110,
+      "hat": 2,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22111,
+      "hat": 2,
+      "saat": "07:00",
+      "varis": "08:15",
+      "firma": "THY",
+      "ucak_saat": "09:40",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22112,
+      "hat": 2,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22113,
+      "hat": 2,
+      "saat": "13:45",
+      "varis": "15:00",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22114,
+      "hat": 2,
+      "saat": "17:00",
+      "varis": "18:15",
+      "firma": "PEGASUS / AJET",
+      "ucak_saat": "20:10 / 20:20",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22115,
+      "hat": 2,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22116,
+      "hat": 2,
+      "saat": "02:30",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:20",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22117,
+      "hat": 2,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22118,
+      "hat": 2,
+      "saat": "06:15",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:45 / 09:40",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22119,
+      "hat": 2,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22120,
+      "hat": 2,
+      "saat": "11:30",
+      "varis": "12:45",
+      "firma": "IRAQI AIRWAYS",
+      "ucak_saat": "14:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22121,
+      "hat": 2,
+      "saat": "13:30",
+      "varis": "14:45",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22122,
+      "hat": 2,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22123,
+      "hat": 2,
+      "saat": "19:15",
+      "varis": "20:30",
+      "firma": "AJET / SUNEXPRESS",
+      "ucak_saat": "22:15 / 22:55",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22124,
+      "hat": 1,
+      "saat": "01:00",
+      "varis": "02:15",
+      "firma": "AJET / THY",
+      "ucak_saat": "03:30 / 04:15",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22125,
+      "hat": 1,
+      "saat": "02:30",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:00",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22126,
+      "hat": 1,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22127,
+      "hat": 1,
+      "saat": "05:30",
+      "varis": "06:45",
+      "firma": "SUNEXPRESS / PEGASUS",
+      "ucak_saat": "08:20 / 08:45",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22128,
+      "hat": 1,
+      "saat": "07:00",
+      "varis": "08:15",
+      "firma": "THY / AJET",
+      "ucak_saat": "09:40 / 10:50",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22129,
+      "hat": 1,
+      "saat": "13:30",
+      "varis": "14:45",
+      "firma": "SUNEXPRESS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22130,
+      "hat": 1,
+      "saat": "16:15",
+      "varis": "17:30",
+      "firma": "PEGASUS",
+      "ucak_saat": "19:05 / 20:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22131,
+      "hat": 1,
+      "saat": "18:15",
+      "varis": "19:30",
+      "firma": "THY / AJET",
+      "ucak_saat": "21:10 / 22:10",
+      "tarih": "2026-03-09",
+      "gun_format": "09 Mart 2026 Pazartesi"
+    },
+    {
+      "id": 22132,
+      "hat": 1,
+      "saat": "01:30",
+      "varis": "02:45",
+      "firma": "AJET",
+      "ucak_saat": "03:55 / 05:00",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22133,
+      "hat": 1,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22134,
+      "hat": 1,
+      "saat": "07:00",
+      "varis": "08:15",
+      "firma": "THY",
+      "ucak_saat": "09:40",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22135,
+      "hat": 1,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22136,
+      "hat": 1,
+      "saat": "13:45",
+      "varis": "15:00",
+      "firma": "THY",
+      "ucak_saat": "16:25",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22137,
+      "hat": 1,
+      "saat": "17:00",
+      "varis": "18:15",
+      "firma": "PEGASUS / AJET",
+      "ucak_saat": "20:10 / 20:20",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22138,
+      "hat": 1,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-10",
+      "gun_format": "10 Mart 2026 Salı"
+    },
+    {
+      "id": 22139,
+      "hat": 1,
+      "saat": "02:30",
+      "varis": "03:45",
+      "firma": "AJET",
+      "ucak_saat": "05:20",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22140,
+      "hat": 1,
+      "saat": "04:00",
+      "varis": "05:15",
+      "firma": "PEGASUS",
+      "ucak_saat": "06:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22141,
+      "hat": 1,
+      "saat": "06:15",
+      "varis": "07:30",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "08:45 / 09:40",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22142,
+      "hat": 1,
+      "saat": "08:00",
+      "varis": "09:15",
+      "firma": "AJET",
+      "ucak_saat": "10:50",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22143,
+      "hat": 1,
+      "saat": "11:30",
+      "varis": "12:45",
+      "firma": "IRAQI AIRWAYS",
+      "ucak_saat": "14:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22144,
+      "hat": 1,
+      "saat": "13:30",
+      "varis": "14:45",
+      "firma": "PEGASUS / THY",
+      "ucak_saat": "16:10 / 16:25",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22145,
+      "hat": 1,
+      "saat": "18:00",
+      "varis": "19:15",
+      "firma": "THY",
+      "ucak_saat": "21:10",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    },
+    {
+      "id": 22146,
+      "hat": 1,
+      "saat": "19:15",
+      "varis": "20:30",
+      "firma": "AJET / SUNEXPRESS",
+      "ucak_saat": "22:15 / 22:55",
+      "tarih": "2026-03-11",
+      "gun_format": "11 Mart 2026 Çarşamba"
+    }
+  ]
+}

@@ -793,12 +793,73 @@
             max-height: 85vh;
             overflow-y: auto;
         }
+
+        /* Harita Kontrol Butonları */
+        .map-ctrls {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: auto;
+        }
+        @media (max-width: 767px) {
+            .map-ctrls {
+                top: 80px;
+                right: 16px;
+            }
+        }
+        .map-ctrl {
+            width: 46px;
+            height: 46px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            color: var(--text);
+        }
+        .map-ctrl:hover {
+            transform: translateY(-2px) scale(1.05);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+        .map-ctrl svg {
+            width: 22px;
+            height: 22px;
+            transition: transform 0.2s;
+        }
+        .map-ctrl:active {
+            transform: translateY(1px) scale(0.95);
+        }
     </style>
 </head>
 
 <body class="panel-open">
 
     <div id="map"></div>
+
+    <div class="map-ctrls">
+        <button class="map-ctrl" onclick="findUserLoc()" title="Konumumu Bul">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <button class="map-ctrl" onclick="focusSamsun()" title="Samsun Merkez">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.47 3.82a.75.75 0 011.06 0l8.69 8.69a.75.75 0 11-1.06 1.06l-.968-.968v8a.75.75 0 01-.75.75h-3.75A.75.75 0 0114 20.625V15a.75.75 0 00-.75-.75h-2.5a.75.75 0 00-.75.75v5.625c0 .414-.336.75-.75.75H5.25a.75.75 0 01-.75-.75v-8L3.53 13.57a.75.75 0 11-1.06-1.06l8.69-8.69z" />
+            </svg>
+        </button>
+    </div>
 
     <div class="top-bar">
         <div
@@ -931,6 +992,66 @@
 
     <script src="/static/leaflet.js"></script>
     <script>
+        // ===== FAVORİLER & HARİTA KONTROLLERİ =====
+        function getFavorites(key) {
+            try {
+                return JSON.parse(localStorage.getItem(key)) || [];
+            } catch {
+                return [];
+            }
+        }
+        function toggleFavoriteHat(id) {
+            let favs = getFavorites('fav_hatlar');
+            const idx = favs.indexOf(id);
+            if (idx > -1) {
+                favs.splice(idx, 1);
+            } else {
+                favs.push(id);
+            }
+            localStorage.setItem('fav_hatlar', JSON.stringify(favs));
+            return idx === -1;
+        }
+        function toggleFavoriteDurak(durakObj) {
+            let favs = getFavorites('fav_duraklar');
+            const idx = favs.findIndex(d => d.id === durakObj.id || d.kod === durakObj.kod);
+            if (idx > -1) {
+                favs.splice(idx, 1);
+            } else {
+                favs.push(durakObj);
+            }
+            localStorage.setItem('fav_duraklar', JSON.stringify(favs));
+            return idx === -1;
+        }
+        function isFavoriteHat(id) {
+            return getFavorites('fav_hatlar').includes(id);
+        }
+        function isFavoriteDurak(id) {
+            return getFavorites('fav_duraklar').some(d => d.id === id || d.kod === id);
+        }
+
+        // Harita konumlandırma fonksiyonları
+        function focusSamsun() {
+            if (window.map) {
+                map.setView([41.29, 36.33], 13);
+            }
+        }
+        function findUserLoc() {
+            if (!window.map) return;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const { latitude, longitude } = position.coords;
+                    map.setView([latitude, longitude], 15);
+                    L.popup()
+                        .setLatLng([latitude, longitude])
+                        .setContent("Konumunuz")
+                        .openOn(map);
+                }, () => {
+                    showToast("Konumunuza erişilemedi.");
+                });
+            } else {
+                showToast("Tarayıcınız konum bilgisini desteklemiyor.");
+            }
+        }
 
         function showKvkk() { document.getElementById('kvkkModal').style.display = 'flex'; return false }
         function showCerez() { document.getElementById('cerezModal').style.display = 'flex'; return false }

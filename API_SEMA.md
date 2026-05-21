@@ -33,16 +33,32 @@
 | `/LineDirections` | `lineCode` | Yön bilgisi | Gidiş/Dönüş |
 | `/SmartStations` | `stationId` | Akıllı durak bilgisi | - |
 
-### 2. YBS API
-**Adres:** `https://ybs.samsun.bel.tr/service`
+### 2. Doğrudan API'ler (YBS Devre Dışı, ODAK & SamAir Doğrudan Bağlantı)
+YBS servisleri kaldırıldığı için doğrudan belediyenin kendi sitelerinin API'leri Cloudflare bypass ve yedek proxy rotasyonu ile kullanılmaktadır.
 
-| Method | Submethod | Dönen | Açıklama |
-|--------|-----------|-------|----------|
-| `getGuestToken` | - | `{token}` | API token |
-| `odakSamsun_Crud` | `HatlarAllList` | `[{id, hat_adi, hat_aciklama}]` | Odak turistik hatlar |
-| `odakSamsun_Crud` | `GetHatDuraklar` | `[{durak_adi, durak_fiyat, durak_kodu}]` | Hat durakları |
-| `samair_duraklar_public` | `DuraklarList` | `[{durak_adi, durak_fiyat, lat, lon}]` | Samair durakları |
-| `samair_ucaksefersaatleri_public` | `HatlarList` | `[{saat, varis_saati, ucak_firmasi}]` | Uçuş seferleri |
+#### 🛡️ Proxy ve Cloudflare Bypass Mimarisi
+* **Tek Türk Proxy Yapılandırması:** Render ortamında çevre değişkenleri (`PROXY_HOST`, `PROXY_PORT`, `PROXY_USER`, `PROXY_PASS`) üzerinden tanımlanan tek bir Türk IP'li proxy birincil olarak kullanılır.
+* **Bypass & Rotasyon Mantığı:**
+  * ODAK ve SamAir doğrudan API'leri Cloudflare korumalıdır. İstekler `cloudscraper` kütüphanesi yardımıyla atlatılır.
+  * İstekler başarısız olduğunda 3 denemeli retry mekanizması devreye girer:
+    * **1. ve 2. Deneme:** Tanımlı olan birincil Türk proxy'si (ve varsa `proxy_https_auth.csv` içindeki yedek proxy'ler) sırayla kullanılır.
+    * **3. Deneme (Fallback):** Doğrudan bağlantı (proxy'siz) denenerek WAF'ın bypass edilmesi amaçlanır.
+
+#### ODAK Doğrudan API
+**Adres:** `https://odak.samsun.bel.tr/doit.php`
+
+| Action | Parametreler | Dönen | Açıklama |
+|--------|--------------|-------|----------|
+| `HatlarAllList` | - | `[{id, hat_adi, hat_aciklama, kod, gunler}]` | Tüm odak hatları |
+| `GetHatDuraklar` | `hatid` | `[{id, ad, kod, sira, lat, lon, fiyat, fiyat_ogr}]` | Odak hat durakları |
+
+#### SamAir Doğrudan API
+**Adres:** `https://samair.samsun.bel.tr/api.php`
+
+| m | a (Action) | Parametreler | Dönen | Açıklama |
+|---|------------|--------------|-------|----------|
+| `samair_public` | `DuraklarList` | - | `[{durak_adi, durak_fiyat, lat, lon}]` | Samair durakları |
+| `samair_public` | `UcakSeferSaatleri` | `hatid` | `[{saat, varis_saati, ucak_firmasi}]` | Uçuş seferleri |
 
 ### 3. Samulaş Web Scraping
 **Adres:** `https://samulas.com.tr`
@@ -119,18 +135,22 @@ samair_sefer(id INTEGER, hat INTEGER, tarih TEXT, saat TEXT,
 
 ### Odak (Turistik)
 
-| Endpoint | Method | Dönen | Açıklama |
-|----------|--------|-------|----------|
-| `/api/odak` | GET | `[{id, ad, kod}]` | Tüm Odak hatları |
-| `/api/odak/{id}/durak` | GET | `[{ad, fiyat, lat, lon}]` | Odak durakları |
+| Endpoint | Method | Parametre | Dönen | Açıklama |
+|----------|--------|-----------|-------|----------|
+| `/api/odak` | GET | - | `[{id, ad, kod}]` | Tüm Odak hatları (DB'den) |
+| `/api/odak/{id}/durak` | GET | - | `[{ad, fiyat, lat, lon}]` | Odak durakları (DB'den) |
+| `/api/proxy_odak` | GET | - | `[{id, kod, ad, gunler}]` | Doğrudan API'den normalize edilmiş tüm odak hatları listesi (Proxy + WAF Aşar) |
+| `/api/proxy_odak_araclar` | GET | `hatid` | `{"active": bool, "vehicles": [...]}` | ASIS üzerinden dinamik eşleştirilen canlı araç konumları |
 
 ### Samair (Havalimanı)
 
-| Endpoint | Method | Dönen | Açıklama |
-|----------|--------|-------|----------|
-| `/api/samair` | GET | `[{id, kod, ad}]` | Tüm Samair hatları |
-| `/api/samair/{id}/durak` | GET | `[{ad, fiyat, lat, lon}]` | Samair durakları |
-| `/api/samair/{id}/sefer` | GET | `{data: [{saat, firma}]}` | Uçuş seferleri |
+| Endpoint | Method | Parametre | Dönen | Açıklama |
+|----------|--------|-----------|-------|----------|
+| `/api/samair` | GET | - | `[{id, kod, ad}]` | Tüm Samair hatları (DB'den) |
+| `/api/samair/{id}/durak` | GET | - | `[{ad, fiyat, lat, lon}]` | Samair durakları (DB'den) |
+| `/api/samair/{id}/sefer` | GET | - | `{data: [{saat, firma}]}` | Uçuş seferleri (DB'den) |
+| `/api/proxy_samair_saatler` | GET | `hatid` | `[{saat, varis, firma, ucak_saat, tarih, gun_format}]` | Doğrudan API'den normalize edilmiş uçuş sefer saatleri (Proxy + WAF Aşar) |
+| `/api/proxy_samair_araclar` | GET | - | `[{lat, lon, plate, speed, lineCode}]` | ASIS üzerinden filtrelenmiş canlı SamAir araç konumları |
 
 ### Konum Tabanlı
 
@@ -140,6 +160,20 @@ samair_sefer(id INTEGER, hat INTEGER, tarih TEXT, saat TEXT,
 | `/api/rota` | GET | `lat1, lon1, lat2, lon2` | Yol tarifi |
 | `/api/durak_panel/{kod}` | GET | `kod` | Durak detayı |
 
+### 📱 Mobil API Proxy Geçitleri
+Bu endpoint'ler, istemci (mobil/web) tarafında CORS ve WAF engellerini aşmak amacıyla ASIS API çağrılarını sunucu üzerinden tüneller:
+
+| Endpoint | Method | Parametre | Açıklama |
+|----------|--------|-----------|----------|
+| `/api/proxy/lines` | GET | - | Alfabetik ve etiketli tüm hatlar |
+| `/api/proxy/orjlines` | GET | - | Orijinal hat listesi |
+| `/api/proxy/smart_stations` | GET | `stationId` | Akıllı durak bilgisi (yaklaşan araçlar) |
+| `/api/proxy/realtime` | GET | `lineCode` | Belirli bir hattın canlı araç konumları |
+| `/api/proxy/stops_stations` | GET | `lineCode` | Belirli bir hattın durakları |
+| `/api/proxy/line_directions` | GET | `lineCode` | Belirli bir hattın gidiş/dönüş yön bilgisi |
+| `/api/proxy/schedules` | GET | `lineCode, scheduleDate` | Belirli bir hattın sefer saatleri |
+| `/api/debug/proxy` | GET | - | Proxy bağlantı testi (ASIS/YBS durumları) |
+
 ---
 
 ## 🔧 Kod Sınıfları (samsun.py)
@@ -147,15 +181,18 @@ samair_sefer(id INTEGER, hat INTEGER, tarih TEXT, saat TEXT,
 ### Http Sınıfı
 ```python
 class Http:
-    def asis(self, ep, **p)    # ASIS API çağrısı
-    def ybs_token(self)        # YBS token al
-    def ybs(self, method, submethod=None, **kw)  # YBS API çağrısı
+    def asis(self, ep, **p)                     # ASIS API çağrısı
+    def odak_direct(self, action, **params)     # ODAK doğrudan API çağrısı (Cloudscraper bypass)
+    def samair_direct(self, action, **params)   # Samair doğrudan API çağrısı (Cloudscraper bypass)
+    def get_next_proxy(self, attempt=1)         # 3. denemede direct fallback yapan proxy seçici
+    def ybs_token(self)                         # Pasif (YBS kaldırıldı)
+    def ybs(self, method, submethod=None, **kw) # Pasif (YBS kaldırıldı)
 ```
 
 ### Database Sınıfı
 ```python
 class Database:
-    def connect(self)          # DB bağlan
+    def connect(self)          # DB bağlan (SQLite ve Supabase REST RPC desteği / db_seed.json otomatik seed)
     def ex(self, q, p=())      # Execute
     def get(self, q, p=())     # Select çoklu
     def one(self, q, p=())     # Select tek
@@ -170,8 +207,8 @@ class Collector:
     def _duraklar(self)        # ASIS StopsStations
     def _seferler(self)        # ASIS Schedules
     def _samulas_fiyatlar(self)# Web scraping
-    def _odak(self)            # YBS Odak
-    def _samair_duraklar(self) # YBS + ASIS Samair
+    def _odak(self)            # ODAK doğrudan API üzerinden turistik hatları günceller
+    def _samair_duraklar(self) # Samair doğrudan API üzerinden durak ve seferleri günceller
     def canli(self, kod)       # RealTimeData
 ```
 
@@ -186,13 +223,13 @@ class Collector:
            │  guncelleme_gerekli() │  (7 günde 1)
            └───────────┬───────────┘
                        ↓
-    ┌──────────────────┴──────────────────┐
+    ┌──────────────────┼──────────────────┐
     ↓                  ↓                  ↓
- ASIS API          YBS API           Web Scrape
-    ↓                  ↓                  ↓
- Lines            odakSamsun_Crud    samulas.com.tr
- OrjLines         samair_duraklar    /otobusler
- StopsStations    sefer_saatleri     /otobus-detay
+ ASIS API        Doğrudan API'ler     Web Scrape
+    ↓            (ODAK & SamAir)          ↓
+ Lines                 ↓            samulas.com.tr
+ OrjLines        odak_direct        /otobusler
+ StopsStations   samair_direct      /otobus-detay
  Schedules             ↓                  ↓
     ↓           ┌──────┴──────┐           ↓
     ↓           ↓             ↓           ↓
@@ -202,11 +239,11 @@ sefer                      samair_sefer
                                 
            └───────────────────────────────┘
                         ↓
-              samsun_v25.db (SQLite)
+             Supabase DB / SQLite
                         ↓
                FastAPI Endpoints
                         ↓
-                   UI (Browser)
+             UI (Browser & Mobile)
 ```
 
 ---
