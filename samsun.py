@@ -3762,12 +3762,11 @@ function normalizeStr(text){if(!text)return"";let t=text.toLowerCase();const rep
 
 function shH(){const bk={};H.forEach(h=>{const k=h.kat||'otobus';(bk[k]=bk[k]||[]).push(h)});
 let x=`<div class="src-wrap"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input class="src" placeholder="Hat ara..." oninput="flt(this.value)"></div>`;
-const isCatSelected=sK&&sK!=='dil';
-if(isCatSelected) x+=`<div style="text-align:center;margin-bottom:8px"><button onclick="document.getElementById('cat-grid').style.display=document.getElementById('cat-grid').style.display==='none'?'flex':'none'" style="background:var(--bg3);border:1px solid var(--card-border);color:var(--text);padding:4px 12px;border-radius:12px;font-size:0.75rem;cursor:pointer">Kategorileri Gizle/Göster ↓</button></div>`;
-x+=`<div class="kg" id="cat-grid" style="display:${isCatSelected?'none':'flex'}">`;
-Object.entries(K).forEach(([k,v])=>{const cnt=k==='dil'?H.length:(bk[k]?bk[k].length:0);x+=`<div class="kb ${sK===k?'on':''}" onclick="selK('${k}')"><div class="i">${v.i}</div>${v.n}<span style="font-size:0.5rem;opacity:0.7">(${cnt})</span></div>`});
+x+=`<div class="kg" id="cat-grid">`;
+x+=`<div class="kb ${!sK||sK==='dil'?'on':''}" onclick="selK('dil')"><div class="i">📋</div>Tümü<span style="font-size:0.5rem;opacity:0.7">(${H.length})</span></div>`;
+Object.entries(K).forEach(([k,v])=>{if(k==='dil')return;const cnt=bk[k]?bk[k].length:0;if(cnt===0)return;x+=`<div class="kb ${sK===k?'on':''}" onclick="selK('${k}')"><div class="i">${v.i}</div>${v.n}<span style="font-size:0.5rem;opacity:0.7">(${cnt})</span></div>`});
 x+=`</div><div class="lst" id="lst">`;(sK&&sK!=='dil'?bk[sK]||[]:H).forEach(h=>{x+=`<div class="it ${h.kat||'otobus'}" onclick="shL('${encodeURIComponent(h.code)}')">${h.name||h.code}</div>`});document.getElementById('ct').innerHTML=x+`</div>`}
-window.selK=k=>{sK=sK===k?null:k;shH()};
+window.selK=k=>{sK=k==='dil'?null:(sK===k?null:k);shH()};
 window.flt=q=>{q=normalizeStr(q);const bk={};H.forEach(h=>{const k=h.kat||'otobus';(bk[k]=bk[k]||[]).push(h)});const f=(sK&&sK!=='dil'?bk[sK]||[]:H).filter(h=>(normalizeStr(h.code+h.name)).includes(q));document.getElementById('lst').innerHTML=f.map(h=>`<div class="it ${h.kat||'otobus'}" onclick="shL('${encodeURIComponent(h.code)}')">${h.name||h.code}</div>`).join('')};
 
 // ===== ARAÇ GÜNCELLEME =====
