@@ -432,6 +432,21 @@ def leaflet_indir():
 
 # --- AĞ KATMANI ---
 
+def sanitize_proxy_url(url: str) -> str:
+    """Mask credentials (username:password) in proxy URLs for safe logging."""
+    if not url:
+        return ""
+    if url == "Direct":
+        return "Direct"
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.username or parsed.password:
+            netloc = parsed.netloc.split('@')[-1]
+            return f"{parsed.scheme}://***:***@{netloc}"
+        return url
+    except Exception:
+        return url
+
 class Http:
     def __init__(self):
         _retry = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
@@ -500,6 +515,8 @@ class Http:
         self._tok = {}
         self._tok_lock = threading.Lock()
         self._cache = {}
+        self._api_cache = {}
+        self._api_cache_lock = threading.Lock()
         self.proxy_idx = 0
 
     def get_next_proxy(self, attempt=1):
@@ -517,6 +534,28 @@ class Http:
         self.s session'ını kullanır (proxy, retry, header ayarları miras alınır)
         """
         import urllib.parse
+        
+        # 1. Determine TTL based on endpoint
+        ttl = 10  # default TTL
+        if ep == 'RealTimeData':
+            ttl = 6
+        elif ep == 'SmartStations':
+            ttl = 10
+        elif ep in ['Lines', 'OrjLines', 'Schedules']:
+            ttl = 3600
+        elif ep in ['StopsStations', 'LineDirections']:
+            ttl = 86400
+            
+        h_params = tuple(sorted((str(k), str(v)) for k, v in p.items()))
+        cache_key = ("asis", ep, h_params)
+        
+        # Check Cache
+        with self._api_cache_lock:
+            if cache_key in self._api_cache:
+                val, timestamp = self._api_cache[cache_key]
+                if time.time() - timestamp < ttl:
+                    log.debug(f"💾 Cache HIT: ASIS {ep} | Params: {p}")
+                    return val
         
         try:
             url = f"{ASIS}/{ep}"
@@ -546,6 +585,13 @@ class Http:
             if r.ok:
                 d = r.json()
                 result = d.get('data', []) if isinstance(d, dict) else d
+                
+                # Save Cache
+                with self._api_cache_lock:
+                    if len(self._api_cache) > 2000:
+                        now = time.time()
+                        self._api_cache = {k: v for k, v in self._api_cache.items() if now - v[1] < 86400}
+                    self._api_cache[cache_key] = (result, time.time())
                 return result
             else:
                 log.error(f"✗ ASIS {ep} | HTTP {r.status_code}")
@@ -576,12 +622,29 @@ class Http:
         Cloudflare korumalı. cloudscraper ile bypass edilir.
         YBS API çalışmazsa bu fallback olarak kullanılır.
         """
+        ttl = 10
+        if action == 'HatlarAllList':
+            ttl = 3600
+        elif action == 'HatDurakList':
+            ttl = 86400
+            
+        h_params = tuple(sorted((str(k), str(v)) for k, v in params.items()))
+        cache_key = ("odak", action, h_params)
+        
+        # Check Cache
+        with self._api_cache_lock:
+            if cache_key in self._api_cache:
+                val, timestamp = self._api_cache[cache_key]
+                if time.time() - timestamp < ttl:
+                    log.debug(f"💾 Cache HIT: ODAK {action} | Params: {params}")
+                    return val
+                    
         p = {'action': action}
         p.update(params)
         for attempt in range(1, 4):
             proxies = self.get_next_proxy(attempt)
             proxy_str = list(proxies.values())[0] if proxies else "Direct"
-            log.info(f"🔄 ODAK direct API istek denemesi {attempt}/3 ({action}) - Proxy: {proxy_str}")
+            log.info(f"🔄 ODAK direct API istek denemesi {attempt}/3 ({action}) - Proxy: {sanitize_proxy_url(proxy_str)}")
             try:
                 r = self.cs.get(
                     'https://odak.samsun.bel.tr/doit.php',
@@ -604,9 +667,20 @@ class Http:
                     log.warning(f"ODAK direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action}) - Deneme {attempt}")
                     continue
                 data = r.json()
+                result = []
                 if isinstance(data, list):
-                    return data
-                return data.get('data', data.get('root', data.get('result', [])))
+                    result = data
+                else:
+                    result = data.get('data', data.get('root', data.get('result', [])))
+                
+                # Save Cache if result is valid
+                if result:
+                    with self._api_cache_lock:
+                        if len(self._api_cache) > 2000:
+                            now = time.time()
+                            self._api_cache = {k: v for k, v in self._api_cache.items() if now - v[1] < 86400}
+                        self._api_cache[cache_key] = (result, time.time())
+                return result
             except Exception as e:
                 log.warning(f"ODAK direct API hatası ({action}) - Deneme {attempt}: {type(e).__name__}: {e}")
         return []
@@ -620,12 +694,29 @@ class Http:
           DuraklarList  → durak listesi
           UcakSeferSaatleri&hatid=3 → sefer saatleri
         """
+        ttl = 10
+        if action == 'UcakSeferSaatleri':
+            ttl = 3600
+        elif action == 'DuraklarList':
+            ttl = 86400
+            
+        h_params = tuple(sorted((str(k), str(v)) for k, v in params.items()))
+        cache_key = ("samair", action, h_params)
+        
+        # Check Cache
+        with self._api_cache_lock:
+            if cache_key in self._api_cache:
+                val, timestamp = self._api_cache[cache_key]
+                if time.time() - timestamp < ttl:
+                    log.debug(f"💾 Cache HIT: SamAir {action} | Params: {params}")
+                    return val
+                    
         p = {'m': 'samair_public', 'a': action}
         p.update(params)
         for attempt in range(1, 4):
             proxies = self.get_next_proxy(attempt)
             proxy_str = list(proxies.values())[0] if proxies else "Direct"
-            log.info(f"🔄 Samair direct API istek denemesi {attempt}/3 ({action}) - Proxy: {proxy_str}")
+            log.info(f"🔄 Samair direct API istek denemesi {attempt}/3 ({action}) - Proxy: {sanitize_proxy_url(proxy_str)}")
             try:
                 r = self.cs.get(
                     'https://samair.samsun.bel.tr/api.php',
@@ -647,9 +738,20 @@ class Http:
                     log.warning(f"Samair direct API: HTML yanıtı aldı — Cloudflare atlatılamadı ({action}) - Deneme {attempt}")
                     continue
                 data = r.json()
+                result = []
                 if isinstance(data, list):
-                    return data
-                return data.get('data', data.get('root', data.get('result', [])))
+                    result = data
+                else:
+                    result = data.get('data', data.get('root', data.get('result', [])))
+                
+                # Save Cache if result is valid
+                if result:
+                    with self._api_cache_lock:
+                        if len(self._api_cache) > 2000:
+                            now = time.time()
+                            self._api_cache = {k: v for k, v in self._api_cache.items() if now - v[1] < 86400}
+                        self._api_cache[cache_key] = (result, time.time())
+                return result
             except Exception as e:
                 log.warning(f"Samair direct API hatası ({action}) - Deneme {attempt}: {type(e).__name__}: {e}")
         return []
@@ -701,7 +803,7 @@ class Database:
                     sd_list = data.get('samair_durak', [])
                     if sd_list:
                         rows = [(r['id'], r['hat'], r['ad'], r['kod'], r['sira'], r['lat'], r['lon'], r['fiyat']) for r in sd_list]
-                        self.exm("INSERT INTO samair_durak(id, hat, ad, kod, sira, lat, lon, fiyat) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", rows)
+                        self.exm("INSERT INTO samair_durak(id, hat, ad, kod, sira, lat, lon, fiyat) VALUES(?, ?, ?, ?, ?, ?, ?, ?)", rows)
                     
                     # samair_sefer tablosu seed
                     ss_list = data.get('samair_sefer', [])
@@ -3722,6 +3824,9 @@ def create_app(db, col):
     app = FastAPI(title="Samsun Ulaşım Sistemi")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+    endpoint_cache = {}
+    endpoint_cache_lock = threading.Lock()
+
     # Geolocation izni ve Static Cache için Headers Middleware
     from starlette.middleware.base import BaseHTTPMiddleware
     class CustomHeadersMiddleware(BaseHTTPMiddleware):
@@ -4026,7 +4131,26 @@ def create_app(db, col):
         saat = datetime.now().hour
         if 0 <= saat < 6:
             return JSONResponse([])
-        return JSONResponse(col.durak_bilgi(kod))
+            
+        cache_key = f"durak_panel_{kod}"
+        with endpoint_cache_lock:
+            if cache_key in endpoint_cache:
+                val, timestamp = endpoint_cache[cache_key]
+                if time.time() - timestamp < 5:
+                    return JSONResponse(val)
+                    
+        res = col.durak_bilgi(kod)
+        
+        with endpoint_cache_lock:
+            if len(endpoint_cache) > 2000:
+                now = time.time()
+                # Use list conversion to safely iterate and prune items from dictionary while modifying it
+                for key in list(endpoint_cache.keys()):
+                    if now - endpoint_cache[key][1] > 86400:
+                        endpoint_cache.pop(key, None)
+            endpoint_cache[cache_key] = (res, time.time())
+            
+        return JSONResponse(res)
 
     @app.get("/api/tum_duraklar")
     async def api_tum_duraklar():
@@ -4083,6 +4207,13 @@ def create_app(db, col):
     @app.get("/api/proxy_samair_araclar")
     async def proxy_samair_araclar():
         """Mobil uygulama için SamAir araç konumlarını proxy yapar (ASIS API üzerinden)"""
+        cache_key = "samair_araclar"
+        with endpoint_cache_lock:
+            if cache_key in endpoint_cache:
+                val, timestamp = endpoint_cache[cache_key]
+                if time.time() - timestamp < 6:
+                    return JSONResponse(val)
+
         samair_line_codes = [
             'H1 OMÜ - HAVALİMANI', 'H1 HAVALİMANI - OMÜ',
             'H2 TTTM - HAVALİMANI', 'H2 HAVALİMANI - TTTM',
@@ -4141,11 +4272,21 @@ def create_app(db, col):
                 'lineCode': line_code_short,
             })
             
+        with endpoint_cache_lock:
+            endpoint_cache[cache_key] = (normalized, time.time())
+            
         return JSONResponse(normalized)
 
     @app.get("/api/proxy_odak_araclar")
     async def proxy_odak_araclar(hatid: int):
         """Odak turistik hat canlı araç konumlarını ASIS OrjLines/RealTimeData üzerinden dinamik eşleştirerek döner"""
+        cache_key = f"odak_araclar_{hatid}"
+        with endpoint_cache_lock:
+            if cache_key in endpoint_cache:
+                val, timestamp = endpoint_cache[cache_key]
+                if time.time() - timestamp < 6:
+                    return JSONResponse(val)
+                    
         try:
             # 1. DB'den ilgili hatid'ye karşılık gelen kod (örn. G1) ve ad değerlerini al
             rows = db.get("SELECT kod, ad FROM odak WHERE id = ?", (str(hatid),))
@@ -4228,7 +4369,16 @@ def create_app(db, col):
                     'lineCode': item.get('HatKodu', item.get('hatKodu', item.get('lineCode', odak_kodu)))
                 })
             
-            return JSONResponse({"active": True, "vehicles": vehicles})
+            response_data = {"active": True, "vehicles": vehicles}
+            with endpoint_cache_lock:
+                if len(endpoint_cache) > 2000:
+                    now = time.time()
+                    for key in list(endpoint_cache.keys()):
+                        if now - endpoint_cache[key][1] > 86400:
+                            endpoint_cache.pop(key, None)
+                endpoint_cache[cache_key] = (response_data, time.time())
+                
+            return JSONResponse(response_data)
         except Exception as e:
             log.error(f"Odak Araçlar endpoint hatası: {e}")
             return JSONResponse({"active": True, "vehicles": []})
@@ -5100,7 +5250,14 @@ loadStats(); setInterval(loadStats, 10000);
         # On-Demand: Bu hattı aktif olarak işaretle (GTFS-RT sadece aktif hatları sorgular)
         with _active_lines_lock:
             _active_lines[c] = time.time()
-        
+            
+        cache_key = f"api_arac_{c}"
+        with endpoint_cache_lock:
+            if cache_key in endpoint_cache:
+                val, timestamp = endpoint_cache[cache_key]
+                if time.time() - timestamp < 5:
+                    return JSONResponse(val)
+                    
         # Önce Samair hattı mı kontrol et
         samair_hat = None
         for hid, hat_info in SAMAIR_HATLAR.items():
@@ -5136,6 +5293,15 @@ loadStats(); setInterval(loadStats, 10000);
         
         for a in araclar: 
             a['yakin'] = col.yakin_durak(a, duraklar)
+            
+        with endpoint_cache_lock:
+            if len(endpoint_cache) > 2000:
+                now = time.time()
+                for key in list(endpoint_cache.keys()):
+                    if now - endpoint_cache[key][1] > 86400:
+                        endpoint_cache.pop(key, None)
+            endpoint_cache[cache_key] = (araclar, time.time())
+            
         return JSONResponse(araclar)
     
     @app.get("/api/hat/esles/{code:path}")
