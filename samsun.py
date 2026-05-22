@@ -1173,9 +1173,8 @@ class Collector:
             # GÜVENLİ MOD: Sadece boş tabloları doldur, dolu tabloları ASLA silme
             log.info("📥 Parçalı Güncelleme — Sadece boş tablolar dolduruluyor...")
             
-            # Hat/Durak varsa koru, yoksa çek
-            if self.db.cnt('hat') == 0:
-                self._hatlar()
+            # Hat'ları HER ZAMAN güncelle (alias alanlarını doldurmak için, INSERT OR REPLACE güvenli)
+            self._hatlar()
             if self.db.cnt('durak') == 0:
                 self._duraklar()
             
