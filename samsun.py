@@ -1109,8 +1109,11 @@ class Collector:
         # Kritik tablo boşluk kontrolü — hat_durak veya sefer boşsa zorla güncelle
         hat_durak_bos = self.db.cnt('hat_durak') == 0
         sefer_bos = self.db.cnt('sefer') == 0
+        parcali_guncelleme = False  # Sadece boş tabloları doldur
+        
         if hat_durak_bos or sefer_bos:
-            log.warning(f"⚠️ Kritik tablolar boş! hat_durak={self.db.cnt('hat_durak')}, sefer={self.db.cnt('sefer')} → Zorla güncelleme başlatılıyor...")
+            log.warning(f"⚠️ Kritik tablolar boş! hat_durak={self.db.cnt('hat_durak')}, sefer={self.db.cnt('sefer')}")
+            parcali_guncelleme = True
             force = True
         
         if not force and not self.db.guncelleme_gerekli():
@@ -1123,28 +1126,60 @@ class Collector:
         # Güncelleme başlamadan kilidi Supabase'e yaz
         self.db.set_meta('guncelleme_kilit', str(time.time()))
 
-        log.info("📥 Ana Güncelleme Başladı...")
-
-        if self.db.cnt('hat') > 0:
-            log.info("   ⚠️ Veritabanı dolu, hat/durak korunuyor, diğerleri yenileniyor...")
-            for t in ['hat_durak', 'sefer', 'odak', 'odak_durak', 'samair', 'samair_durak']:
-                self.db.ex(f"DELETE FROM {t} WHERE 1=1")
-            self.db.ex("DELETE FROM fiyat WHERE 1=1")
+        if parcali_guncelleme:
+            # GÜVENLİ MOD: Sadece boş tabloları doldur, dolu tabloları ASLA silme
+            log.info("📥 Parçalı Güncelleme — Sadece boş tablolar dolduruluyor...")
+            
+            # Hat/Durak varsa koru, yoksa çek
+            if self.db.cnt('hat') == 0:
+                self._hatlar()
+            if self.db.cnt('durak') == 0:
+                self._duraklar()
+            
+            # Boş olan kritik tabloları doldur
+            if hat_durak_bos:
+                log.info("   📥 hat_durak dolduruluyor...")
+                self._hat_duraklari()
+            if sefer_bos:
+                log.info("   📥 sefer dolduruluyor...")
+                self._seferler()
+            
+            # Odak/Samair/Fiyat varsa DOKUNMA
+            if self.db.cnt('odak') == 0:
+                self._odak()
+            if self.db.cnt('samair_durak') == 0:
+                self._samair_duraklar()
+            if self.db.cnt('fiyat') == 0:
+                self._samulas_fiyatlar()
+                self._inject_fixed_prices()
+            
+            self._fix_tram_schedules()
+            if self.db.cnt('gtfs_shape') == 0:
+                self.gtfs_generate_shapes()
         else:
-            self.db.temizle()
+            # TAM GÜNCELLEME: Her şeyi sil ve yeniden çek
+            log.info("📥 Tam Güncelleme Başladı...")
+            
+            if self.db.cnt('hat') > 0:
+                log.info("   ⚠️ Veritabanı dolu, hat/durak korunuyor, diğerleri yenileniyor...")
+                for t in ['hat_durak', 'sefer', 'odak', 'odak_durak', 'samair', 'samair_durak']:
+                    self.db.ex(f"DELETE FROM {t} WHERE 1=1")
+                self.db.ex("DELETE FROM fiyat WHERE 1=1")
+            else:
+                self.db.temizle()
 
-        self._hatlar()
-        self._duraklar()
-        self._hat_duraklari()
-        self._seferler()
-        self._odak()
-        self._samair_duraklar()
-        self._samulas_fiyatlar()
-        self._inject_fixed_prices()
-        self._fix_tram_schedules()
-        self._fix_stop_coordinates()
-        self._inject_boat_teleferik_schedules()
-        self.gtfs_generate_shapes()
+            self._hatlar()
+            self._duraklar()
+            self._hat_duraklari()
+            self._seferler()
+            self._odak()
+            self._samair_duraklar()
+            self._samulas_fiyatlar()
+            self._inject_fixed_prices()
+            self._fix_tram_schedules()
+            self._fix_stop_coordinates()
+            self._inject_boat_teleferik_schedules()
+            self.gtfs_generate_shapes()
 
         self.db.guncelleme_tamamlandi()
         self.db.set_meta('guncelleme_kilit', '')  # Kilidi kaldır
