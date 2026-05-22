@@ -118,7 +118,50 @@ HAT_ALIAS = {
     'R2 CEZAEVİ-BÜYÜK CAMİ': 'R2',
     'R2 BÜYÜK CAMİ-CEZAEVİ': 'R2',
     '28': 'R2',  # 28 = R2 alias
+    # Numerik hatların OrjLines karşılıkları
+    '12/17 BEL.EVLERİ-ÜNİVERSİTE': '12',
+    '17/12 ÜNİVERSİTE-BEL.EVLERİ': '12',
+    '12H HACİ İSMAİL - OMÜ': '12H',
+    '12H OMÜ - HACİ İSMAİL': '12H',
+    '13  BL.EVLERİ-TOKİ': '13',
+    '13 TOKİ-BL.EVLERİ': '13',
+    '14 C.MEYDANI ATAKÖY': '14',
+    ' 14 ATAKÖY-C.MEYDANI': '14',
+    '19 BEL.EVLERİ-PELİTKÖY': '19',
+    '19 B PELİTKÖY-BEL.EVLERİ': '19',
+    '24 ÜNİVERSİTE-OTOGAR': '24',
+    '24 OTOGAR-ÜNİVERSİTE': '24',
+    '26/17 B.EVLERİ-ÜNİVERSİTE': '26',
+    '26 ÜNİVERSİTE-B.EVLERİ': '26',
+    '3 TÜRKİŞ AKTARMA-OTOGAR': '3',
+    '3 OTOGAR-TÜRKİŞ AKTARMA': '3',
+    # Ring hatlarının OrjLines karşılıkları
+    'R4 KALKANCA': 'R4',
+    'R5 SERHAT CD.-ATAKUM BLD.': 'R5',
+    'R6-B OTOGAR-BARUTHANE': 'R6-B',
+    'R6-B BARUTHANE-OTOGAR': 'R6-B',
+    'R6-T TÜRKİŞ-EĞTİM': 'R6-T',
+    'R1 BÜYÜK CAMİ': 'R1',
+    'R1 ŞEHİR HASTANESİ': 'R1',
+    'R10 PELİTKÖY KONUTLARI': 'R10',
+    'BALLICA KAMPÜS-ÜNİVERSİTE': 'R11',
+    'ÜNİVERSİTE-BALLICA KAMPÜS': 'R11',
+    'R12 TAFLAN': 'R12',
+    'R13 KORUPARK': 'R13',
+    'R3 TOYBELEN SANAYİ': 'R3',
+    'R25 BÜYÜKCAMİ-HASKÖY': 'R25',
+    'R25 HASKÖY': 'R25',
+    'R28 GAR': 'R28',
+    'R29 OTOGAR-DERECİK MEZARLIK': 'R29',
+    'R11B Eczacılık Fak - B. Garajı': 'R11B',
+    'R2 CEZAEVİ-BÜYÜK CAMİ': 'R2',
+    'R2 BÜYÜK CAMİ-CEZAEVİ': 'R2',
 }
+
+# Ters mapping: Kısa kod -> OrjLines kodları listesi (canlı araç sorgusu için)
+TERS_ALIAS = {}
+for _orj, _kisa in HAT_ALIAS.items():
+    TERS_ALIAS.setdefault(_kisa, []).append(_orj)
 
 # Samulaş fiyat isimleri -> Hat kodu (web scraping eşleştirmesi)
 SAMULAS_FIYAT_ESLESTIRME = {
@@ -1918,18 +1961,46 @@ class Collector:
             log.info(f"      ✅ {toplam} uçuş bilgisi güncellendi.")
 
     def canli(self, code, use_cache=False):
-        """Canlı araç verisi çek (opsiyonel 5sn cache)"""
-        if use_cache and code in self.http._cache:
+        """Canlı araç verisi çek (10sn cache, TERS_ALIAS ile çoklu Asis kodu desteği)"""
+        # Cache kontrolü (10 saniye)
+        if code in self.http._cache:
             cached_data, cached_time = self.http._cache[code]
-            if time.time() - cached_time < 5:
+            if time.time() - cached_time < 10:
                 return cached_data
         
+        # 1. Direkt kod ile dene
         data = self.http.asis('RealTimeData', lineCode=code)
+        
+        # 2. Boş geldiyse TERS_ALIAS'tan alternatif kodları dene
+        if not data and code in TERS_ALIAS:
+            alias_codes = TERS_ALIAS[code]
+            log.debug(f"Canlı: {code} boş → TERS_ALIAS deniyor: {alias_codes}")
+            for alt_code in alias_codes:
+                time.sleep(0.05)  # Rate limit koruması (50ms)
+                alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
+                if alt_data:
+                    data.extend(alt_data)
+        
+        # 3. Hâlâ boşsa DB'deki hat adıyla dene (son şans)
+        if not data:
+            hat_info = self.db.one("SELECT name FROM hat WHERE code=?", (code,))
+            if hat_info and hat_info['name'] != code:
+                alt_name = hat_info['name']
+                alt_data = self.http.asis('RealTimeData', lineCode=alt_name)
+                if alt_data:
+                    data.extend(alt_data)
+        
+        # Parse et (plaka bazlı deduplicate)
         result = []
+        seen_plaka = set()
         for d in data:
             try:
+                plaka = d.get('plaka', '?')
+                if plaka in seen_plaka:
+                    continue
                 lat, lon = parse_float(d.get('enlem')), parse_float(d.get('boylam'))
                 if 40 < lat < 43 and 34 < lon < 38:
+                    seen_plaka.add(plaka)
                     # Tarih/saat parse
                     tarih_raw = d.get('tarih') or d.get('editDate') or ''
                     saat_str = ''
@@ -1948,7 +2019,7 @@ class Collector:
                     mesafe_km = round(mesafe_m / 1000, 1)
                     
                     result.append({
-                        'plaka': d.get('plaka', '?'),
+                        'plaka': plaka,
                         'lat': lat, 'lon': lon,
                         'hiz': int(float(d.get('hiz', 0))),
                         'yon': float(d.get('yon', 0)),
@@ -1963,7 +2034,7 @@ class Collector:
             except Exception as e:
                 log.debug(f"Canlı veri parse hatası ({code}): {e}")
         
-        # Cache'e kaydet
+        # Cache'e kaydet (10 saniye)
         self.http._cache[code] = (result, time.time())
         return result
 
