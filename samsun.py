@@ -1993,10 +1993,20 @@ class Collector:
         
         # 2. Boş geldiyse DB'deki alias alanından Asis kodlarını al (Lines/OrjLines'tan otomatik doldurulmuş)
         if not data:
-            hat_info = self.db.one("SELECT alias, name FROM hat WHERE code=?", (code,))
+            hat_info = self.db.one("SELECT alias, name, tip FROM hat WHERE code=?", (code,))
             if hat_info and hat_info.get('alias'):
                 alias_codes = [a.strip() for a in hat_info['alias'].split(',') if a.strip()]
-                log.debug(f"Canlı: {code} boş → DB alias deniyor: {alias_codes}")
+                
+                # YÖN FİLTRESİ: Gidiş hattında sadece GİDİŞ alias'ları, dönüşte sadece DÖNÜŞ
+                tip = hat_info.get('tip', '')
+                if tip == 'gidis':
+                    filtered = [a for a in alias_codes if 'DÖNÜŞ' not in a.upper()]
+                    if filtered: alias_codes = filtered  # filtre boşaltırsa orijinali koru
+                elif tip == 'donus':
+                    filtered = [a for a in alias_codes if 'GİDİŞ' not in a.upper()]
+                    if filtered: alias_codes = filtered
+                
+                log.debug(f"Canlı: {code} (tip={tip}) → DB alias: {alias_codes}")
                 for alt_code in alias_codes:
                     time.sleep(0.05)  # Rate limit koruması (50ms)
                     alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
@@ -2006,7 +2016,16 @@ class Collector:
             # 2b. DB'de alias yoksa TERS_ALIAS'tan dene (hardcoded fallback)
             if not data and code in TERS_ALIAS:
                 alias_codes = TERS_ALIAS[code]
-                log.debug(f"Canlı: {code} boş → TERS_ALIAS deniyor: {alias_codes}")
+                # Aynı yön filtresi
+                tip = hat_info.get('tip', '') if hat_info else ''
+                if tip == 'gidis':
+                    filtered = [a for a in alias_codes if 'DÖNÜŞ' not in a.upper()]
+                    if filtered: alias_codes = filtered
+                elif tip == 'donus':
+                    filtered = [a for a in alias_codes if 'GİDİŞ' not in a.upper()]
+                    if filtered: alias_codes = filtered
+                
+                log.debug(f"Canlı: {code} → TERS_ALIAS: {alias_codes}")
                 for alt_code in alias_codes:
                     time.sleep(0.05)
                     alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
