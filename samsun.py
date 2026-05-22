@@ -1334,74 +1334,76 @@ class Collector:
         log.info(f"      ✅ {toplam} Samulaş fiyatı çekildi, {eslesen} eşleşti ({eslesen_oran:.0f}%)")
 
     def _hatlar(self):
-        """Hatları çek - hem Lines hem OrjLines'tan, alias ile eşleştir"""
+        """Hatları çek - Kısa kod normalize et (frontend), orijinal lineCode alias'a yaz (RealTimeData)"""
         log.info("   📥 Hatlar (Lines + OrjLines)...")
         
-        # Asis orijinal lineCode → bizim kısa kod eşleştirmesi (canlı araç sorgusu için)
-        asis_to_our = {}  # {"SAMULAŞ EKSPRES 5-GİDİŞ": "E5", ...}
-        our_to_asis = {}  # {"E5": ["SAMULAŞ EKSPRES 5-GİDİŞ", "SAMULAŞ EKSPRES 5-DÖNÜŞ"], ...}
+        our_to_asis = {}  # {"13": ["13 TOKİ-BL.EVLERİ", "13  BL.EVLERİ-TOKİ"], ...}
         
-        def _normalize_code(raw_code):
-            """Asis lineCode → bizim kısa kod dönüşümü"""
-            c = raw_code
-            if len(c) > 6 and "EKSPRES" in c.upper():
-                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
-                if m_eks:
-                    return m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
+        def _normalize(raw):
+            """Lines/OrjLines lineCode → kısa kod (frontend için)"""
             # HAT_ALIAS'ta varsa direkt eşleştir
-            alias_match = HAT_ALIAS.get(raw_code, '')
-            if alias_match:
-                return alias_match
-            if len(c) > 6 and " " in c:
-                return c.split()[0]
-            return c
+            if raw in HAT_ALIAS:
+                return HAT_ALIAS[raw]
+            # SAMULAŞ EKSPRES 5-GİDİŞ → E5
+            if "EKSPRES" in raw.upper():
+                m = re.search(r'EKSPRES\s*(?:GECE\s*)?(\d+)', raw.upper())
+                if m:
+                    num = m.group(1)
+                    if 'GECE' in raw.upper():
+                        return f"GECE E{num}" if not raw.upper().startswith('GECE') else raw.split()[0] + ' ' + raw.split()[1] if len(raw.split()) > 1 else raw
+                    return f"E{num}"
+                # "SAMULAŞ EKSPRES" (E1 gidiş) / "SAMULAŞ EKSPRES D" (E1 dönüş)
+                if raw.strip().upper() == 'SAMULAŞ EKSPRES':
+                    return 'SAMULAŞ EKSPRES'  # Lines kodu olduğu gibi (E1 dönüş)
+                if raw.strip().upper() == 'SAMULAŞ EKSPRES D':
+                    return 'SAMULAŞ EKSPRES D'  # Lines kodu olduğu gibi (E1 gidiş)
+            # "13 TOKİ-BL.EVLERİ" → "13"  /  "T4" → "T4"  /  "SAMSUN - TERME" → "SAMSUN - TERME"
+            parts = raw.split()
+            if parts and re.match(r'^\d+[A-Z]?$', parts[0], re.IGNORECASE):
+                return parts[0]  # Numerik hat: ilk kelime
+            if parts and re.match(r'^(R\d|R\d+[A-Z]?)$', parts[0], re.IGNORECASE):
+                return parts[0] if len(parts) > 1 else raw  # Ring: R4 KALKANCA → R4
+            return raw  # Diğerleri olduğu gibi (T4, SAMSUN - TERME, vs.)
         
-        # 1. Lines'tan ana hatları çek
+        # 1. Lines'tan hatları çek
         data_lines = self.http.asis('Lines')
         seen_codes = set()
         rows = []
         
         for d in data_lines:
-            raw_code = fix_turkish(str(d.get('lineCode','')).strip())
-            name = fix_turkish(d.get('lineName', raw_code))
+            raw = fix_turkish(str(d.get('lineCode','')).strip())
+            name = fix_turkish(d.get('lineName', raw))
             name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
+            tip = d.get('tip', 'gidis')
+            c = _normalize(raw)
             
-            c = _normalize_code(raw_code)
-            
-            # Orijinal Asis kodunu kaydet (kısaltılmışsa)
-            if raw_code != c and raw_code:
-                asis_to_our[raw_code] = c
-                our_to_asis.setdefault(c, []).append(raw_code)
+            # Orijinal lineCode'u alias olarak sakla (RealTimeData için)
+            if raw:
+                our_to_asis.setdefault(c, []).append(raw)
 
             if c and c not in seen_codes:
                 seen_codes.add(c)
-                rows.append((c, name, d.get('tip','gidis'), self.kat(c, name), ''))
+                rows.append((c, name, tip, self.kat(c, name), ''))
         
         log.info(f"      ✅ Lines: {len(rows)} hat")
         
-        # 2. OrjLines'tan eksik hatları çek
+        # 2. OrjLines'tan eksik hatları + alias eşleştirmesi
         data_orj = self.http.asis('OrjLines')
         orj_count = 0
+        skip_kw = ['OTOPARK', 'KENT MÜZESİ', 'GÖREVLİ', 'BAŞVURU', 'İADE', 'IADE', 'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ']
         
         for d in data_orj:
-            raw_code = fix_turkish(str(d.get('lineCode','')).strip())
-            name = fix_turkish(d.get('lineName', raw_code))
+            raw = fix_turkish(str(d.get('lineCode','')).strip())
+            name = fix_turkish(d.get('lineName', raw))
             name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
+            if not raw: continue
+            if any(kw in raw.upper() or kw in name.upper() for kw in skip_kw): continue
             
-            c = _normalize_code(raw_code)
-                
-            if not c:
-                continue
+            c = _normalize(raw)
             
-            # Orijinal Asis kodunu kaydet
-            if raw_code != c and raw_code:
-                asis_to_our[raw_code] = c
-                our_to_asis.setdefault(c, []).append(raw_code)
-                
-            # Otopark, gemi gibi şeyleri atla (Artık Gemi ve Teleferik serbest)
-            skip_keywords = ['OTOPARK', 'KENT MÜZESİ', 'GÖREVLİ', 'BAŞVURU', 'İADE', 'IADE', 'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ']
-            if any(kw in c.upper() or kw in name.upper() for kw in skip_keywords):
-                continue
+            # Alias kaydet (kısa kod → orijinal Asis lineCode)
+            if raw != c:
+                our_to_asis.setdefault(c, []).append(raw)
             
             if c not in seen_codes:
                 seen_codes.add(c)
@@ -1410,18 +1412,17 @@ class Collector:
         
         log.info(f"      ✅ OrjLines ek: {orj_count} hat")
         
-        # 3. alias alanına Asis orijinal kodlarını yaz (virgülle ayrılmış)
+        # 3. DB'ye yaz
         if rows:
             self.db.exm("INSERT OR REPLACE INTO hat(code, name, tip, kat, alias) VALUES(?,?,?,?,?)", rows)
         
-        # Her hat için alias alanını güncelle
+        # 4. Alias alanlarını güncelle — HER hat için TÜM Asis lineCode'larını yaz
         for our_code, asis_codes in our_to_asis.items():
-            unique_codes = list(dict.fromkeys(asis_codes))  # sıralı unique
-            alias_str = ','.join(unique_codes)
-            self.db.ex("UPDATE hat SET alias=? WHERE code=?", (alias_str, our_code))
+            unique = list(dict.fromkeys(asis_codes))
+            self.db.ex("UPDATE hat SET alias=? WHERE code=?", (','.join(unique), our_code))
         
         alias_count = sum(1 for v in our_to_asis.values() if v)
-        log.info(f"      ✅ Toplam: {len(rows)} hat yüklendi, {alias_count} hat Asis eşleştirmesi yapıldı")
+        log.info(f"      ✅ Toplam: {len(rows)} hat, {alias_count} alias eşleştirmesi")
         # (YENİ) 3. Samulaş V1 API'den Short Name ve İstasyon Çekimi (GTFS Zenginleştirme)
         try:
             r = requests.get("https://samulas.com.tr/api/v1/lines/list?page=1&limit=500", timeout=10)
