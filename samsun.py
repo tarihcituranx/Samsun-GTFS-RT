@@ -1337,23 +1337,41 @@ class Collector:
         """Hatları çek - hem Lines hem OrjLines'tan, alias ile eşleştir"""
         log.info("   📥 Hatlar (Lines + OrjLines)...")
         
+        # Asis orijinal lineCode → bizim kısa kod eşleştirmesi (canlı araç sorgusu için)
+        asis_to_our = {}  # {"SAMULAŞ EKSPRES 5-GİDİŞ": "E5", ...}
+        our_to_asis = {}  # {"E5": ["SAMULAŞ EKSPRES 5-GİDİŞ", "SAMULAŞ EKSPRES 5-DÖNÜŞ"], ...}
+        
+        def _normalize_code(raw_code):
+            """Asis lineCode → bizim kısa kod dönüşümü"""
+            c = raw_code
+            if len(c) > 6 and "EKSPRES" in c.upper():
+                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
+                if m_eks:
+                    return m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
+            # HAT_ALIAS'ta varsa direkt eşleştir
+            alias_match = HAT_ALIAS.get(raw_code, '')
+            if alias_match:
+                return alias_match
+            if len(c) > 6 and " " in c:
+                return c.split()[0]
+            return c
+        
         # 1. Lines'tan ana hatları çek
         data_lines = self.http.asis('Lines')
         seen_codes = set()
         rows = []
         
         for d in data_lines:
-            c = fix_turkish(str(d.get('lineCode','')).strip())
-            name = fix_turkish(d.get('lineName', c))
+            raw_code = fix_turkish(str(d.get('lineCode','')).strip())
+            name = fix_turkish(d.get('lineName', raw_code))
             name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
             
-            # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor
-            if len(c) > 6 and "EKSPRES" in c.upper():
-                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
-                if m_eks:
-                    c = m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
-            elif len(c) > 6 and " " in c:
-                c = c.split()[0]
+            c = _normalize_code(raw_code)
+            
+            # Orijinal Asis kodunu kaydet (kısaltılmışsa)
+            if raw_code != c and raw_code:
+                asis_to_our[raw_code] = c
+                our_to_asis.setdefault(c, []).append(raw_code)
 
             if c and c not in seen_codes:
                 seen_codes.add(c)
@@ -1366,27 +1384,20 @@ class Collector:
         orj_count = 0
         
         for d in data_orj:
-            c = fix_turkish(str(d.get('lineCode','')).strip())
-            name = fix_turkish(d.get('lineName', c))
+            raw_code = fix_turkish(str(d.get('lineCode','')).strip())
+            name = fix_turkish(d.get('lineName', raw_code))
             name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
             
-            # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor, 
-            # bunu normalize edelim.
-            if len(c) > 6 and "EKSPRES" in c.upper():
-                m_eks = re.search(r'EKSPRES\s*([E]?\d+)', c.upper())
-                if m_eks:
-                    c = m_eks.group(1) if m_eks.group(1).startswith('E') else f"E{m_eks.group(1)}"
-            elif len(c) > 6 and " " in c:
-                # Eger "15/A BÜYÜK CAMİ..." gibi uzun bir şeysese ilk kısmı al
-                c = c.split()[0]
+            c = _normalize_code(raw_code)
                 
             if not c:
                 continue
-                
-            # Alias kontrolü - OrjLines ismi HAT_ALIAS'ta varsa kısa koda çevir
-            alias_code = HAT_ALIAS.get(c.upper(), '')
             
-            # Otopark, gemi gibi şeyleri atla
+            # Orijinal Asis kodunu kaydet
+            if raw_code != c and raw_code:
+                asis_to_our[raw_code] = c
+                our_to_asis.setdefault(c, []).append(raw_code)
+                
             # Otopark, gemi gibi şeyleri atla (Artık Gemi ve Teleferik serbest)
             skip_keywords = ['OTOPARK', 'KENT MÜZESİ', 'GÖREVLİ', 'BAŞVURU', 'İADE', 'IADE', 'SAMULAŞ - AKTARMA', 'BANDIRMA VAPURU', 'AMAZON KÖYÜ']
             if any(kw in c.upper() or kw in name.upper() for kw in skip_keywords):
@@ -1394,14 +1405,23 @@ class Collector:
             
             if c not in seen_codes:
                 seen_codes.add(c)
-                rows.append((c, name, d.get('tip','gidis'), self.kat(c, name), alias_code))
+                rows.append((c, name, d.get('tip','gidis'), self.kat(c, name), ''))
                 orj_count += 1
         
         log.info(f"      ✅ OrjLines ek: {orj_count} hat")
         
+        # 3. alias alanına Asis orijinal kodlarını yaz (virgülle ayrılmış)
         if rows:
             self.db.exm("INSERT OR REPLACE INTO hat(code, name, tip, kat, alias) VALUES(?,?,?,?,?)", rows)
-        log.info(f"      ✅ Toplam: {len(rows)} hat yüklendi")
+        
+        # Her hat için alias alanını güncelle
+        for our_code, asis_codes in our_to_asis.items():
+            unique_codes = list(dict.fromkeys(asis_codes))  # sıralı unique
+            alias_str = ','.join(unique_codes)
+            self.db.ex("UPDATE hat SET alias=? WHERE code=?", (alias_str, our_code))
+        
+        alias_count = sum(1 for v in our_to_asis.values() if v)
+        log.info(f"      ✅ Toplam: {len(rows)} hat yüklendi, {alias_count} hat Asis eşleştirmesi yapıldı")
         # (YENİ) 3. Samulaş V1 API'den Short Name ve İstasyon Çekimi (GTFS Zenginleştirme)
         try:
             r = requests.get("https://samulas.com.tr/api/v1/lines/list?page=1&limit=500", timeout=10)
@@ -1971,22 +1991,31 @@ class Collector:
         # 1. Direkt kod ile dene
         data = self.http.asis('RealTimeData', lineCode=code)
         
-        # 2. Boş geldiyse TERS_ALIAS'tan alternatif kodları dene
-        if not data and code in TERS_ALIAS:
-            alias_codes = TERS_ALIAS[code]
-            log.debug(f"Canlı: {code} boş → TERS_ALIAS deniyor: {alias_codes}")
-            for alt_code in alias_codes:
-                time.sleep(0.05)  # Rate limit koruması (50ms)
-                alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
-                if alt_data:
-                    data.extend(alt_data)
-        
-        # 3. Hâlâ boşsa DB'deki hat adıyla dene (son şans)
+        # 2. Boş geldiyse DB'deki alias alanından Asis kodlarını al (Lines/OrjLines'tan otomatik doldurulmuş)
         if not data:
-            hat_info = self.db.one("SELECT name FROM hat WHERE code=?", (code,))
-            if hat_info and hat_info['name'] != code:
-                alt_name = hat_info['name']
-                alt_data = self.http.asis('RealTimeData', lineCode=alt_name)
+            hat_info = self.db.one("SELECT alias, name FROM hat WHERE code=?", (code,))
+            if hat_info and hat_info.get('alias'):
+                alias_codes = [a.strip() for a in hat_info['alias'].split(',') if a.strip()]
+                log.debug(f"Canlı: {code} boş → DB alias deniyor: {alias_codes}")
+                for alt_code in alias_codes:
+                    time.sleep(0.05)  # Rate limit koruması (50ms)
+                    alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
+                    if alt_data:
+                        data.extend(alt_data)
+            
+            # 2b. DB'de alias yoksa TERS_ALIAS'tan dene (hardcoded fallback)
+            if not data and code in TERS_ALIAS:
+                alias_codes = TERS_ALIAS[code]
+                log.debug(f"Canlı: {code} boş → TERS_ALIAS deniyor: {alias_codes}")
+                for alt_code in alias_codes:
+                    time.sleep(0.05)
+                    alt_data = self.http.asis('RealTimeData', lineCode=alt_code)
+                    if alt_data:
+                        data.extend(alt_data)
+            
+            # 2c. Hâlâ boşsa hat adıyla dene (son şans)
+            if not data and hat_info and hat_info.get('name') and hat_info['name'] != code:
+                alt_data = self.http.asis('RealTimeData', lineCode=hat_info['name'])
                 if alt_data:
                     data.extend(alt_data)
         
