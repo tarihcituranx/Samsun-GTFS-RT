@@ -1059,6 +1059,31 @@
 
     <script src="/static/leaflet.js"></script>
     <script>
+// ===== OTOMATİK ÖNBELLEK TEMİZLEME (YENİ SÜRÜM KONTROLÜ) =====
+const BUILD_VERSION = "2.6.2";
+(function() {
+    const savedVersion = localStorage.getItem('app_build_version');
+    if (savedVersion && savedVersion !== BUILD_VERSION) {
+        localStorage.setItem('app_build_version', BUILD_VERSION);
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                for (let r of regs) r.unregister();
+            });
+        }
+        if (window.caches) {
+            caches.keys().then(keys => {
+                for (let k of keys) caches.delete(k);
+            });
+        }
+        sessionStorage.clear();
+        console.log("Yeni sürüm (" + BUILD_VERSION + ") yüklendi, önbellek temizleniyor...");
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 300);
+    } else if (!savedVersion) {
+        localStorage.setItem('app_build_version', BUILD_VERSION);
+    }
+})();
         // ===== FAVORİLER & HARİTA KONTROLLERİ =====
         function getFavorites(key) {
             try {
@@ -1390,8 +1415,90 @@ Güncelleme: ${trTime}`;
         function drawRotaResults(res, query) { Object.keys(M).filter(k => k.startsWith('rota_') || k.startsWith('walk_')).forEach(k => { map.removeLayer(M[k]); delete M[k] }); let x = `<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Yeni Arama</button><div class="sec">🗺 Gezi Planı${query ? ' - ' + query : ''}</div><div class="lst">`; if (res.length) { res.forEach((r, i) => { x += r.desc; if (r.polyline && r.polyline.length > 1) { const color = r.type === 'DIRECT' ? '#d946ef' : '#c2410c'; const pl = L.polyline(r.polyline, { color: color, weight: 6, opacity: 0.85 }).addTo(map); M['rota_' + i] = pl; if (i === 0) map.fitBounds(pl.getBounds(), { padding: [40, 40] }) } if (r.walk_start && r.walk_start.length > 1) { const wl = L.polyline(r.walk_start, { color: '#06b6d4', weight: 4, opacity: 0.9, dashArray: '8,6' }).addTo(map); M['walk_s' + i] = wl } if (r.walk_end && r.walk_end.length > 1) { const wl = L.polyline(r.walk_end, { color: '#06b6d4', weight: 4, opacity: 0.9, dashArray: '8,6' }).addTo(map); M['walk_e' + i] = wl } }) } else { x += `<div class="no-data">Uygun toplu taşıma rotası bulunamadı.<br><small>Mesafeler çok uzak olabilir.</small></div>` } document.getElementById('ct').innerHTML = x + '</div>' }
 
         async function shDurakDetay(kod) {
+const p = document.querySelector('.pnl');
+if (p) p.classList.remove('minimized');
             document.getElementById('ct').innerHTML = '<div class="loading">Durak bilgileri alınıyor...</div>'; try {
-                const inf = await (await fetch(`/api/durak_panel/${kod}`)).json(); let x = `<button class="bk" onclick="shYakin()">← Geri</button><div class="sec">🚏 Durak: ${kod}</div>`; Object.values(V).forEach(m => map.removeLayer(m)); V = {}; const activeBuses = []; if (inf.length) { x += '<div style="display:flex;flex-direction:column;gap:2px">'; x += '<div class="sec" style="font-size:.75rem;margin:4px 0">🚌 Geçen Hatlar</div><div class="lst" style="max-height:40vh;overflow-y:auto">'; inf.forEach(h => { x += `<div class="it ${h.kat}" onclick="shL('${encodeURIComponent(h.hat)}')"><div><b>${h.hat}</b> - ${h.ad}</div>${h.gelen ? (() => { let vb = ''; if (h.gelen.verify) { const v = h.gelen.verify; if (v.status === 'OK') vb = '<span style="color:#fff;background:var(--green);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">✅ Doğrulandı</span>'; else if (v.status === 'WARN') vb = `<span style="color:#fff;background:#f59e0b;padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">⚠️ ${v.msg}</span>`; else if (v.status === 'ERR') vb = `<span style="color:#fff;background:var(--red);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">❌ ${v.msg}</span>`; else vb = `<span style="color:#fff;background:var(--accent);padding:1px 3px;border-radius:3px;font-size:0.55rem;margin-left:4px">ℹ️ ${v.msg}</span>` } if (h.gelen.lat && h.gelen.lon) { const m = L.marker([h.gelen.lat, h.gelen.lon], { icon: bI(K[h.kat].c, h.gelen.plaka, h.hat) }).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`); V['v' + h.gelen.plaka] = m; activeBuses.push([h.gelen.lat, h.gelen.lon]) } return `<div class="live-badge">⏱️ ${h.gelen.tahmini_dk} dk (${h.gelen.durak_kaldi} durak)${vb}<br><span style="font-weight:400;font-size:0.6rem">Plaka: ${h.gelen.plaka} • Hız: ${h.gelen.hiz} km/s • ${h.gelen.doluluk} yolcu</span></div>` })() : ''}</div>` }); x += '</div>'; x += '<div class="sec" style="font-size:.75rem;margin:8px 0 4px">📍 Yaklaşan Araçlar</div><div class="lst">'; const approaching = inf.filter(h => h.gelen); if (approaching.length > 0) { approaching.forEach(h => { const g = h.gelen; x += `<div class="arac" onclick="map.setView([${g.lat},${g.lon}],16)" style="padding:8px 10px"><div style="display:flex;justify-content:space-between;align-items:center;width:100%"><div><div style="font-weight:700;font-size:.8rem;color:var(--text)">${h.hat}</div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">🚌 ${g.plaka}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:1rem;color:var(--green)">${g.tahmini_dk} dk</div><div style="font-size:.6rem;color:var(--text3)">${g.durak_kaldi} durak • ${g.hiz} km/s</div></div></div></div>` }) } else { x += '<div class="no-data" style="font-size:.7rem">Yaklaşan araç bulunamadı</div>' } x += '</div></div>'; if (activeBuses.length > 0) { const group = L.featureGroup(Object.values(V)); map.fitBounds(group.getBounds().pad(0.2)) } } else x += '<div class="no-data">Hat bilgisi yok</div>';
+                const inf = await (await fetch(`/api/durak_panel/${kod}`)).json();
+                let x = `<button class="bk" onclick="shYakin()">← Geri</button><div class="sec">🚏 Durak: ${kod}</div>`;
+                Object.values(V).forEach(m => map.removeLayer(m));
+                V = {};
+                const activeBuses = [];
+                if (inf.length) {
+                    x += '<div style="display:flex;flex-direction:column;gap:2px">';
+                    x += '<div class="sec" style="font-size:.75rem;margin:4px 0">🚌 Geçen Hatlar</div><div class="lst" style="max-height:40vh;overflow-y:auto">';
+                    inf.forEach(h => {
+                        const ki = K[h.kat || 'otobus'] || K.otobus;
+                        const displayCode = h.hat;
+                        const fontSize = displayCode.length > 5 ? '10px' : (displayCode.length > 3 ? '12px' : '15px');
+                        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        const subColor = isDark ? '#94a3b8' : '#64748b';
+                        
+                        let liveHtml = '';
+                        if (h.gelen) {
+                            let vb = '';
+                            if (h.gelen.verify) {
+                                const v = h.gelen.verify;
+                                if (v.status === 'OK') vb = '<span style="color:#fff;background:var(--green);padding:1px 5px;border-radius:4px;font-size:0.55rem;font-weight:700;margin-left:4px">✅ Doğrulandı</span>';
+                                else if (v.status === 'WARN') vb = `<span style="color:#fff;background:#f59e0b;padding:1px 5px;border-radius:4px;font-size:0.55rem;font-weight:700;margin-left:4px">⚠️ ${v.msg}</span>`;
+                                else if (v.status === 'ERR') vb = `<span style="color:#fff;background:var(--red);padding:1px 5px;border-radius:4px;font-size:0.55rem;font-weight:700;margin-left:4px">❌ ${v.msg}</span>`;
+                                else vb = `<span style="color:#fff;background:var(--accent);padding:1px 5px;border-radius:4px;font-size:0.55rem;font-weight:700;margin-left:4px">ℹ️ ${v.msg}</span>`;
+                            }
+                            
+                            if (h.gelen.lat && h.gelen.lon) {
+                                const m = L.marker([h.gelen.lat, h.gelen.lon], { icon: bI(K[h.kat].c, h.gelen.plaka, h.hat) }).addTo(map).bindPopup(`<b>${h.hat}</b><br>${h.gelen.tahmini_dk} dk`);
+                                V['v' + h.gelen.plaka] = m;
+                                activeBuses.push([h.gelen.lat, h.gelen.lon]);
+                            }
+                            
+                            liveHtml = `<div class="live-badge" style="margin-top:6px;padding:6px 10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:0.7rem;color:var(--text);font-weight:700">
+                                <span style="color:var(--green)">⏱️ ${h.gelen.tahmini_dk} dk</span> (${h.gelen.durak_kaldi} durak) ${vb}
+                                <div style="font-weight:400;font-size:0.6rem;color:var(--text-muted);margin-top:2px">Plaka: ${h.gelen.plaka} &bull; Hız: ${h.gelen.hiz} km/s &bull; Yolcu: ${h.gelen.doluluk || 0}</div>
+                            </div>`;
+                        }
+                        
+                        x += `<div class="it pulse-it ${h.kat || 'otobus'}" onclick="shL('${encodeURIComponent(h.hat)}')" style="flex-direction:column;align-items:stretch;gap:4px;padding:10px 14px;cursor:pointer;margin-bottom:8px">
+                            <div style="display:flex;align-items:center;width:100%;min-width:0;gap:8px">
+                                <div class="it-badge" style="background:${ki.c};font-size:${fontSize};flex-shrink:0">${displayCode}</div>
+                                <div class="it-info" style="min-width:0;flex:1">
+                                    <div class="it-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;font-size:14px">${h.ad}</div>
+                                    <div class="it-sub" style="color:${subColor};font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span class="badge-icon-s" style="color:${ki.c}">${ki.i}</span> ${ki.n} &bull; ${displayCode} Hattı</div>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="it-arrow" style="flex-shrink:0;width:16px;height:16px"><path d="M9 18l6-6-6-6"/></svg>
+                            </div>
+                            ${liveHtml}
+                        </div>`;
+                    });
+                    x += '</div>';
+                    
+                    x += '<div class="sec" style="font-size:.75rem;margin:8px 0 4px">📍 Yaklaşan Araçlar</div><div class="lst">';
+                    const approaching = inf.filter(h => h.gelen);
+                    if (approaching.length > 0) {
+                        approaching.forEach(h => {
+                            const g = h.gelen;
+                            x += `<div class="arac pulse-it" onclick="map.setView([${g.lat},${g.lon}],16)" style="padding:10px 14px;cursor:pointer;margin-bottom:8px">
+                                <div style="display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px;min-width:0">
+                                    <div style="min-width:0;flex:1">
+                                        <div style="font-weight:800;font-size:.85rem;color:var(--text);display:flex;align-items:center;gap:6px">
+                                            <span class="badge-icon-s" style="color:var(--accent)">🚌</span> ${h.hat}
+                                        </div>
+                                        <div style="font-size:.65rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Plaka: ${g.plaka}</div>
+                                    </div>
+                                    <div style="text-align:right;flex-shrink:0">
+                                        <div style="font-weight:800;font-size:1rem;color:var(--green)">${g.tahmini_dk} dk</div>
+                                        <div style="font-size:.6rem;color:var(--text-muted)">${g.durak_kaldi} durak &bull; ${g.hiz} km/s</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    } else {
+                        x += '<div class="no-data" style="font-size:.7rem">Yaklaşan araç bulunamadı</div>';
+                    }
+                    x += '</div></div>';
+                    if (activeBuses.length > 0) {
+                        const group = L.featureGroup(Object.values(V));
+                        map.fitBounds(group.getBounds().pad(0.2));
+                    }
+                } else x += '<div class="no-data">Hat bilgisi yok</div>';
                 // Yakın mekanları getir
                 const durak = await (await fetch(`/api/durak_ara?q=${encodeURIComponent(kod)}`)).json(); const d0 = durak[0]; if (d0 && d0.lat && d0.lon) { try { const pois = await (await fetch(`/api/yakin_mekanlar?lat=${d0.lat}&lon=${d0.lon}&radius=1`)).json(); if (pois.length) { x += `<div class="sec" style="margin-top:12px">🏛️ Yakındaki Turistik Mekanlar</div>`; pois.forEach(p => { x += `<div class="drk" onclick="shMekanDetay(${p.id})" style="gap:10px;padding:10px"><img src="${p.img}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'" width="48" height="48" loading="lazy"><div class="inf"><span class="ad">${p.title}</span><span class="fyt">${p.mesafe_m}m • ${p.cat} • ${p.hours}</span></div></div>` }) } } catch (e) { } }
                 document.getElementById('ct').innerHTML = x
@@ -1559,6 +1666,8 @@ Güncelleme: ${trTime}`;
 
         // ===== HAT DETAY (shL) =====
         async function shL(e, backToRoute = false) {
+const p = document.querySelector('.pnl');
+if (p) p.classList.remove('minimized');
             if (window.innerWidth <= 480) togglePnl(true); clr(); document.getElementById('ct').innerHTML = '<div class="loading" style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:2rem;animation:spin 1s linear infinite">🔄</div><div style="color:var(--text);font-size:.8rem;font-weight:600">Hat bilgileri yükleniyor...</div></div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>'; try {
                 const _results = await Promise.allSettled([
                     fetch('/api/hat/info/' + e).then(r => r.ok ? r.json() : {}),
@@ -1573,7 +1682,7 @@ Güncelleme: ${trTime}`;
                 const sf = _results[2].status === 'fulfilled' ? _results[2].value : [];
                 const ar = _results[3].status === 'fulfilled' ? _results[3].value : [];
                 const pr = _results[4].status === 'fulfilled' ? _results[4].value : {};
-                const fy = _results[5].status === 'fulfilled' ? _results[5].value : {}; const nm = inf.name || decodeURIComponent(e), k = inf.kat || 'otobus', ki = K[k] || K.otobus, g = inf.tip === 'gidis', col = ki.c; const da = Array.isArray(dr) ? dr : [], sa = Array.isArray(sf) ? sf : [], aa = Array.isArray(ar) ? ar : []; const tamF = (fy.tam_fiyat || 20).toFixed(2), indF = (fy.indirimli_fiyat || 14).toFixed(2); let x = backToRoute ? `<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>` : `<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`; x += `<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`; if (pr.code) x += `<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g ? 'Dönüş ➝' : '← Gidiş'}</button>`; x += `</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
+                const fy = _results[5].status === 'fulfilled' ? _results[5].value : {}; const nm = inf.name || decodeURIComponent(e), k = inf.kat || 'otobus', ki = K[k] || K.otobus, g = inf.tip === 'gidis', col = ki.c; const da = Array.isArray(dr) ? dr : [], sa = Array.isArray(sf) ? sf : [], aa = Array.isArray(ar) ? ar : []; const tamF = (fy.tam_fiyat || (k === 'ring' ? 22 : (k === 'tramvay' ? 34 : (k === 'teleferik' ? 50 : 30)))).toFixed(2), indF = (fy.indirimli_fiyat || (k === 'ring' ? 16 : (k === 'tramvay' ? 20 : (k === 'teleferik' ? 30 : 20)))).toFixed(2); let x = backToRoute ? `<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>` : `<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`; x += `<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`; if (pr.code) x += `<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g ? 'Dönüş ➝' : '← Gidiş'}</button>`; x += `</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
 
                 // === BİLGİLENDİRME KUTULARI ===
                 if (nm.includes('SAMSUNUM-1')) {
