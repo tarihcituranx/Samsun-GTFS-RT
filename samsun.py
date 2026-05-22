@@ -1159,6 +1159,17 @@ class Collector:
             parcali_guncelleme = True
             force = True
         
+        # Alias alanları boşsa _hatlar() çalıştırılmalı (canlı araç sorgusu için kritik)
+        alias_bos = False
+        try:
+            alias_check = self.db.one("SELECT COUNT(*) as c FROM hat WHERE alias IS NOT NULL AND alias != ''")
+            if alias_check and alias_check['c'] == 0:
+                alias_bos = True
+                log.warning("⚠️ Alias alanları boş — _hatlar() çalıştırılacak...")
+                parcali_guncelleme = True
+                force = True
+        except: pass
+        
         if not force and not self.db.guncelleme_gerekli():
             log.info("📦 Ana veriler güncel, atlanıyor.")
             if self.db.cnt('gtfs_shape') == 0:
