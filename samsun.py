@@ -84,9 +84,9 @@ YBS = "https://ybs.samsun.bel.tr/service"
 SAMULAS_URL = "https://samulas.com.tr"
 GUNCELLEME_GUN = 7
 
-# Fiyat hesaplama sabitleri (Samulaş web scraping'den gelen tam fiyattan indirimli ve aktarma hesaplama)
-INDIRIMLI_ORAN = 0.70      # İndirimli = Tam × %70
-AKTARMA_ORAN = 0.375       # Aktarma = Tam × %37.5 (maks 30 TL altı hatlar)
+# Fiyat hesaplama sabitleri (Samulaş güncel tarife - 2025)
+INDIRIMLI_ORAN = 0.6667    # Eğitim/İndirimli = Tam × %66.67 (Otobüs: 30→20, Ring: 22→16)
+AKTARMA_SABIT = 8.0        # 1 saat sonrası aktarma ücreti: 8.00 TL
 
 # OrjLines -> Lines hat alias mapping (fiyat eşleştirmesi için)
 HAT_ALIAS = {
@@ -1214,7 +1214,7 @@ class Collector:
                         indirimli, aktarma1, aktarma2 = 0, "Ücretsiz", 0
                         if tam_fiyat > 0:
                             indirimli = round(tam_fiyat * INDIRIMLI_ORAN, 2)
-                            aktarma2 = round(tam_fiyat * AKTARMA_ORAN, 2) if tam_fiyat <= 30 else 0
+                            aktarma2 = AKTARMA_SABIT  # 1 saat sonrası aktarma: 8.00 TL
                         
                         # Hat kodu eşleştir
                         hat_code = ''
@@ -3631,38 +3631,7 @@ async function toggleAllStops(show){
         showToast(`${stops.length} durak haritada gösteriliyor`);
     }catch(e){console.error('Durak yükleme hatası:',e)}
 }
-async function upV(e,col,duraklar=[]){try{const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};let html='';const showH=localStorage.getItem('showHasilat')==='1';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa)&&aa.length>0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';const durumIcon=a.durum==='dikkat'?'⚠️':a.durum==='uyari'?'🔶':'🔹';let kalanStr='';let cevreDuraklar='';if(yak&&duraklar&&duraklar.length){const yi=duraklar.findIndex(d=>d.ad.includes(yak)||yak.includes(d.ad));if(yi!==-1){const kalan=duraklar.length-(yi+1);kalanStr=`<span style="background:var(--red);color:#fff;padding:2px 6px;border-radius:12px;font-size:0.6rem;margin-left:8px;box-shadow:0 2px 4px rgba(220,38,38,0.3)">🏁 Son durağa ${kalan} durak</span>`;let p2=duraklar[yi-2],p1=duraklar[yi-1],n1=duraklar[yi+1],n2=duraklar[yi+2];cevreDuraklar+=`<div style="font-size:0.65rem;color:var(--text);margin-top:8px;border-top:1px dashed var(--card-border);padding-top:8px">`;if(p2)cevreDuraklar+=`<div style="color:var(--text3);margin-bottom:2px">↑ ${p2.ad}</div>`;if(p1)cevreDuraklar+=`<div style="color:var(--text2);margin-bottom:2px">↑ ${p1.ad}</div>`;cevreDuraklar+=`<div style="color:var(--accent);font-weight:700;margin:4px 0;background:var(--accent-bg);padding:2px 6px;border-radius:4px;display:inline-block">📍 ${yak}</div>`;if(n1)cevreDuraklar+=`<div style="color:var(--text2);margin-top:2px">↓ ${n1.ad}</div>`;if(n2)cevreDuraklar+=`<div style="color:var(--text3);margin-top:2px">↓ ${n2.ad}</div>`;cevreDuraklar+=`</div>`;}}html+=`<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)" style="flex-wrap:wrap"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><div><div class="pl">${durumIcon} ${a.plaka}${kalanStr}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:.9rem;color:var(--text)">${a.hiz} <small style="font-weight:400;font-size:0.6rem">km/s</small></div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">${a.saat?'⏱ '+a.saat:''}</div></div></div>${cevreDuraklar||(yak?`<div class="inf" style="color:var(--accent);font-weight:700;margin-top:6px;background:var(--accent-bg);padding:2px 6px;border-radius:4px;display:inline-block">📍 ${yak}</div>`:'')}<div style="display:flex;gap:6px;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);font-size:.65rem;color:var(--text)"><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">👥 <b>${a.yolcu}</b> biniş</span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">📊 Gün: <b>${a.gunluk_yolcu||0}</b></span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">🏎 Max: <b>${a.max_hiz||0}</b></span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">📏 <b>${a.mesafe_km||0}</b> km</span>${showH?`<span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">💰 <b>₺${(a.hasilat||0).toFixed(0)}</b></span>`:''}</div></div>`;if(yak){const rows=document.querySelectorAll('.drk');rows.forEach(r=>{if(r.innerText.includes(yak)){if(!r.querySelector('.vtg'))r.innerHTML+=`<span class="vtg" style="background:${col};color:#fff;padding:2px 6px;border-radius:4px;font-size:0.6rem;margin-left:6px">🚌 ${a.plaka}</span>`}})}});document.getElementById('vlist').innerHTML=html}else{document.getElementById('acnt').innerText='0';document.getElementById('vlist').innerHTML='<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'}}catch(e){console.error(e)}}
-
-// ===== OSRM ROUTE HELPER =====
-async function drawRouteOSRM(coords,color){
-    if(!coords||coords.length<2) return;
-    try{
-        // Max 25 waypoints for OSRM demo, sample if more
-        let pts=coords;
-        if(pts.length>25){
-            const step=Math.ceil(pts.length/24);
-            const sampled=[pts[0]];
-            for(let i=step;i<pts.length-1;i+=step) sampled.push(pts[i]);
-            sampled.push(pts[pts.length-1]);
-            pts=sampled;
-        }
-        const wp=pts.map(c=>c[1]+','+c[0]).join(';');
-        const res=await fetch(`https://router.project-osrm.org/route/v1/driving/${wp}?overview=full&geometries=geojson`);
-        const data=await res.json();
-        if(data.routes&&data.routes[0]){
-            const geo=data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-            const pl=L.polyline(geo,{color:color,weight:4,opacity:0.7,dashArray:null}).addTo(map);
-            M['routeLine']=pl;
-        }
-    }catch(e){console.log('OSRM route error:',e)}
-}
-
-// Stop marker with name label
-const stopLbl=(n,num,c)=>{
-    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const bg=isDark?'rgba(15,23,42,0.85)':'rgba(255,255,255,0.9)';
-    const tc=isDark?'#e2e8f0':'#1e293b';
-    return L.divIcon({className:'',html:`<div style="position:relative"><div style="width:20px;height:20px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">${num}</div><div style="position:absolute;top:-8px;left:24px;background:${bg};color:${tc};padding:1px 6px;border-radius:4px;font-size:9px;white-space:nowrap;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">${n}</div></div>`,iconSize:[20,20],iconAnchor:[10,10]});
+async function upV(e,col,duraklar=[]){try{const aa=await(await fetch('/api/hat/arac/'+e)).json();Object.values(V).forEach(m=>map.removeLayer(m));V={};let html='';const showH=localStorage.getItem('showHasilat')==='1';document.querySelectorAll('.drk .vtg').forEach(el=>el.remove());if(Array.isArray(aa)&&aa.length>0){document.getElementById('acnt').innerText=aa.length;aa.forEach(a=>{V['v'+a.plaka]=L.marker([a.lat,a.lon],{icon:bI(col,a.plaka)}).addTo(map);const yak=a.yakin||'';const durumIcon=a.durum==='dikkat'?'⚠️':a.durum==='uyari'?'🔶':'🔹';let kalanStr='';let cevreDuraklar='';if(yak&&duraklar&&duraklar.length){const yi=duraklar.findIndex(d=>d.ad.includes(yak)||yak.includes(d.ad));if(yi!==-1){const kalan=duraklar.length-(yi+1);kalanStr=`<span style="background:var(--red);color:#fff;padding:2px 6px;border-radius:12px;font-size:0.6rem;margin-left:8px;box-shadow:0 2px 4px rgba(220,38,38,0.3)">🏁 Son durağa ${kalan} durak</span>`;let p2=duraklar[yi-2],p1=duraklar[yi-1],n1=duraklar[yi+1],n2=duraklar[yi+2];cevreDuraklar+=`<div style="font-size:0.65rem;color:var(--text);margin-top:8px;border-top:1px dashed var(--card-border);padding-top:8px">`;if(p2)cevreDuraklar+=`<div style="color:var(--text3);margin-bottom:2px">↑ ${p2.ad}</div>`;if(p1)cevreDuraklar+=`<div style="color:var(--text2);margin-bottom:2px">↑ ${p1.ad}</div>`;cevreDuraklar+=`<div style="color:var(--accent);font-weight:700;margin:4px 0;background:var(--accent-bg);padding:2px 6px;border-radius:4px;display:inline-block">📍 ${yak}</div>`;if(n1)cevreDuraklar+=`<div style="color:var(--text2);margin-top:2px">↓ ${n1.ad}</div>`;if(n2)cevreDuraklar+=`<div style="color:var(--text3);margin-top:2px">↓ ${n2.ad}</div>`;cevreDuraklar+=`</div>`;}}html+=`<div class="arac" onclick="map.setView([${a.lat},${a.lon}],16)" style="flex-wrap:wrap"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><div><div class="pl">${durumIcon} ${a.plaka}${kalanStr}</div></div><div style="text-align:right"><div style="font-weight:800;font-size:.9rem;color:var(--text)">${a.hiz} <small style="font-weight:400;font-size:0.6rem">km/s</small></div><div style="font-size:.65rem;color:var(--text2);margin-top:2px">${a.saat?'⏱ '+a.saat:''}</div></div></div>${cevreDuraklar||(yak?`<div class="inf" style="color:var(--accent);font-weight:700;margin-top:6px;background:var(--accent-bg);padding:2px 6px;border-radius:4px;display:inline-block">📍 ${yak}</div>`:'')}<div style="display:flex;gap:6px;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border);font-size:.65rem;color:var(--text)"><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">👥 <b>${a.yolcu}</b> biniş</span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">📊 Gün: <b>${a.gunluk_yolcu||0}</b></span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">🏎 Max: <b>${a.max_hiz||0}</b></span><span style="background:var(--bg3);padding:4px 8px;border-radius:12px;border:1px solid var(--card-border)">📏 <b>${a.mesafe_km||0}</basync function shL(e,backToRoute=false){if(window.innerWidth<=480)togglePnl(true);clr();document.getElementById('ct').innerHTML='<div class="loading" style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:2rem;animation:spin 1s linear infinite">🔄</div><div style="color:var(--text);font-size:.8rem;font-weight:600">Hat bilgileri yükleniyor...</div></div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>';try{const _r=await Promise.allSettled([fetch('/api/hat/info/'+e).then(r=>r.ok?r.json():{}),fetch('/api/hat/durak/'+e).then(r=>r.ok?r.json():[]),fetch('/api/hat/sefer/'+e).then(r=>r.ok?r.json():[]),fetch('/api/hat/arac/'+e).then(r=>r.ok?r.json():[]),fetch('/api/hat/esles/'+e).then(r=>r.ok?r.json():{}),fetch('/api/hat/fiyat/'+e).then(r=>r.ok?r.json():{})]);const inf=_r[0].status==='fulfilled'?_r[0].value:{};const dr=_r[1].status==='fulfilled'?_r[1].value:[];const sf=_r[2].status==='fulfilled'?_r[2].value:[];const ar=_r[3].status==='fulfilled'?_r[3].value:[];const pr=_r[4].status==='fulfilled'?_r[4].value:{};const fy=_r[5].status==='fulfilled'?_r[5].value:{};const nm=inf.name||decodeURIComponent(e),k=inf.kat||'otobus',ki=K[k]||K.otobus,g=inf.tip==='gidis',col=ki.c;const da=Array.isArray(dr)?dr:[],sa=Array.isArray(sf)?sf:[],aa=Array.isArray(ar)?ar:[];const tamF=(fy.tam_fiyat||30).toFixed(2),indF=(fy.indirimli_fiyat||20).toFixed(2);let x=backToRoute?`<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>`:`<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`;x+=`<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`;if(pr.code)x+=`<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g?'Dönüş →':'← Gidiş'}</button>`;x+=`</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;one">${n}</div></div>`,iconSize:[20,20],iconAnchor:[10,10]});
 };
 
 function togglePnl(forceMinimize = false){
@@ -5211,15 +5180,15 @@ loadStats(); setInterval(loadStats, 10000);
         
         # Fallback: DB'deki en yaygın fiyatı kullan (sıfır değilse)
         if not res:
-            res = {"tam_fiyat": 20.0, "indirimli_fiyat": 14.0, "ogrenci_fiyat": 14.0, "aktarma1": "Ücretsiz"}
+            res = {"tam_fiyat": 30.0, "indirimli_fiyat": 20.0, "ogrenci_fiyat": 20.0, "aktarma1": "Ücretsiz"}
         else:
             # SQL row dict'e çevrildiyse doğrudan müdahale edebilmek için dict(res) kullan
             res = dict(res)
 
         # Öğrenci fiyatı için öncelikli gösterim (Yoksa indirimli fiyat kullanılır)
-        gosterilecek_indirimli = res.get("ogrenci_fiyat") or res.get("indirimli_fiyat") or 14.0
+        gosterilecek_indirimli = res.get("ogrenci_fiyat") or res.get("indirimli_fiyat") or 20.0
 
-        tam = res.get("tam_fiyat", 20.0)
+        tam = res.get("tam_fiyat", 30.0)
         indirimli = gosterilecek_indirimli
         aktarma_ucret = res.get("aktarma2", 0.0)
         aktarma_str = res.get("aktarma1", "Ücretsiz")
