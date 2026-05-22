@@ -1,14 +1,18 @@
 {
-  "lines_count": 74,
-  "orjlines_count": 134,
+  "lines_count": 73,
+  "orjlines_count": 138,
   "sadece_orjlines": [
     {
+      "code": "SAMULAŞ EKSPRES GECE 1 - DÖNÜŞ",
+      "name": "GECE E1 OMÜ - ŞEHİR HASTANESİ"
+    },
+    {
       "code": "15/A BÜYÜK CAMİ-SOĞUKSU",
-      "name": "15 BÜYÜK CAMİ - SOĞUKSU"
+      "name": "15 BÜYÜK CAMİ - ŞEHİR HASTANESİ"
     },
     {
       "code": "15/B SOĞUKSU-BÜYÜK CAMİ",
-      "name": "15 SOĞUKSU - BÜYÜK CAMİ"
+      "name": "15 ŞEHİR HASTANESİ - BÜYÜK CAMİ"
     },
     {
       "code": "20 BEL.ELERİ-B.KOLPINAR",
@@ -45,6 +49,10 @@
     {
       "code": "22 TÜRKİŞ-SOĞUKSU",
       "name": "22 TÜRKİŞ-SOĞUKSU"
+    },
+    {
+      "code": "R3 TOYBELEN SANAYİ",
+      "name": "R3 KARAYOLLARI - TOYBELEN SANAYİ - KARAYOLLARI"
     },
     {
       "code": "R11B B. Garajı - Eczacılık Fak",
@@ -187,6 +195,18 @@
       "name": "ÇARŞAMBA-SAMSUN"
     },
     {
+      "code": "GECE 24 OMÜ - OTOGAR",
+      "name": "GECE 24A OMÜ - OTOGAR"
+    },
+    {
+      "code": "GECE 24 OTOGAR - OMÜ",
+      "name": "GECE 24A OTOGAR - OMÜ"
+    },
+    {
+      "code": "SAMULAŞ EKSPRES GECE 1 - GİDİŞ",
+      "name": "GECE E1 ŞEHİR HASTANESİ - OMÜ"
+    },
+    {
       "code": "KENT MÜZESİ",
       "name": "KENT MÜZESİ"
     },
@@ -266,6 +286,8 @@
       "G3 SAMSUN - AYVACIK",
       "G4 LADİK AKDAĞ - SAMSUN",
       "G4 SAMSUN - LADİK AKDAĞ",
+      "GECE 24 OMÜ - OTOGAR",
+      "GECE 24 OTOGAR - OMÜ",
       "GÖREVLİ"
     ],
     "HAVAŞ EK (H5+)": [
@@ -292,9 +314,11 @@
       "TEKEL OTOPARKI"
     ],
     "DİĞER": [
+      "SAMULAŞ EKSPRES GECE 1 - DÖNÜŞ",
       "SAMULAŞ EKSPRES 2-DÖNÜŞ",
       "SAMULAŞ EKSPRES 7-DÖNÜŞ",
       "SAMULAŞ EKSPRES 7-GİDİŞ",
+      "R3 TOYBELEN SANAYİ",
       "R11B B. Garajı - Eczacılık Fak",
       "R11B Eczacılık Fak - B. Garajı",
       "SAMSUNUM1 GEZİNTİ GEMİSİ(MRKZ)",
@@ -305,6 +329,7 @@
       "AMAZON KÖYÜ",
       "BANDIRMA VAPURU",
       "ÇARŞAMBA-SAMSUN",
+      "SAMULAŞ EKSPRES GECE 1 - GİDİŞ",
       "KENT MÜZESİ",
       "R2 CEZAEVİ-BÜYÜK CAMİ",
       "R2 BÜYÜK CAMİ-CEZAEVİ",

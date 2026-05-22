@@ -477,7 +477,7 @@ class Http:
                 self.proxies_pool.insert(0, proxy_url)
         else:
             self.s.proxies = None
-            log.info("🌐 Kentkart API istekleri için proxy kullanılmayacak (Doğrudan bağlantı).")
+            log.info("🌐 ASIS API istekleri için proxy kullanılmayacak (Doğrudan bağlantı).")
         
         # Cloudscraper bypass
         if _CLOUDSCRAPER_OK:
