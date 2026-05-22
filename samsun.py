@@ -261,6 +261,25 @@ def title_case_tr(text):
         result.append(''.join(parts))
     return ' '.join(result)
 
+def get_asis_codes(db_instance, code):
+    """Verilen normalleşmiş kısa kod için gerçek ASIS API kodlarını (alias) döner."""
+    row = db_instance.one("SELECT alias FROM hat WHERE code=?", (code,))
+    if row and row['alias']:
+        return [a.strip() for a in row['alias'].split(',') if a.strip()]
+    if code in TERS_ALIAS:
+        return TERS_ALIAS[code]
+    
+    # E5-D gibi son ekli kodların ana kodunu temizleyip ana kodun alias'ını çek
+    base_code = re.sub(r'-D\d*$', '', code)
+    if base_code != code:
+        row_base = db_instance.one("SELECT alias FROM hat WHERE code=?", (base_code,))
+        if row_base and row_base['alias']:
+            return [a.strip() for a in row_base['alias'].split(',') if a.strip()]
+        if base_code in TERS_ALIAS:
+            return TERS_ALIAS[base_code]
+            
+    return [code]
+
 def extract_short_name(code, short_name):
     """route_short_name max 12 karakter. Hat numarasını çıkarır.
     Öncelik: code'dan hat numarası > uygun short_name > fallback.
@@ -1374,7 +1393,42 @@ class Collector:
             if parts and re.match(r'^(R\d|R\d+[A-Z]?)$', parts[0], re.IGNORECASE):
                 return parts[0] if len(parts) > 1 else raw  # Ring: R4 KALKANCA → R4
             return raw  # Diğerleri olduğu gibi (T4, SAMSUN - TERME, vs.)
-        
+
+        def clean_raw_code(r):
+            r = r.strip()
+            if r.upper().endswith('GİDİ'):
+                return r + 'Ş'
+            if r.upper().endswith('DÖNÜ'):
+                return r + 'Ş'
+            return r
+
+        cleaned_raw_to_assigned = {}
+        base_counts = {}
+
+        def get_assigned_code(raw):
+            cleaned = clean_raw_code(raw)
+            if cleaned in cleaned_raw_to_assigned:
+                return cleaned_raw_to_assigned[cleaned]
+            
+            base = _normalize(cleaned)
+            if base in ('SAMULAŞ EKSPRES', 'SAMULAŞ EKSPRES D'):
+                cleaned_raw_to_assigned[cleaned] = base
+                return base
+            
+            if base not in base_counts:
+                base_counts[base] = 1
+                c_final = base
+            else:
+                base_counts[base] += 1
+                cnt = base_counts[base]
+                if cnt == 2:
+                    c_final = f"{base}-D"
+                else:
+                    c_final = f"{base}-D{cnt-1}"
+            
+            cleaned_raw_to_assigned[cleaned] = c_final
+            return c_final
+
         # 1. Lines'tan hatları çek
         data_lines = self.http.asis('Lines')
         seen_codes = set()
@@ -1385,12 +1439,16 @@ class Collector:
             name = fix_turkish(d.get('lineName', raw))
             name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
             tip = d.get('tip', 'gidis')
-            c = _normalize(raw)
             
-            # Orijinal lineCode'u alias olarak sakla (RealTimeData için)
-            if raw:
-                our_to_asis.setdefault(c, []).append(raw)
-
+            if not raw: continue
+            
+            c = get_assigned_code(raw)
+            cleaned = clean_raw_code(raw)
+            
+            our_to_asis.setdefault(c, []).append(raw)
+            if cleaned != raw:
+                our_to_asis.setdefault(c, []).append(cleaned)
+            
             if c and c not in seen_codes:
                 seen_codes.add(c)
                 rows.append((c, name, tip, self.kat(c, name), ''))
@@ -1409,11 +1467,12 @@ class Collector:
             if not raw: continue
             if any(kw in raw.upper() or kw in name.upper() for kw in skip_kw): continue
             
-            c = _normalize(raw)
+            c = get_assigned_code(raw)
+            cleaned = clean_raw_code(raw)
             
-            # Alias kaydet (kısa kod → orijinal Asis lineCode)
-            if raw != c:
-                our_to_asis.setdefault(c, []).append(raw)
+            our_to_asis.setdefault(c, []).append(raw)
+            if cleaned != raw:
+                our_to_asis.setdefault(c, []).append(cleaned)
             
             if c not in seen_codes:
                 seen_codes.add(c)
@@ -1496,7 +1555,12 @@ class Collector:
         hatlar = self.db.get("SELECT code FROM hat")
         for i, h in enumerate(hatlar):
             code = h['code']
-            data = self.http.asis('StopsStations', lineCode=code)
+            asis_codes = get_asis_codes(self.db, code)
+            data = None
+            for ac in asis_codes:
+                data = self.http.asis('StopsStations', lineCode=ac)
+                if data:
+                    break
             if data:
                 rows = []
                 for d in data:
@@ -1517,20 +1581,27 @@ class Collector:
         for i, h in enumerate(hatlar):
             code = h['code']
             g_route_id = sanitize_id(code)
+            asis_codes = get_asis_codes(self.db, code)
             for gun, t in [('hi', hi), ('hs', hs)]:
                 service_id = gun_to_service(gun)
-                for d in self.http.asis('Schedules', lineCode=code, scheduleDate=t.strftime("%Y-%m-%d")):
-                    # API 'saat' döndürür — 'time' alanı yoktur
+                schedules = []
+                for ac in asis_codes:
+                    res = self.http.asis('Schedules', lineCode=ac, scheduleDate=t.strftime("%Y-%m-%d"))
+                    if res:
+                        schedules.extend(res)
+                
+                seen_scheds = set()
+                for d in schedules:
                     saat = d.get('saat', '')
-                    # yon: API "G"/"D" döndürür — okunabilir forma çevir
                     yon_raw = d.get('yon', '')
                     yon = {'G': 'Gidiş', 'D': 'Dönüş'}.get(yon_raw, yon_raw)
-                    if saat:
+                    key = (saat, yon)
+                    if saat and key not in seen_scheds:
+                        seen_scheds.add(key)
                         self.db.ex(
                             "INSERT INTO sefer(hat,saat,yon,gun,gtfs_route_id,gtfs_service_id) VALUES(?,?,?,?,?,?)",
                             (code, saat, yon, gun, g_route_id, service_id)
                         )
-                        # gtfs_trip_id için son eklenen id'yi al
                         last_id = self.db.one("SELECT last_insert_rowid() as lid")
                         if last_id:
                             tid = sanitize_id(f"T_{last_id['lid']}")
@@ -2852,6 +2923,20 @@ Kurallar:
         return self.akilli_rota(lat1, lon1, lat2, lon2)
 
     def esles(self, code):
+        # 0) Sonekli kodlar için doğrudan yön eşleştirmesi (ör: E3 <-> E3-D)
+        if '-' in code:
+            base_code = re.sub(r'-D\d*$', '', code)
+            if base_code != code:
+                # E3-D -> E3
+                row_base = self.db.one("SELECT code FROM hat WHERE code=?", (base_code,))
+                if row_base:
+                    return base_code
+        else:
+            # E3 -> E3-D
+            row_d = self.db.one("SELECT code FROM hat WHERE code LIKE ?", (code + "-D%",))
+            if row_d:
+                return row_d['code']
+
         cur = self.db.one("SELECT code, name, tip, kat FROM hat WHERE code=?", (code,))
         if not cur:
             return ""
@@ -5510,14 +5595,27 @@ loadStats(); setInterval(loadStats, 10000);
         if not yonler:
             # Fallback: API'den direkt çek
             try:
-                yonler_api = col.http.asis('LineDirections', lineCode=c)
+                asis_codes = get_asis_codes(db, c)
+                yonler_api = []
+                for ac in asis_codes:
+                    res = col.http.asis('LineDirections', lineCode=ac)
+                    if res:
+                        yonler_api.extend(res)
                 if yonler_api:
-                    return JSONResponse([{
-                        'yon_id': str(y.get('directionId', '')),
-                        'yon_adi': fix_turkish(y.get('directionName', ''))
-                    } for y in yonler_api if str(y.get('lineCode', '')).strip() == c])
-            except:
-                pass
+                    seen_yons = set()
+                    out = []
+                    for y in yonler_api:
+                        y_id = str(y.get('directionId', ''))
+                        y_name = fix_turkish(y.get('directionName', ''))
+                        if y_id and y_id not in seen_yons:
+                            seen_yons.add(y_id)
+                            out.append({
+                                'yon_id': y_id,
+                                'yon_adi': y_name
+                            })
+                    return JSONResponse(out)
+            except Exception as e:
+                log.error(f"api_hat_yonler error: {e}")
         
         return JSONResponse(yonler or [])
     
@@ -5743,8 +5841,15 @@ col = Collector(db, Http())
 def initial_data_loader():
     try:
         log.info("🚀 Arka plan veri önbellekleme (veri_cek) başlatılıyor...")
-        col.veri_cek()
-        col.samair_seferler_guncelle()
+        
+        # Yeni deploy sonrası Supabase'deki eski yön ve alias verilerinin
+        # tamamen temizlenip yeni kod yapısına göre (-D, alias, clean_raw_code vb.) 
+        # sıfırdan oluşturulması için tabloları temizliyor ve veri çekmeyi zorluyoruz.
+        log.info("🧹 Supabase tabloları temizleniyor...")
+        db.temizle()
+        
+        col.veri_cek(force=True)
+        col.samair_seferler_guncelle(force=True)
         log.info("✅ Arka plan veri önbellekleme tamamlandı.")
     except Exception as e:
         log.error(f"Başlangıç veri çekme hatası: {e}")
