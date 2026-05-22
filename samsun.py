@@ -525,7 +525,7 @@ class Http:
         # Proxy Pool Yükleme
         self.proxies_pool = []
         csv_path = "proxy_https_auth.csv"
-        if os.path.exists(csv_path):
+        if False and os.path.exists(csv_path): # Yedek proxy listesi devre dışı bırakıldı (proxyler çalışmıyor)
             try:
                 with open(csv_path, "r", encoding="utf-8") as f:
                     for line in f:
@@ -2113,6 +2113,13 @@ class Collector:
             if time.time() - cached_time < 10:
                 return cached_data
         
+        # ⚠️ CRITICAL WARNING FOR AIs & DEVELOPERS / YAPAY ZEKALAR & GELİŞTİRİCİLER İÇİN UYARI:
+        # ASIS API'si doğrudan "E1", "E2" gibi kullanıcı dostu kısa kodları (display name) TANIMAZ.
+        # ASIS'in tanıdığı gerçek parametre (lineCode) DB'de 'hat' tablosundaki 'code' kolonunda veya
+        # 'alias' kolonunda saklanır (Örn: "SAMULAŞ EKSPRES", "H1 OMÜ - HAVALİMANI").
+        # Sorgu atarken doğrudan display name ile asis() çağrısı yaparsanız ASIS API her zaman 0 sonuç döner.
+        # Her zaman DB'deki code veya alias alanını sorgulamalısınız!
+
         # 1. Direkt kod ile dene
         data = self.http.asis('RealTimeData', lineCode=code)
         
@@ -4219,9 +4226,9 @@ HTML = '''<!DOCTYPE html>
     <div class="top-bar">
         <div
             style="display:flex;align-items:center;gap:12px;pointer-events:auto;background:rgba(15,23,42,0.6);padding:6px 16px 6px 6px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);">
-            <div
-                style="width:36px;height:36px;background:#ea580c;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;">
-                ST</div>
+            <img src="/static/images/logo.png" alt="Samsun Transit" 
+                 style="width:36px;height:36px;border-radius:10px;object-fit:cover;cursor:pointer;border:1px solid rgba(255,255,255,0.15);"
+                 onclick="showAboutModal()">
             <div style="display:flex;flex-direction:column;">
                 <span style="font-weight:800;font-size:14px;color:#fff;letter-spacing:0.5px;cursor:pointer" onclick="showAboutModal()">SAMSUN TRANSIT</span>
                 <div style="display:flex;align-items:center;gap:6px">
@@ -4341,6 +4348,9 @@ HTML = '''<!DOCTYPE html>
     <div id="aboutModal" class="modal-overlay" style="display:none">
         <div class="modal-content" style="text-align:center;max-width:440px">
             <h3 style="color:var(--accent);margin-bottom:16px;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;gap:8px">INFO Proje Hakkında</h3>
+            <div style="display:flex;justify-content:center;margin-bottom:16px;">
+                <img src="/static/images/logo.png" alt="Samsun Transit" style="width:72px;height:72px;border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,0.3);border:2px solid var(--accent);object-fit:cover;">
+            </div>
             <p style="font-size:15px;color:var(--text);margin-bottom:12px;font-weight:700">Samsun Transit</p>
             <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;text-align:left">
                 Bu uygulama <strong>Turan KAYA (tarihcituranx)</strong> tarafından acik kaynakli olarak gelistirilen tamamen <strong>bagimsiz ve sivil bir vatandas/ogrenci projesidir.</strong><br><br>
@@ -4676,23 +4686,84 @@ Güncelleme: ${trTime}`;
         }
 
         let lastNearbyStops = [];
-        async function loadHats() { try { H = await (await fetch('/api/hat')).json(); shH() } catch (e) { } }
+        async function loadHats() {
+            try {
+                H = await (await fetch('/api/hat')).json();
+                if (Array.isArray(H)) {
+                    H.sort((a, b) => {
+                        const codeA = getDisplayCode(a) || '';
+                        const codeB = getDisplayCode(b) || '';
+                        return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+                }
+                shH();
+            } catch (e) { }
+        }
 
-        function shYakin(duraklar) {
-            if (duraklar) lastNearbyStops = duraklar; else duraklar = lastNearbyStops;
+        async function shYakin(duraklar) {
             clr();
             let x = `<div class="sec">📍 Yakınınızdaki Duraklar</div>`;
             x += `<div class="src-wrap" style="margin:10px 0"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input class="src" id="durakInput" placeholder="Durak Ara (Ör: Türkiş, 12055...)" style="padding-left:36px" onkeyup="if(event.key==='Enter') araDurak()"></div><button class="bk" onclick="araDurak()" style="margin-bottom:12px">🔍 Durak Ara</button>`;
 
             x += `<div class="lst" id="yakinList">`;
+            
+            if (duraklar) {
+                lastNearbyStops = duraklar;
+            } else if (lastNearbyStops && lastNearbyStops.length > 0) {
+                duraklar = lastNearbyStops;
+            }
+
             if (duraklar && duraklar.length) {
                 duraklar.forEach((d, i) => {
-                    x += `<div class="drk" onclick="shDurakDetay('${d.id || d.kod}')"><span class="no">${i + 1}</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.dist ? d.dist + 'm uzakta' : 'Mesafe Bilinmiyor'}</small></div></div>`;
-                    M['d' + (d.id || d.kod)] = L.marker([d.lat, d.lon], { icon: stopIcon(i + 1) }).addTo(map).bindPopup(d.ad);
+                    x += `<div class="drk" onclick="shDurakDetay('${d.id || d.kod}');if(window.innerWidth<=480)togglePnl(false)">
+                        <span class="no">${i + 1}</span>
+                        <div class="inf" style="margin-left:10px">
+                            <b>${d.ad}</b><br>
+                            <small style="color:var(--text2)">${d.dist ? Math.round(d.dist) + 'm uzakta' : 'Mesafe Bilinmiyor'}</small>
+                        </div>
+                    </div>`;
+                    
+                    const markerPopupHtml = `
+                        <div style="font-family:inherit;padding:4px">
+                            <b style="font-size:0.85rem;color:var(--text)">🚏 ${d.ad}</b><br>
+                            <span style="font-size:0.7rem;color:var(--text2)">${d.dist ? Math.round(d.dist) + 'm uzakta' : 'Mesafe Bilinmiyor'}</span><br>
+                            <button onclick="shDurakDetay('${d.id || d.kod}');if(window.innerWidth<=480)togglePnl(false)" style="margin-top:8px;padding:6px 12px;font-size:0.75rem;cursor:pointer;border:none;border-radius:6px;background:var(--accent,#3b82f6);color:#fff;font-weight:700;width:100%">🔍 Otobüsleri Göster</button>
+                        </div>
+                    `;
+                    
+                    M['d' + (d.id || d.kod)] = L.marker([d.lat, d.lon], { icon: stopIcon(i + 1) })
+                        .addTo(map)
+                        .bindPopup(markerPopupHtml);
                 });
-            } else x += `<div class="no-data">Yakında durak bulunamadı. Lütfen arama yapın.</div>`;
-            x += `<button class="bk" style="margin-top:10px" onclick="loadHats()">Tüm Hatları Göster</button></div>`;
+                x += `</div>`;
+            } else {
+                x += `<div class="no-data" id="yakinInfo">⏳ Konumunuza göre en yakın duraklar taranıyor...</div></div>`;
+            }
+            
+            x += `<button class="bk" style="margin-top:10px" onclick="loadHats()">Tüm Hatları Göster</button>`;
             document.getElementById('ct').innerHTML = x;
+
+            // Eğer veriler yoksa ve konumumuz varsa API'den çekelim
+            if (!duraklar) {
+                if (userLoc) {
+                    try {
+                        const res = await (await fetch(`/api/yakin?lat=${userLoc.lat}&lon=${userLoc.lon}`)).json();
+                        if (res && res.length) {
+                            lastNearbyStops = res;
+                            shYakin(res);
+                        } else {
+                            const infoEl = document.getElementById('yakinInfo');
+                            if (infoEl) infoEl.innerHTML = 'Yakınlarda durak bulunamadı. Lütfen arama özelliğini kullanın.';
+                        }
+                    } catch (e) {
+                        const infoEl = document.getElementById('yakinInfo');
+                        if (infoEl) infoEl.innerHTML = 'Duraklar yüklenirken hata oluştu.';
+                    }
+                } else {
+                    const infoEl = document.getElementById('yakinInfo');
+                    if (infoEl) infoEl.innerHTML = 'Konumunuz alınamadı. Lütfen konum izinlerinizi kontrol edin veya yukarıdaki arama kutusunu kullanın.';
+                }
+            }
         }
         async function araDurak() {
             const q = document.getElementById('durakInput')?.value?.trim();
@@ -4703,7 +4774,7 @@ Güncelleme: ${trTime}`;
                 if (res.length) {
                     let h = '';
                     res.forEach((d, i) => {
-                        h += `<div class="drk" onclick="shDurakDetay('${d.id || d.kod}');if(window.innerWidth<=480)togglePnl(true)"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.kod ? 'Kod: ' + d.kod : 'ID: ' + d.id}</small></div></div>`;
+                        h += `<div class="drk" onclick="shDurakDetay('${d.id || d.kod}');if(window.innerWidth<=480)togglePnl(false)"><span class="no">🚏</span><div class="inf" style="margin-left:10px"><b>${d.ad}</b><br><small style="color:var(--text2)">${d.kod ? 'Kod: ' + d.kod : 'ID: ' + d.id}</small></div></div>`;
                         if (i === 0) { map.setView([d.lat, d.lon], 16); }
                     });
                     document.getElementById('yakinList').innerHTML = h;
@@ -4833,6 +4904,7 @@ if (p) p.classList.remove('minimized');
                     return;
                 } else {
                     document.body.classList.add('panel-open');
+                    togglePnl(false); // Her aktif sekmede paneli otomatik genislet
                 }
 
                 if (cur === 'rota') shRotaUI();
@@ -4874,10 +4946,10 @@ if (p) p.classList.remove('minimized');
         window.selK = k => {
             if (k === 'odak') {
                 shO();
-                if(window.innerWidth <= 480) togglePnl(true);
+                if(window.innerWidth <= 480) togglePnl(false);
             } else if (k === 'havalimani') {
                 shS();
-                if(window.innerWidth <= 480) togglePnl(true);
+                if(window.innerWidth <= 480) togglePnl(false);
             } else {
                 sK = sK === k ? null : k;
                 shH();
@@ -4905,7 +4977,7 @@ if (p) p.classList.remove('minimized');
                     const sIcon = L.divIcon({ className: '', html: `<div style="position:relative"><div style="width:12px;height:12px;background:#6366f1;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>${showLabels ? `<div style="position:absolute;top:-2px;left:16px;white-space:nowrap;font-size:10px;font-weight:600;color:var(--text);background:var(--panel);padding:1px 4px;border-radius:3px;border:1px solid var(--card-border);pointer-events:none;opacity:.85">${s.ad}</div>` : ''}</div>`, iconSize: [12, 12], iconAnchor: [6, 6] });
                     const m = L.marker([s.lat, s.lon], { icon: sIcon })
                         .addTo(map)
-                        .bindPopup(`<b>${s.ad}</b><br><small>${s.kod ? 'Kod: ' + s.kod : 'ID: ' + s.id}</small><br><button onclick="shDurakDetay('${s.id || s.kod}');if(window.innerWidth<=480)togglePnl(true)" style="margin-top:4px;padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`);
+                        .bindPopup(`<b>${s.ad}</b><br><small>${s.kod ? 'Kod: ' + s.kod : 'ID: ' + s.id}</small><br><button onclick="shDurakDetay('${s.id || s.kod}');if(window.innerWidth<=480)togglePnl(false)" style="margin-top:4px;padding:4px 8px;font-size:.7rem;cursor:pointer;border:1px solid #ccc;border-radius:4px">Detay Gör</button>`);
                     allStopMarkers.push(m);
                 });
                 showToast(`${stops.length} durak haritada gösteriliyor`);
@@ -4945,18 +5017,29 @@ if (p) p.classList.remove('minimized');
             return L.divIcon({ className: '', html: `<div style="position:relative"><div style="width:20px;height:20px;background:${c};border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">${num}</div><div style="position:absolute;top:-8px;left:24px;background:${bg};color:${tc};padding:1px 6px;border-radius:4px;font-size:9px;white-space:nowrap;font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none">${n}</div></div>`, iconSize: [20, 20], iconAnchor: [10, 10] });
         };
 
-        function togglePnl(forceMinimize = false) {
+        function togglePnl(forceState = null) {
             const p = document.querySelector('.pnl');
             const svg = document.querySelector('#pnlToggle svg path');
             const toggle = document.getElementById('pnlToggle');
-            if (forceMinimize || !p.classList.contains('minimized')) {
+            if (!p) return;
+            
+            let shouldMinimize;
+            if (forceState === true || forceState === 'minimize') {
+                shouldMinimize = true;
+            } else if (forceState === false || forceState === 'expand') {
+                shouldMinimize = false;
+            } else {
+                shouldMinimize = !p.classList.contains('minimized');
+            }
+            
+            if (shouldMinimize) {
                 p.classList.add('minimized');
                 if (svg) svg.setAttribute('d', 'M5 15l7-7 7 7');
             } else {
                 p.classList.remove('minimized');
                 if (svg) svg.setAttribute('d', 'M19 9l-7 7-7-7');
             }
-            // Reposition toggle button at panel bottom
+            
             requestAnimationFrame(() => {
                 const rect = p.getBoundingClientRect();
                 if (toggle) toggle.style.top = rect.bottom + 'px';
@@ -4978,7 +5061,7 @@ if (p) p.classList.remove('minimized');
         async function shL(e, backToRoute = false) {
 const p = document.querySelector('.pnl');
 if (p) p.classList.remove('minimized');
-            if (window.innerWidth <= 480) togglePnl(true); clr(); document.getElementById('ct').innerHTML = '<div class="loading" style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:2rem;animation:spin 1s linear infinite">🔄</div><div style="color:var(--text);font-size:.8rem;font-weight:600">Hat bilgileri yükleniyor...</div></div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>'; try {
+            if (window.innerWidth <= 480) togglePnl(false); clr(); document.getElementById('ct').innerHTML = '<div class="loading" style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:2rem;animation:spin 1s linear infinite">🔄</div><div style="color:var(--text);font-size:.8rem;font-weight:600">Hat bilgileri yükleniyor...</div></div><style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>'; try {
                 const _results = await Promise.allSettled([
                     fetch('/api/hat/info/' + e).then(r => r.ok ? r.json() : {}),
                     fetch('/api/hat/durak/' + e).then(r => r.ok ? r.json() : []),
@@ -4992,7 +5075,7 @@ if (p) p.classList.remove('minimized');
                 const sf = _results[2].status === 'fulfilled' ? _results[2].value : [];
                 const ar = _results[3].status === 'fulfilled' ? _results[3].value : [];
                 const pr = _results[4].status === 'fulfilled' ? _results[4].value : {};
-                const fy = _results[5].status === 'fulfilled' ? _results[5].value : {}; const nm = inf.name || decodeURIComponent(e), k = inf.kat || 'otobus', ki = K[k] || K.otobus, g = inf.tip === 'gidis', col = ki.c; const da = Array.isArray(dr) ? dr : [], sa = Array.isArray(sf) ? sf : [], aa = Array.isArray(ar) ? ar : []; const tamF = (fy.tam_fiyat || (k === 'ring' ? 22 : (k === 'tramvay' ? 34 : (k === 'teleferik' ? 50 : 30)))).toFixed(2), indF = (fy.indirimli_fiyat || (k === 'ring' ? 16 : (k === 'tramvay' ? 20 : (k === 'teleferik' ? 30 : 20)))).toFixed(2); let x = backToRoute ? `<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>` : `<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`; x += `<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center"><div style="width:24px;height:24px;margin-right:8px;display:flex;pointer-events:none">${ki.i}</div> ${nm}</div>`; if (pr.code) x += `<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g ? 'Dönüş ➝' : '← Gidiş'}</button>`; x += `</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
+                const fy = _results[5].status === 'fulfilled' ? _results[5].value : {}; const nm = inf.name || decodeURIComponent(e), k = inf.kat || 'otobus', ki = K[k] || K.otobus, g = inf.tip === 'gidis', col = ki.c; const da = Array.isArray(dr) ? dr : [], sa = Array.isArray(sf) ? sf : [], aa = Array.isArray(ar) ? ar : []; const tamF = (fy.tam_fiyat || (k === 'ring' ? 22 : (k === 'tramvay' ? 34 : (k === 'teleferik' ? 50 : 30)))).toFixed(2), indF = (fy.indirimli_fiyat || (k === 'ring' ? 16 : (k === 'tramvay' ? 20 : (k === 'teleferik' ? 30 : 20)))).toFixed(2); let x = backToRoute ? `<button class="bk" onclick="shRotaUI();if(window.innerWidth<=480)togglePnl(false)">← Rotaya Dön</button>` : `<button class="bk" onclick="shH();if(window.innerWidth<=480)togglePnl(false)">← Hatlar</button>`; x += `<div class="hdr" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px"><div style="font-weight:700;font-size:.9rem;display:flex;align-items:center;min-width:0;flex:1"><div style="width:24px;height:24px;margin-right:8px;display:flex;flex-shrink:0;pointer-events:none">${ki.i}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${nm}</span></div>`; if (pr.code) x += `<button class="pbtn" onclick="shL('${encodeURIComponent(pr.code)}',${backToRoute})">${g ? 'Dönüş ➝' : '← Gidiş'}</button>`; x += `</div><div class="ig"><div class="ic" onclick="document.getElementById('aktarmaModal').style.display='flex'" style="cursor:pointer;border-color:var(--accent)"><div class="v" style="font-size:1rem;margin-bottom:4px">ℹ️</div><div class="l"><b>Aktarma Kuralları</b><br><small>Tıkla ve Oku</small></div></div><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">${aa.length}</div><div class="l">Araç</div></div></div>`;
 
                 // === BİLGİLENDİRME KUTULARI ===
                 if (nm.includes('SAMSUNUM-1')) {
@@ -5101,16 +5184,18 @@ if (p) p.classList.remove('minimized');
         window.schT = (t, b) => { document.querySelectorAll('.saattab div').forEach(x => x.classList.remove('on')); b.classList.add('on'); const d = window._s?.[t] || []; document.getElementById('scht').innerHTML = d.slice(0, 40).map(s => `<span>${s.saat}</span>`).join('') + (d.length > 40 ? `<span>+${d.length - 40}</span>` : '') };
         window.openTramTab = function (tabId, el) { document.getElementById('tab_hi').style.display = 'none'; document.getElementById('tab_cmt').style.display = 'none'; document.getElementById('tab_pzr').style.display = 'none'; document.getElementById('tab_' + tabId).style.display = 'block'; let tabs = el.parentNode.children; for (let i = 0; i < tabs.length; i++) { tabs[i].style.borderBottom = '2px solid transparent'; tabs[i].style.fontWeight = 'normal'; tabs[i].style.backgroundColor = 'transparent' } el.style.borderBottom = '2px solid var(--accent)'; el.style.fontWeight = 'bold'; el.style.backgroundColor = 'var(--card)' };
 
-        async function shO() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; document.getElementById('infoModal').style.display = 'flex'; try { const d = await (await fetch('/api/odak')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">🏔️ Veri yok</div>'; return } let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#16a34a"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)"><b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir.</div><div class="lst">${d.map(o => `<div class="it odak" onclick="shOD('${o.id}')">${o.kod} ${o.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
+        async function shO() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; document.getElementById('infoModal').style.display = 'flex'; try { const d = await (await fetch('/api/odak')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">🏔️ Veri yok</div>'; return } const ki = K.odak; const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const subColor = isDark ? '#94a3b8' : '#64748b'; let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#16a34a"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)"><b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir.</div><div class="lst">${d.map(o => { const displayCode = o.kod || 'ODAK'; const fontSize = displayCode.length > 5 ? '10px' : (displayCode.length > 3 ? '12px' : '15px'); return `<div class="it pulse-it odak" onclick="shOD('${o.id}')"><div class="it-badge" style="background:${ki.c};font-size:${fontSize}">${displayCode}</div><div class="it-info"><div class="it-title">${o.ad}</div><div class="it-sub" style="color:${subColor}"><span class="badge-icon-s" style="color:${ki.c}">${ki.i}</span> Odak &bull; ${displayCode} Hattı</div></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="it-arrow"><path d="M9 18l6-6-6-6"/></svg></div>` }).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
 
-        async function shOD(id) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr] = await Promise.all([fetch('/api/odak').then(r => r.json()), fetch('/api/odak/' + id + '/durak').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], ilk = da[0] || {}; const isGidis = h.ad && h.ad.includes('Gidiş'); const pair = (hl || []).find(x => x.kod === h.kod && x.id != id); let x = `<button class="bk" onclick="shO()">← Odak</button><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-weight:700;font-size:1rem">🏔️ ${h.kod || ''} ${h.ad || ''}</div>${pair ? `<button class="pbtn" onclick="shOD('${pair.id}')">${isGidis ? 'Dönüş ➡' : '&#x2190; Gidiş'}</button>` : ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v">₺${ilk.fiyat || '?'}</div><div class="l">Tam</div></div><div class="ic"><div class="v" id="oacnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">🏔️ Canlı Araçlar</div><div id="ovlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (da.length) { x += `<div class="sec">📍 Güzergah</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--green)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'} / ₺${d.fiyat_ogr || '?'}<br><small>(Sol: Tam, Sağ: İndirimli)</small></span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['o' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#16a34a') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#16a34a', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['odak_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; upOdakV(id, h.kod); liveT = setInterval(() => upOdakV(id, h.kod), 5000) } catch (e) { console.error(e) } }
+        async function shod_dummy() {} // Cleaned up
+        async function shOD(id) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr] = await Promise.all([fetch('/api/odak').then(r => r.json()), fetch('/api/odak/' + id + '/durak').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], ilk = da[0] || {}; const isGidis = h.ad && h.ad.includes('Gidiş'); const pair = (hl || []).find(x => x.kod === h.kod && x.id != id); let x = `<button class="bk" onclick="shO()">← Odak</button><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px"><div style="font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0">🏔️ ${h.kod || ''} ${h.ad || ''}</div>${pair ? `<button class="pbtn" style="flex-shrink:0" onclick="shOD('${pair.id}')">${isGidis ? 'Dönüş ➡' : '&#x2190; Gidiş'}</button>` : ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v">₺${ilk.fiyat || '?'}</div><div class="l">Tam</div></div><div class="ic"><div class="v" id="oacnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">🏔️ Canlı Araçlar</div><div id="ovlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (da.length) { x += `<div class="sec">📍 Güzergah</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--green)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'} / ₺${d.fiyat_ogr || '?'}<br><small>(Sol: Tam, Sağ: İndirimli)</small></span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['o' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#16a34a') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#16a34a', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['odak_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; upOdakV(id, h.kod); liveT = setInterval(() => upOdakV(id, h.kod), 5000) } catch (e) { console.error(e) } }
         window.shOD = shOD;
         async function upOdakV(hatid, lineShort = '') { try { const r = await (await fetch('/api/proxy_odak_araclar?hatid=' + hatid)).json(); Object.values(V).forEach(m => map.removeLayer(m)); V = {}; const el = document.getElementById('ovlist'), cnt = document.getElementById('oacnt'); if (!r || !r.vehicles || !r.vehicles.length) { if (cnt) cnt.innerText = '0'; if (el) el.innerHTML = '<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'; return } if (cnt) cnt.innerText = r.vehicles.length; let html = ''; r.vehicles.forEach(v => { const lat = parseFloat((v.Enlem || v.lat || '0').toString().replace(',', '.')); const lon = parseFloat((v.Boylam || v.lon || '0').toString().replace(',', '.')); const plaka = (v.Plaka || v.plate || '').toString(); const hiz = (v.Hizi || v.speed || '0').toString(); if (lat > 0 && lon > 0) { V['ov' + plaka] = L.marker([lat, lon], { icon: bI('#16a34a', plaka, lineShort) }).addTo(map); html += `<div class="arac" onclick="map.setView([${lat},${lon}],16)"><div><div class="pl">${plaka}</div></div><div style="text-align:right"><div style="font-weight:700">${hiz} km/s</div></div></div>` } }); if (el) el.innerHTML = html || '<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Konum verisi yok</div>' } catch (e) { } }
 
         // ===== SAMAIR =====
-        async function shS() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const d = await (await fetch('/api/samair')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">✈️ Veri yok</div>'; return } let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#dc2626"><path d="M17.8 19.2L16 11l3.5-3.5c.8-.8.8-2 0-2.8s-2-.8-2.8 0L13 8.2 4.8 6.4c-1-.2-2 .3-2.4 1.3-.4.9 0 2 1 2.4L11 14l-3.5 3.5-3 .5c-.5 0-1 .4-1.2.9-.2.5-.1 1.1.3 1.4.3.3.9.4 1.4.3l3.5-1 3.5-3.5 3.8 7.7c.4.9 1.4 1.4 2.4 1 .9-.4 1.4-1.4 1.2-2.4z"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)">⚠️ Test verileridir. Veriler her saat başı güncellenir.</div><div class="lst">${d.map(h => `<div class="it" style="border-left-color:var(--red)" onclick="shSD(${h.id},'${h.kod}')">${h.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
+        async function shS() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const d = await (await fetch('/api/samair')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">✈️ Veri yok</div>'; return } const ki = K.havalimani; const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const subColor = isDark ? '#94a3b8' : '#64748b'; let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#dc2626"><path d="M17.8 19.2L16 11l3.5-3.5c.8-.8.8-2 0-2.8s-2-.8-2.8 0L13 8.2 4.8 6.4c-1-.2-2 .3-2.4 1.3-.4.9 0 2 1 2.4L11 14l-3.5 3.5-3 .5c-.5 0-1 .4-1.2.9-.2.5-.1 1.1.3 1.4.3.3.9.4 1.4.3l3.5-1 3.5-3.5 3.8 7.7c.4.9 1.4 1.4 2.4 1 .9-.4 1.4-1.4 1.2-2.4z"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)">⚠️ Test verileridir. Veriler her saat başı güncellenir.</div><div class="lst">${d.map(h => { const displayCode = h.kod || 'HAVA'; const fontSize = displayCode.length > 5 ? '10px' : (displayCode.length > 3 ? '12px' : '15px'); return `<div class="it pulse-it samair" onclick="shSD(${h.id},'${h.kod}')"><div class="it-badge" style="background:${ki.c};font-size:${fontSize}">${displayCode}</div><div class="it-info"><div class="it-title">${h.ad}</div><div class="it-sub" style="color:${subColor}"><span class="badge-icon-s" style="color:${ki.c}">${ki.i}</span> SamAir &bull; ${displayCode} Hattı</div></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="it-arrow"><path d="M9 18l6-6-6-6"/></svg></div>` }).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
 
-        async function shSD(id, kod) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr, sf] = await Promise.all([fetch('/api/samair').then(r => r.json()), fetch('/api/samair/' + id + '/durak').then(r => r.json()), fetch('/api/samair/' + id + '/sefer').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], seferler = sf.data || [], last_up = sf.last_update || ''; let x = `<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">✈️ ${h.ad || ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (seferler.length) { x += `<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up ? `<div style="text-align:center;font-size:0.6rem;color:var(--text3);margin-bottom:5px">Son Güncelleme: ${last_up}</div>` : ''}`; let cDay = ""; seferler.forEach(s => { if (s.gun_format !== cDay) { x += `<div class="dhead">${s.gun_format}</div>`; cDay = s.gun_format } x += `<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>` }) } else { x += `<div class="no-data">✈️ Uçuş bilgisi bekleniyor...</div>` } if (da.length) { x += `<div class="sec">📍 Duraklar (${da.length})</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--purple)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'}</span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['s' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#9333ea') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#9333ea', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['samair_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; if (kod) { upV(kod, '#9333ea', da, kod); liveT = setInterval(() => upV(kod, '#9333ea', da, kod), 5000) } } catch (e) { console.error(e) } }
+        async function shsd_dummy() {} // Cleaned up
+        async function shSD(id, kod) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr, sf] = await Promise.all([fetch('/api/samair').then(r => r.json()), fetch('/api/samair/' + id + '/durak').then(r => r.json()), fetch('/api/samair/' + id + '/sefer').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], seferler = sf.data || [], last_up = sf.last_update || ''; let x = `<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">✈️ ${h.ad || ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (seferler.length) { x += `<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up ? `<div style="text-align:center;font-size:0.6rem;color:var(--text3);margin-bottom:5px">Son Güncelleme: ${last_up}</div>` : ''}`; let cDay = ""; seferler.forEach(s => { if (s.gun_format !== cDay) { x += `<div class="dhead">${s.gun_format}</div>`; cDay = s.gun_format } x += `<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>` }) } else { x += `<div class="no-data">✈️ Uçuş bilgisi bekleniyor...</div>` } if (da.length) { x += `<div class="sec">📍 Duraklar (${da.length})</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--purple)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'}</span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['s' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#9333ea') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#9333ea', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['samair_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; if (kod) { upV(kod, '#9333ea', da, kod); liveT = setInterval(() => upV(kod, '#9333ea', da, kod), 5000) } } catch (e) { console.error(e) } }
         window.shSD = shSD;
 
         init();
