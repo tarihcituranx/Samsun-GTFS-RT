@@ -839,44 +839,52 @@ class Database:
     def seed_if_empty(self):
         """Veritabanı boşsa db_seed.json dosyasından statik turistik odak ve havalimanı hatlarını seed eder (Bloklamaması için arka planda çağrılmalıdır)"""
         try:
-            if self.cnt('odak') == 0:
-                seed_path = "db_seed.json"
-                if os.path.exists(seed_path):
-                    log.info("📀 Veritabanı boş, db_seed.json dosyasından otomatik seed ediliyor...")
-                    with open(seed_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                    
-                    # odak tablosu seed
+            seed_path = "db_seed.json"
+            if os.path.exists(seed_path):
+                with open(seed_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                # odak tablosu seed
+                if self.cnt('odak') == 0:
                     odak_list = data.get('odak', [])
                     if odak_list:
+                        log.info("📀 odak tablosu seed ediliyor...")
                         rows = [(r['id'], r['ad'], r['kod'], r['gunler']) for r in odak_list]
-                        self.exm("INSERT INTO odak(id, ad, kod, gunler) VALUES(?, ?, ?, ?)", rows)
-                    
-                    # odak_durak tablosu seed
+                        self.exm("INSERT INTO odak(id, ad, kod, gunler) VALUES(?, ?, ?, ?) ON CONFLICT (id) DO NOTHING", rows)
+                
+                # odak_durak tablosu seed
+                if self.cnt('odak_durak') == 0:
                     od_list = data.get('odak_durak', [])
                     if od_list:
+                        log.info("📀 odak_durak tablosu seed ediliyor...")
                         rows = [(r['id'], r['hat'], r['ad'], r['kod'], r['sira'], r['lat'], r['lon'], r['fiyat'], r['fiyat_ogr']) for r in od_list]
-                        self.exm("INSERT INTO odak_durak(id, hat, ad, kod, sira, lat, lon, fiyat, fiyat_ogr) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", rows)
-                    
-                    # samair tablosu seed
+                        self.exm("INSERT INTO odak_durak(id, hat, ad, kod, sira, lat, lon, fiyat, fiyat_ogr) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING", rows)
+                
+                # samair tablosu seed
+                if self.cnt('samair') == 0:
                     samair_list = data.get('samair', [])
                     if samair_list:
+                        log.info("📀 samair tablosu seed ediliyor...")
                         rows = [(r['id'], r['ad'], r['kod']) for r in samair_list]
-                        self.exm("INSERT INTO samair(id, ad, kod) VALUES(?, ?, ?)", rows)
-                    
-                    # samair_durak tablosu seed
+                        self.exm("INSERT INTO samair(id, ad, kod) VALUES(?, ?, ?) ON CONFLICT (id) DO NOTHING", rows)
+                
+                # samair_durak tablosu seed
+                if self.cnt('samair_durak') == 0:
                     sd_list = data.get('samair_durak', [])
                     if sd_list:
+                        log.info("📀 samair_durak tablosu seed ediliyor...")
                         rows = [(r['id'], r['hat'], r['ad'], r['kod'], r['sira'], r['lat'], r['lon'], r['fiyat']) for r in sd_list]
-                        self.exm("INSERT INTO samair_durak(id, hat, ad, kod, sira, lat, lon, fiyat) VALUES(?, ?, ?, ?, ?, ?, ?, ?)", rows)
-                    
-                    # samair_sefer tablosu seed
+                        self.exm("INSERT INTO samair_durak(id, hat, ad, kod, sira, lat, lon, fiyat) VALUES(?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING", rows)
+                
+                # samair_sefer tablosu seed
+                if self.cnt('samair_sefer') == 0:
                     ss_list = data.get('samair_sefer', [])
                     if ss_list:
+                        log.info("📀 samair_sefer tablosu seed ediliyor...")
                         rows = [(r['id'], r['hat'], r['saat'], r['varis'], r['firma'], r['ucak_saat'], r['tarih'], r['gun_format']) for r in ss_list]
-                        self.exm("INSERT INTO samair_sefer(id, hat, saat, varis, firma, ucak_saat, tarih, gun_format) VALUES(?, ?, ?, ?, ?, ?, ?, ?)", rows)
-                    
-                    log.info("📀 Veritabanı seed işlemi başarıyla tamamlandı.")
+                        self.exm("INSERT INTO samair_sefer(id, hat, saat, varis, firma, ucak_saat, tarih, gun_format) VALUES(?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING", rows)
+                
+                log.info("📀 Veritabanı seed işlemi başarıyla tamamlandı.")
         except Exception as e:
             log.error(f"❌ Veritabanı seed hatası: {e}")
 
@@ -1108,13 +1116,42 @@ class Database:
             self._rpc(sql)
 
     def exm(self, q, d):
+        if not d:
+            return
+        
         q_fmt = self._fmt(q)
-        if len(d) > 5:
-            from concurrent.futures import ThreadPoolExecutor
-            sqls = [self._bind(q_fmt, p) for p in d]
-            with ThreadPoolExecutor(max_workers=25) as executor:
-                list(executor.map(self._rpc, sqls))
+        
+        # Ultra-Performanslı Toplu Bulk Insert Entegrasyonu:
+        # SQL içindeki VALUES(%s,%s,...) kalıbını bulup PostgreSQL toplu insert formatına dönüştürüyoruz.
+        # Bu sayede 5000+ HTTP isteği yerine sadece 5-10 HTTP isteği gönderilir ve RAM tavan yapmaz.
+        import re
+        values_match = re.search(r'VALUES\s*\([%s,\s]*\)', q_fmt, re.IGNORECASE)
+        
+        if values_match:
+            values_clause = values_match.group(0)
+            
+            def _escape_val(v):
+                if v is None: return "NULL"
+                if isinstance(v, (int, float)): return str(v)
+                s = str(v).replace("'", "''")
+                return f"'{s}'"
+                
+            def make_row(p):
+                return f"({','.join(_escape_val(x) for x in p)})"
+                
+            # Parametre sınırını aşmamak için 200'erli paketler halinde bulk insert yapıyoruz
+            batch_size = 200
+            for i in range(0, len(d), batch_size):
+                batch = d[i:i+batch_size]
+                rows_sql = ",".join(make_row(p) for p in batch)
+                
+                # VALUES clause'unu toplu satırlarla değiştir
+                sql = q_fmt.replace(values_clause, f"VALUES {rows_sql}")
+                
+                with self._lk:
+                    self._rpc(sql)
         else:
+            # Fallback: VALUES kalıbı yoksa (nadiren), güvenli tekil insert yap
             with self._lk:
                 for p in d:
                     sql = self._bind(q_fmt, p)
