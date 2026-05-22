@@ -151,12 +151,24 @@
         .pnl-body {
             flex: 1;
             overflow-y: auto;
-            padding: 0 20px 20px;
-            scrollbar-width: none;
+            padding: 16px 20px 20px;
         }
 
         .pnl-body::-webkit-scrollbar {
-            display: none;
+            width: 6px;
+        }
+        
+        .pnl-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .pnl-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        .pnl-body::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
         }
 
         .bottom-nav {
@@ -324,7 +336,9 @@
         }
 
         .it-badge {
-            width: 48px;
+            min-width: 48px;
+            width: max-content;
+            padding: 0 8px;
             height: 48px;
             border-radius: 14px;
             display: flex;
@@ -335,6 +349,7 @@
             font-size: 15px;
             flex-shrink: 0;
             letter-spacing: -0.5px;
+            white-space: nowrap;
         }
 
         .it-info {
@@ -841,6 +856,53 @@
         .map-ctrl:active {
             transform: translateY(1px) scale(0.95);
         }
+
+        /* Modern Leaflet Pop-up */
+        .leaflet-popup-content-wrapper {
+            background: var(--panel) !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+            backdrop-filter: blur(16px) !important;
+            font-family: inherit !important;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--panel) !important;
+            border: 1px solid var(--border) !important;
+        }
+
+        .leaflet-popup-content {
+            margin: 12px 16px !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+        }
+
+        .leaflet-popup-content button {
+            background: var(--accent) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            width: 100% !important;
+            margin-top: 8px !important;
+        }
+
+        .leaflet-popup-content button:hover {
+            opacity: 0.9 !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Override inline dark texts from API content in popups */
+        .leaflet-popup-content [style*="color:#666"],
+        .leaflet-popup-content [style*="color:#888"],
+        .leaflet-popup-content [style*="color:gray"] {
+            color: var(--text3) !important;
+        }
     </style>
 </head>
 
@@ -1123,24 +1185,37 @@
             tramvay: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#10b981"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16"/><path d="M8 5V3M16 5V3"/><path d="M3 3h18"/><circle cx="8.5" cy="17" r="1.2"/><circle cx="15.5" cy="17" r="1.2"/><path d="M6 21l2-2.5M18 21l-2-2.5"/><path d="M8 10v5M12 10v5M16 10v5"/></svg>', n: 'Tramvay', c: '#10b981' },
             ring: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#f59e0b"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 9h20"/><circle cx="7" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/><path d="M7 17.5v1M17 17.5v1"/><path d="M2 13h1M21 13h1"/><path d="M7 9v5M12 9v5M17 9v5"/></svg>', n: 'Ring', c: '#f59e0b' },
             tekne: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#0ea5e9"><path d="M3 17l1.5-7h15l1.5 7"/><path d="M2 20c1.5-2 3-2 4.5 0s3 2 4.5 0 3 2 4.5 0 3-2 4.5 0"/><rect x="7" y="7" width="10" height="3" rx="1"/><path d="M12 7V4M9 4h6"/><path d="M5 10h14"/></svg>', n: 'Vapur', c: '#0ea5e9' },
-            odak: { i: '<img src="/static/images/odak.png" style="width:100%;height:100%;object-fit:contain">', n: '', c: '#16a34a' },
+            odak: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#16a34a"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>', n: 'Odak', c: '#16a34a' },
             teleferik: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#ec4899"><path d="M2 6l20-2"/><path d="M7 6l-1 2h12l-1-2"/><rect x="6" y="8" width="12" height="8" rx="2"/><path d="M9 8v8M15 8v8"/><circle cx="12" cy="5.5" r="1"/></svg>', n: 'Teleferik', c: '#ec4899' },
-            havalimani: { i: '<img src="/static/images/samair.png" style="width:100%;height:100%;object-fit:contain">', n: '', c: '#dc2626' },
+            havalimani: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#dc2626"><path d="M17.8 19.2L16 11l3.5-3.5c.8-.8.8-2 0-2.8s-2-.8-2.8 0L13 8.2 4.8 6.4c-1-.2-2 .3-2.4 1.3-.4.9 0 2 1 2.4L11 14l-3.5 3.5-3 .5c-.5 0-1 .4-1.2.9-.2.5-.1 1.1.3 1.4.3.3.9.4 1.4.3l3.5-1 3.5-3.5 3.8 7.7c.4.9 1.4 1.4 2.4 1 .9-.4 1.4-1.4 1.2-2.4z"/></svg>', n: 'SamAir', c: '#dc2626' },
             ilce: { i: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%;color:#ef4444"><path d="M1 10l2-5h14l4 5v6H1z"/><path d="M1 10h19"/><circle cx="6" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/><path d="M6 16.5V19M16 16.5V19"/><rect x="4" y="11" width="4" height="3" rx="0.5"/><rect x="10" y="11" width="4" height="3" rx="0.5"/></svg>', n: 'İlçe', c: '#ef4444' }
         };
+
+        function getDisplayCode(code, name) {
+            if (!code) return '';
+            if (code.length > 8) {
+                const match = name.match(/\b(E\d+)\b/);
+                if (match) return match[1];
+                if (code.toLowerCase().includes('ekspres') || name.toLowerCase().includes('ekspres')) return 'EXP';
+                return code.substring(0, 4);
+            }
+            return code;
+        }
 
         function renderLi(h) {
             const ki = K[h.kat || 'otobus'] || K.otobus;
             const nameStr = h.name || h.code;
             const codeStr = h.code || '';
+            const displayCode = getDisplayCode(codeStr, nameStr);
+            const fontSize = displayCode.length > 5 ? '10px' : (displayCode.length > 3 ? '12px' : '15px');
             const nameWithoutCode = nameStr.startsWith(codeStr) ? nameStr.substring(codeStr.length).trim().replace(/^-/, '').trim() : nameStr;
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const subColor = isDark ? '#94a3b8' : '#64748b';
             return `<div class="it pulse-it ${h.kat || 'otobus'}" onclick="shL('${encodeURIComponent(h.code)}')">
-        <div class="it-badge" style="background:${ki.c}">${codeStr}</div>
+        <div class="it-badge" style="background:${ki.c};font-size:${fontSize}">${displayCode}</div>
         <div class="it-info">
             <div class="it-title">${nameWithoutCode}</div>
-            <div class="it-sub" style="color:${subColor}"><span class="badge-icon-s" style="color:${ki.c}">${ki.i}</span> ${ki.n} &bull; ${codeStr} Hattı</div>
+            <div class="it-sub" style="color:${subColor}"><span class="badge-icon-s" style="color:${ki.c}">${ki.i}</span> ${ki.n} &bull; ${displayCode} Hattı</div>
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="it-arrow"><path d="M9 18l6-6-6-6"/></svg>
     </div>`;
@@ -1358,10 +1433,26 @@ Güncelleme: ${trTime}`;
             let x = `<div class="src-wrap"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input class="src" placeholder="Hat ara..." oninput="flt(this.value)"></div>`;
             const isCatSelected = sK && sK !== 'dil';
             x += `<div class="kg" id="cat-grid" style="display:${isCatSelected ? 'none' : 'flex'}">`;
-            Object.entries(K).forEach(([k, v]) => { const cnt = k === 'dil' ? H.length : (bk[k] ? bk[k].length : 0); x += `<div class="kb ${sK === k ? 'on' : ''}" onclick="selK('${k}')"><div class="i">${v.i}</div>${v.n}</div>` });
+            Object.entries(K).forEach(([k, v]) => {
+                const cnt = k === 'dil' ? H.length : (bk[k] ? bk[k].length : 0);
+                if (cnt > 0 || k === 'dil' || k === 'odak' || k === 'havalimani') {
+                    x += `<div class="kb ${sK === k ? 'on' : ''}" onclick="selK('${k}')"><div class="i">${v.i}</div>${v.n}</div>`;
+                }
+            });
             x += `</div><div class="lst" id="lst">`; (sK && sK !== 'dil' ? bk[sK] || [] : H).forEach(h => { x += renderLi(h) }); document.getElementById('ct').innerHTML = x + `</div>`
         }
-        window.selK = k => { sK = sK === k ? null : k; shH() };
+        window.selK = k => {
+            if (k === 'odak') {
+                shO();
+                if(window.innerWidth <= 480) togglePnl(true);
+            } else if (k === 'havalimani') {
+                shS();
+                if(window.innerWidth <= 480) togglePnl(true);
+            } else {
+                sK = sK === k ? null : k;
+                shH();
+            }
+        };
         window.flt = q => { q = normalizeStr(q); const bk = {}; H.forEach(h => { const k = h.kat || 'otobus'; (bk[k] = bk[k] || []).push(h) }); const f = (sK && sK !== 'dil' ? bk[sK] || [] : H).filter(h => (normalizeStr(h.code + h.name)).includes(q)); document.getElementById('lst').innerHTML = f.map(h => renderLi(h)).join('') };
 
         // ===== ARAÇ GÜNCELLEME =====
@@ -1578,14 +1669,14 @@ Güncelleme: ${trTime}`;
         window.schT = (t, b) => { document.querySelectorAll('.saattab div').forEach(x => x.classList.remove('on')); b.classList.add('on'); const d = window._s?.[t] || []; document.getElementById('scht').innerHTML = d.slice(0, 40).map(s => `<span>${s.saat}</span>`).join('') + (d.length > 40 ? `<span>+${d.length - 40}</span>` : '') };
         window.openTramTab = function (tabId, el) { document.getElementById('tab_hi').style.display = 'none'; document.getElementById('tab_cmt').style.display = 'none'; document.getElementById('tab_pzr').style.display = 'none'; document.getElementById('tab_' + tabId).style.display = 'block'; let tabs = el.parentNode.children; for (let i = 0; i < tabs.length; i++) { tabs[i].style.borderBottom = '2px solid transparent'; tabs[i].style.fontWeight = 'normal'; tabs[i].style.backgroundColor = 'transparent' } el.style.borderBottom = '2px solid var(--accent)'; el.style.fontWeight = 'bold'; el.style.backgroundColor = 'var(--card)' };
 
-        async function shO() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; document.getElementById('infoModal').style.display = 'flex'; try { const d = await (await fetch('/api/odak')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">🏔️ Veri yok</div>'; return } let x = `<div style="text-align:center;padding:16px 0"><img src="/static/images/odak.png" style="height:80px;border-radius:12px;box-shadow:var(--shadow2)"></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)"><b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir.</div><div class="lst">${d.map(o => `<div class="it odak" onclick="shOD('${o.id}')">${o.kod} ${o.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
+        async function shO() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; document.getElementById('infoModal').style.display = 'flex'; try { const d = await (await fetch('/api/odak')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">🏔️ Veri yok</div>'; return } let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#16a34a"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)"><b>DİKKAT:</b> Fiyatlar değişiklik gösterebilir.</div><div class="lst">${d.map(o => `<div class="it odak" onclick="shOD('${o.id}')">${o.kod} ${o.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
 
         async function shOD(id) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr] = await Promise.all([fetch('/api/odak').then(r => r.json()), fetch('/api/odak/' + id + '/durak').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], ilk = da[0] || {}; const isGidis = h.ad && h.ad.includes('Gidiş'); const pair = (hl || []).find(x => x.kod === h.kod && x.id != id); let x = `<button class="bk" onclick="shO()">← Odak</button><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-weight:700;font-size:1rem">🏔️ ${h.kod || ''} ${h.ad || ''}</div>${pair ? `<button class="pbtn" onclick="shOD('${pair.id}')">${isGidis ? 'Dönüş ➡' : '&#x2190; Gidiş'}</button>` : ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v">₺${ilk.fiyat || '?'}</div><div class="l">Tam</div></div><div class="ic"><div class="v" id="oacnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">🏔️ Canlı Araçlar</div><div id="ovlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (da.length) { x += `<div class="sec">📍 Güzergah</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--green)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'} / ₺${d.fiyat_ogr || '?'}<br><small>(Sol: Tam, Sağ: İndirimli)</small></span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['o' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#16a34a') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#16a34a', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['odak_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; upOdakV(id); liveT = setInterval(() => upOdakV(id), 5000) } catch (e) { console.error(e) } }
         window.shOD = shOD;
         async function upOdakV(hatid) { try { const r = await (await fetch('/api/proxy_odak_araclar?hatid=' + hatid)).json(); Object.values(V).forEach(m => map.removeLayer(m)); V = {}; const el = document.getElementById('ovlist'), cnt = document.getElementById('oacnt'); if (!r || !r.vehicles || !r.vehicles.length) { if (cnt) cnt.innerText = '0'; if (el) el.innerHTML = '<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Aktif araç yok</div>'; return } if (cnt) cnt.innerText = r.vehicles.length; let html = ''; r.vehicles.forEach(v => { const lat = parseFloat((v.Enlem || v.lat || '0').toString().replace(',', '.')); const lon = parseFloat((v.Boylam || v.lon || '0').toString().replace(',', '.')); const plaka = (v.Plaka || v.plate || '').toString(); const hiz = (v.Hizi || v.speed || '0').toString(); if (lat > 0 && lon > 0) { V['ov' + plaka] = L.marker([lat, lon], { icon: bI('#16a34a', plaka) }).addTo(map); html += `<div class="arac" onclick="map.setView([${lat},${lon}],16)"><div><div class="pl">${plaka}</div></div><div style="text-align:right"><div style="font-weight:700">${hiz} km/s</div></div></div>` } }); if (el) el.innerHTML = html || '<div style="text-align:center;padding:10px;color:var(--text3);font-size:0.7rem">Konum verisi yok</div>' } catch (e) { } }
 
         // ===== SAMAIR =====
-        async function shS() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const d = await (await fetch('/api/samair')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">✈️ Veri yok</div>'; return } let x = `<div style="text-align:center;padding:16px 0"><img src="/static/images/samair.png" style="height:80px;border-radius:12px;box-shadow:var(--shadow2)"></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)">⚠️ Test verileridir. Veriler her saat başı güncellenir.</div><div class="lst">${d.map(h => `<div class="it" style="border-left-color:var(--red)" onclick="shSD(${h.id},'${h.kod}')">${h.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
+        async function shS() { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const d = await (await fetch('/api/samair')).json(); if (!d || !d.length) { document.getElementById('ct').innerHTML = '<div class="no-data">✈️ Veri yok</div>'; return } let x = `<button class="bk" onclick="shH()">← Tüm Hatlar</button><div style="text-align:center;padding:16px 0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:80px;height:80px;margin:0 auto;color:#dc2626"><path d="M17.8 19.2L16 11l3.5-3.5c.8-.8.8-2 0-2.8s-2-.8-2.8 0L13 8.2 4.8 6.4c-1-.2-2 .3-2.4 1.3-.4.9 0 2 1 2.4L11 14l-3.5 3.5-3 .5c-.5 0-1 .4-1.2.9-.2.5-.1 1.1.3 1.4.3.3.9.4 1.4.3l3.5-1 3.5-3.5 3.8 7.7c.4.9 1.4 1.4 2.4 1 .9-.4 1.4-1.4 1.2-2.4z"/></svg></div><div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div><div style="background:var(--accent-bg);border:1px solid var(--accent);border-radius:10px;padding:8px;margin:8px 0;font-size:0.65rem;text-align:center;color:var(--text)">⚠️ Test verileridir. Veriler her saat başı güncellenir.</div><div class="lst">${d.map(h => `<div class="it" style="border-left-color:var(--red)" onclick="shSD(${h.id},'${h.kod}')">${h.ad}</div>`).join('')}</div>`; document.getElementById('ct').innerHTML = x } catch (e) { console.error(e) } }
 
         async function shSD(id, kod) { clr(); document.getElementById('ct').innerHTML = '<div class="loading">⏳</div>'; try { const [hl, dr, sf] = await Promise.all([fetch('/api/samair').then(r => r.json()), fetch('/api/samair/' + id + '/durak').then(r => r.json()), fetch('/api/samair/' + id + '/sefer').then(r => r.json())]); const h = (hl || []).find(x => x.id == id) || {}, da = Array.isArray(dr) ? dr : [], seferler = sf.data || [], last_up = sf.last_update || ''; let x = `<button class="bk" onclick="shS()">← Samair</button><div style="font-weight:700;margin-bottom:10px;font-size:1rem">✈️ ${h.ad || ''}</div>`; x += `<div class="ig"><div class="ic"><div class="v">${da.length}</div><div class="l">Durak</div></div><div class="ic"><div class="v" id="acnt">0</div><div class="l">Araç</div></div></div>`; x += `<div class="araclar"><div class="t">✈️ Canlı Araçlar</div><div id="vlist">Yükleniyor...</div></div>`; x += `<div class="tel">📞 Bilgi: <a href="tel:03624311012">0362 431 10 12</a></div>`; if (seferler.length) { x += `<div class="sec">✈️ Uçuş & Servis Saatleri</div>${last_up ? `<div style="text-align:center;font-size:0.6rem;color:var(--text3);margin-bottom:5px">Son Güncelleme: ${last_up}</div>` : ''}`; let cDay = ""; seferler.forEach(s => { if (s.gun_format !== cDay) { x += `<div class="dhead">${s.gun_format}</div>`; cDay = s.gun_format } x += `<div class="sfr"><div class="st">${s.saat} → ${s.varis}</div><div class="fr">${s.firma} - ${s.ucak_saat}</div></div>` }) } else { x += `<div class="no-data">✈️ Uçuş bilgisi bekleniyor...</div>` } if (da.length) { x += `<div class="sec">📍 Duraklar (${da.length})</div>`; const co = []; da.forEach((d, i) => { x += `<div class="drk" onclick="map.setView([${d.lat},${d.lon}],16)"><span class="no" style="background:var(--purple)">${i + 1}</span><span class="inf"><span class="ad">${d.ad}</span><span class="fyt">₺${d.fiyat || '?'}</span></span></div>`; if (d.lat > 0 && d.lon > 0) { co.push([d.lat, d.lon]); M['s' + i] = L.marker([d.lat, d.lon], { icon: dI(i + 1, '#9333ea') }).addTo(map) } }); if (co.length > 1) { const pl = L.polyline(co, { color: '#9333ea', weight: 4, opacity: 0.7, dashArray: '8,6' }).addTo(map); M['samair_route'] = pl; map.fitBounds(pl.getBounds().pad(0.2)) } else if (co.length) map.fitBounds(co, { padding: [40, 40] }) } document.getElementById('ct').innerHTML = x; if (kod) { upV(kod, '#9333ea'); liveT = setInterval(() => upV(kod, '#9333ea'), 5000) } } catch (e) { console.error(e) } }
         window.shSD = shSD;

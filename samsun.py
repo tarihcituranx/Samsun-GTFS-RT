@@ -475,12 +475,9 @@ class Http:
             log.info(f"🌐 Birincil Proxy aktif: {proxy_host}:{proxy_port} (Tüm API istekleri)")
             if proxy_url not in self.proxies_pool:
                 self.proxies_pool.insert(0, proxy_url)
-        elif self.proxies_pool:
-            proxy_url = self.proxies_pool[0]
-            self.s.proxies = {"http": proxy_url, "https": proxy_url}
-            log.info(f"🌐 İlk yedek proxy birincil olarak seçildi: {proxy_url}")
         else:
-            log.warning("⚠️ Proxy ayarlanmamış! PROXY_HOST/PORT/USER env var eksik ve CSV bulunamadı. Direkt bağlantı kullanılacak.")
+            self.s.proxies = None
+            log.info("🌐 Kentkart API istekleri için proxy kullanılmayacak (Doğrudan bağlantı).")
         
         # Cloudscraper bypass
         if _CLOUDSCRAPER_OK:
@@ -4044,102 +4041,44 @@ def create_app(db, col):
     @app.get("/api/proxy_odak")
     async def proxy_odak():
         """Mobil uygulama için Odak noktalarını proxy yapar (WAF Aşar)"""
-        http_client = col.http
-        for sess in [http_client.cs, http_client.session]:
-            try:
-                proxies = getattr(sess, 'proxies', None)
-                resp = await asyncio.to_thread(
-                    sess.get,
-                    "https://odak.samsun.bel.tr/doit.php?action=HatlarAllList",
-                    headers={
-                        "User-Agent": "Mozilla/5.0", 
-                        "Referer": "https://odak.samsun.bel.tr/",
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    proxies=proxies,
-                    timeout=10
-                )
-                content_type = resp.headers.get('content-type', '')
-                if 'text/html' in content_type or resp.status_code != 200:
-                    log.warning(f"Odak Proxy: HTML/WAF yanıtı (status={resp.status_code}) ({type(sess).__name__})")
-                    continue
-                try:
-                    data = resp.json()
-                except (ValueError, TypeError):
-                    log.warning(f"Odak Proxy: JSON parse hatası ({type(sess).__name__})")
-                    continue
-                
-                raw = []
-                if isinstance(data, list):
-                    raw = data
-                elif isinstance(data, dict):
-                    raw = data.get('result', data.get('data', data.get('root', [])))
-                
-                # Mobil uyumlu alan adlarına normalize et (kodu→kod, adi→ad)
-                normalized = []
-                for item in (raw if isinstance(raw, list) else []):
-                    normalized.append({
-                        'id': item.get('id', item.get('kod', '')),
-                        'kod': item.get('hat_aciklama', item.get('kod', '')),
-                        'ad': item.get('hat_adi', item.get('ad', '')),
-                        'gunler': item.get('hat_gunleri', item.get('gunler', '')),
-                    })
-                return JSONResponse(normalized)
-            except Exception as e:
-                log.warning(f"Odak Proxy hatası ({type(sess).__name__}): {e}")
-        return JSONResponse([])
+        try:
+            raw = await asyncio.to_thread(col.http.odak_direct, 'HatlarAllList')
+            
+            # Mobil uyumlu alan adlarına normalize et (kodu→kod, adi→ad)
+            normalized = []
+            for item in (raw if isinstance(raw, list) else []):
+                normalized.append({
+                    'id': item.get('id', item.get('kod', '')),
+                    'kod': item.get('hat_aciklama', item.get('kod', '')),
+                    'ad': item.get('hat_adi', item.get('ad', '')),
+                    'gunler': item.get('hat_gunleri', item.get('gunler', '')),
+                })
+            return JSONResponse(normalized)
+        except Exception as e:
+            log.warning(f"Odak Proxy hatası: {e}")
+            return JSONResponse([])
 
     @app.get("/api/proxy_samair_saatler")
     async def proxy_samair_saatler(hatid: int):
         """Mobil usage için SamAir saatlerini proxy yapar"""
-        http_client = col.http
-        for sess in [http_client.cs, http_client.session]:
-            try:
-                proxies = getattr(sess, 'proxies', None)
-                resp = await asyncio.to_thread(
-                    sess.get,
-                    f"https://samair.samsun.bel.tr/api.php?m=samair_public&a=UcakSeferSaatleri&hatid={hatid}",
-                    headers={
-                        "User-Agent": "Mozilla/5.0",
-                        "Referer": "https://samair.samsun.bel.tr/",
-                        "X-Requested-With": "XMLHttpRequest"
-                    },
-                    proxies=proxies,
-                    timeout=10
-                )
-                content_type = resp.headers.get('content-type', '')
-                if 'text/html' in content_type or resp.status_code != 200:
-                    log.warning(f"SamAir Saatler: HTML/WAF yanıtı (status={resp.status_code}) ({type(sess).__name__})")
-                    continue
-                try:
-                    data = resp.json()
-                except (ValueError, TypeError):
-                    log.warning(f"SamAir Saatler: JSON parse hatası ({type(sess).__name__})")
-                    continue
-                
-                raw = []
-                if isinstance(data, list):
-                    raw = data
-                elif isinstance(data, dict):
-                    raw = data.get('result', data.get('data', data.get('root', [])))
-                
-                if not isinstance(raw, list):
-                    raw = []
-                # Mobil uyumlu alan adlarına normalize et
-                normalized = []
-                for item in raw:
-                    normalized.append({
-                        'saat': item.get('saat', ''),
-                        'varis': item.get('varis_saati', item.get('varis', '')),
-                        'firma': item.get('ucak_firmasi', item.get('firma', '')),
-                        'ucak_saat': item.get('ucak_saatleri', item.get('ucak_saat', '')),
-                        'tarih': item.get('tarih', ''),
-                        'gun_format': item.get('formatted_date', item.get('gun_format', '')),
-                    })
-                return JSONResponse(normalized)
-            except Exception as e:
-                log.warning(f"SamAir Saatler hatası ({type(sess).__name__}): {e}")
-        return JSONResponse([])
+        try:
+            raw = await asyncio.to_thread(col.http.samair_direct, 'UcakSeferSaatleri', hatid=hatid)
+            
+            # Mobil uyumlu alan adlarına normalize et
+            normalized = []
+            for item in (raw if isinstance(raw, list) else []):
+                normalized.append({
+                    'saat': item.get('saat', ''),
+                    'varis': item.get('varis_saati', item.get('varis', '')),
+                    'firma': item.get('ucak_firmasi', item.get('firma', '')),
+                    'ucak_saat': item.get('ucak_saatleri', item.get('ucak_saat', '')),
+                    'tarih': item.get('tarih', ''),
+                    'gun_format': item.get('formatted_date', item.get('gun_format', '')),
+                })
+            return JSONResponse(normalized)
+        except Exception as e:
+            log.warning(f"SamAir Saatler hatası: {e}")
+            return JSONResponse([])
 
     @app.get("/api/proxy_samair_araclar")
     async def proxy_samair_araclar():
