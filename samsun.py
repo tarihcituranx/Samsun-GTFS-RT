@@ -1108,11 +1108,17 @@ class Database:
             self._rpc(sql)
 
     def exm(self, q, d):
-        with self._lk:
-            q_fmt = self._fmt(q)
-            for p in d:
-                sql = self._bind(q_fmt, p)
-                self._rpc(sql)
+        q_fmt = self._fmt(q)
+        if len(d) > 5:
+            from concurrent.futures import ThreadPoolExecutor
+            sqls = [self._bind(q_fmt, p) for p in d]
+            with ThreadPoolExecutor(max_workers=25) as executor:
+                list(executor.map(self._rpc, sqls))
+        else:
+            with self._lk:
+                for p in d:
+                    sql = self._bind(q_fmt, p)
+                    self._rpc(sql)
 
     def get(self, q, p=()):
         with self._lk:
@@ -5841,19 +5847,25 @@ col = Collector(db, Http())
 def initial_data_loader():
     try:
         log.info("🚀 Arka plan veri önbellekleme (veri_cek) başlatılıyor...")
+
+        # Auto-Recovery: Eğer kritik tablolar (hat_durak veya sefer) beklenenden çok az veriye sahipse
+        # (örneğin yarım kaldıysa veya bozuksa), veritabanını tamamen temizleyip temiz bir kurulum yapalım!
+        # Normalde hat_durak 4000+, sefer 5000+ kayıt içerir.
+        hat_durak_cnt = db.cnt('hat_durak')
+        sefer_cnt = db.cnt('sefer')
         
-        # Yeni deploy sonrası Supabase'deki eski yön ve alias verilerinin
-        # tamamen temizlenip yeni kod yapısına göre (-D, alias, clean_raw_code vb.) 
-        # sıfırdan oluşturulması için tabloları temizliyor ve veri çekmeyi zorluyoruz.
-        log.info("🧹 Supabase tabloları temizleniyor...")
-        db.temizle()
-        
-        # Veritabanı temizlendiği için statik odak ve samair tablolarını 
-        # uvicorn'u bloklamadan arka planda (bu thread içinde) seed ediyoruz.
-        db.seed_if_empty()
-        
-        col.veri_cek(force=True)
-        col.samair_seferler_guncelle(force=True)
+        if hat_durak_cnt < 100 or sefer_cnt < 100:
+            log.warning(f"⚠️ Kritik tablolar eksik veya yarım kalmış tespit edildi! hat_durak={hat_durak_cnt}, sefer={sefer_cnt}")
+            log.info("🧹 Supabase tabloları temizleniyor ve sıfırdan kuruluyor...")
+            db.temizle()
+            db.seed_if_empty()
+            col.veri_cek(force=True)
+        else:
+            log.info(f"📊 Veritabanı durumu sağlıklı görünüyor (hat_durak={hat_durak_cnt}, sefer={sefer_cnt}). Standart kontrol yapılıyor.")
+            db.seed_if_empty()
+            col.veri_cek(force=False)
+            
+        col.samair_seferler_guncelle(force=False)
         log.info("✅ Arka plan veri önbellekleme tamamlandı.")
     except Exception as e:
         log.error(f"Başlangıç veri çekme hatası: {e}")
