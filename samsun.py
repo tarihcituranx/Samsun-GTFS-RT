@@ -196,6 +196,7 @@ def _tr_upper_first(ch):
 def title_case_tr(text):
     """Türkçe uyumlu Title Case ('SOĞUKSU' → 'Soğuksu')."""
     if not text: return text
+    text = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', str(text))
     words = str(text).split()
     result = []
     small_words = {'ve', 'ile', 'ya', 'da', 'de', 'den', 'dan', 'ne', 'bir'}
@@ -1259,6 +1260,7 @@ class Collector:
         for d in data_lines:
             c = fix_turkish(str(d.get('lineCode','')).strip())
             name = fix_turkish(d.get('lineName', c))
+            name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
             
             # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor
             if len(c) > 6 and "EKSPRES" in c.upper():
@@ -1281,6 +1283,7 @@ class Collector:
         for d in data_orj:
             c = fix_turkish(str(d.get('lineCode','')).strip())
             name = fix_turkish(d.get('lineName', c))
+            name = re.sub(r'([A-Za-zÇĞİÖŞÜçğıöşü]{2,})\s*-\s*([A-Za-zÇĞİÖŞÜçğıöşü]{2,})', r'\1 - \2', name)
             
             # (BU KISIM EKLENDİ) ASIS bazen kodu "SAMULAŞ EKSPRES E1" diye veriyor, 
             # bunu normalize edelim.
@@ -5105,9 +5108,13 @@ loadStats(); setInterval(loadStats, 10000);
         if fiyat_map:
             fiyat_row = fiyat_map.get(d['code']) or fiyat_map.get(d.get('name', ''))
             d['tam_fiyat'] = fiyat_row['tam_fiyat'] if fiyat_row else (
-                15.0 if kat == 'ekspres' else
-                50.0 if kat == 'samair' else
+                30.0 if kat == 'ekspres' else
+                120.0 if kat == 'samair' else
                 15.0 if kat == 'odak' else
+                22.0 if kat == 'ring' else
+                34.0 if kat == 'tramvay' else
+                50.0 if kat == 'teleferik' else
+                30.0 if kat == 'otobus' or kat == 'ilce' else
                 20.0
             )
         return d
@@ -5140,23 +5147,6 @@ loadStats(); setInterval(loadStats, 10000);
         fiyat_map = {c: fiyat_row} if fiyat_row else {}
         return JSONResponse(_enrich_hat(res, stop_counts, fiyat_map))
     
-    @app.get("/api/hat/durak/{code:path}")
-    async def api_durak(code: str):
-        c = urllib.parse.unquote(code).strip()
-        res = db.get("SELECT * FROM hat_durak WHERE hat=? ORDER BY sira", (c,))
-        if not res: res = db.get("SELECT * FROM hat_durak WHERE hat LIKE ? ORDER BY sira", (c+'%',))
-        
-    @app.get("/api/hat")
-    async def get_hatlar():
-        hatlar = db.get("SELECT * FROM hat ORDER BY kat, LOWER(name) ASC")
-        return JSONResponse([_enrich_hat(h) for h in hatlar])
-    
-    @app.get("/api/hat/info/{code:path}")
-    async def api_hat_one(code: str):
-        c = urllib.parse.unquote(code).strip()
-        res = db.one("SELECT * FROM hat WHERE code=?", (c,))
-        if not res: res = db.one("SELECT * FROM hat WHERE code LIKE ?", (c+'%',))
-        return JSONResponse(_enrich_hat(res) if res else {})
     
     @app.get("/api/hat/durak/{code:path}")
     async def api_durak(code: str):
