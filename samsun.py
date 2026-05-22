@@ -1105,8 +1105,15 @@ class Collector:
         
         return 'otobus'
 
-    def veri_cek(self):
-        if not self.db.guncelleme_gerekli():
+    def veri_cek(self, force=False):
+        # Kritik tablo boşluk kontrolü — hat_durak veya sefer boşsa zorla güncelle
+        hat_durak_bos = self.db.cnt('hat_durak') == 0
+        sefer_bos = self.db.cnt('sefer') == 0
+        if hat_durak_bos or sefer_bos:
+            log.warning(f"⚠️ Kritik tablolar boş! hat_durak={self.db.cnt('hat_durak')}, sefer={self.db.cnt('sefer')} → Zorla güncelleme başlatılıyor...")
+            force = True
+        
+        if not force and not self.db.guncelleme_gerekli():
             log.info("📦 Ana veriler güncel, atlanıyor.")
             if self.db.cnt('gtfs_shape') == 0:
                 log.info("📐 GTFS Shapes eksik, oluşturuluyor...")
@@ -3864,9 +3871,9 @@ def create_app(db, col):
                 await asyncio.sleep(30)
                 continue
             
-            # Gece modu (23-09 TR)
+            # Gece modu (01:00-06:00 TR) — Otobüsler ~06:00'da başlar
             tr_hour = (datetime.utcnow().hour + 3) % 24
-            if tr_hour >= 23 or tr_hour < 9:
+            if 1 <= tr_hour < 6:
                 log.debug(f"🌙 Gece modu (saat {tr_hour:02d}:xx TR). GTFS-RT duraklatıldı.")
                 await asyncio.sleep(300)
                 continue
@@ -4130,9 +4137,9 @@ def create_app(db, col):
 
     @app.get("/api/durak_panel/{kod}")
     async def api_durak_panel(kod: str):
-        # GECE MODU KONTROLU (00:00 - 06:00 arası durak panelleri API'yi yormasın)
-        saat = datetime.now().hour
-        if 0 <= saat < 6:
+        # GECE MODU KONTROLU (01:00 - 06:00 TR arası durak panelleri API'yi yormasın)
+        tr_hour = (datetime.utcnow().hour + 3) % 24
+        if 1 <= tr_hour < 6:
             return JSONResponse([])
             
         cache_key = f"durak_panel_{kod}"
@@ -5269,9 +5276,9 @@ loadStats(); setInterval(loadStats, 10000);
                 araclar = []
             duraklar = db.get("SELECT * FROM samair_durak WHERE hat IN (SELECT id FROM samair WHERE kod LIKE ?) ORDER BY sira", (f'%{c}%',))
         else:
-            # GECE MODU KONTROLU (00:00 - 06:00 arası normal hatlar çalışmaz, API'yi yormayalım)
-            saat = datetime.now().hour
-            if 0 <= saat < 6:
+            # GECE MODU KONTROLU (01:00 - 06:00 TR arası normal hatlar çalışmaz, API'yi yormayalım)
+            tr_hour = (datetime.utcnow().hour + 3) % 24
+            if 1 <= tr_hour < 6:
                 return JSONResponse([])
                 
             # Normal hat
@@ -5569,9 +5576,7 @@ loadStats(); setInterval(loadStats, 10000);
             }
         })
 
-    return app
-
-     # Dinamik PWA ve Workbox Root Dosyaları yakalayıcı (Vite-PWA için kritik)
+    # Dinamik PWA ve Workbox Root Dosyaları yakalayıcı (Vite-PWA için kritik)
     @app.get("/{filename:path}")
     async def get_root_files(filename: str):
         # Eğer dosya kök dizindeyse (sw.js, manifest.webmanifest, workbox-*.js) geri döndür.
@@ -5582,6 +5587,8 @@ loadStats(); setInterval(loadStats, 10000);
                 return FileResponse(path)
         # Bulunamadıysa veya tehlikeli bir şeyse Fastapi'ye pasla, o da 404 döner
         return HTMLResponse(status_code=404)
+
+    return app
 
 # ==========================================
 # GLOBAL ASGI INITIALIZATION (SAMSUN TRANSIT)
@@ -5622,9 +5629,9 @@ def start_samair_updater():
         while True:
             interval = _admin_config.get('samair_interval', 7200)
             time.sleep(interval)
-            # Gece kontrolü (23-09 arası güncelleme yapma)
+            # Gece kontrolü (01:00-06:00 TR arası güncelleme yapma)
             tr_hour = (datetime.utcnow().hour + 3) % 24
-            if tr_hour >= 23 or tr_hour < 9:
+            if 1 <= tr_hour < 6:
                 continue
             try:
                 log.info(f"✈️ Samair seferleri güncelleniyor ({interval//3600}h aralıkla)...")
@@ -5663,7 +5670,7 @@ def start_keep_alive_ping():
                 _req.get(ext, timeout=5)
                 
                 tr_hour = (datetime.utcnow().hour + 3) % 24
-                if tr_hour >= 23 or tr_hour < 9:
+                if 1 <= tr_hour < 6:
                     log.debug("💤 Gece modu: Sadece keep-alive (40s) ping gönderildi")
                 else:
                     log.debug("💓 Keep-Alive (40s) ağ aktivitesi yaratıldı")
