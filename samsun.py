@@ -834,8 +834,10 @@ class Database:
         log.info(f"📀 Supabase (REST API RPC) DB'ye bağlanıldı.")
         self._load_durak_coords()
         self._load_tram_csv_corrections()
+        return False
 
-        # Database Seed Entegrasyonu
+    def seed_if_empty(self):
+        """Veritabanı boşsa db_seed.json dosyasından statik turistik odak ve havalimanı hatlarını seed eder (Bloklamaması için arka planda çağrılmalıdır)"""
         try:
             if self.cnt('odak') == 0:
                 seed_path = "db_seed.json"
@@ -877,8 +879,6 @@ class Database:
                     log.info("📀 Veritabanı seed işlemi başarıyla tamamlandı.")
         except Exception as e:
             log.error(f"❌ Veritabanı seed hatası: {e}")
-
-        return False
 
     def _load_tram_csv_corrections(self):
         """CSV'den tramvay durak düzeltmelerini yükle (DB'yi bozmadan)"""
@@ -5847,6 +5847,10 @@ def initial_data_loader():
         # sıfırdan oluşturulması için tabloları temizliyor ve veri çekmeyi zorluyoruz.
         log.info("🧹 Supabase tabloları temizleniyor...")
         db.temizle()
+        
+        # Veritabanı temizlendiği için statik odak ve samair tablolarını 
+        # uvicorn'u bloklamadan arka planda (bu thread içinde) seed ediyoruz.
+        db.seed_if_empty()
         
         col.veri_cek(force=True)
         col.samair_seferler_guncelle(force=True)
