@@ -115,13 +115,30 @@ export const fetchAllLines = async (): Promise<TransitLine[]> => {
     }
 };
 
+const resolveSpecialLineId = async (code: string, type: string): Promise<string> => {
+    if (type !== "odak" && type !== "samair") return code;
+    const trimmed = String(code ?? "").trim();
+    if (/^\d+$/.test(trimmed)) return trimmed;
+    try {
+        const res = await fetch(`${API_BASE}/api/${type}`);
+        if (!res.ok) return code;
+        const data: any[] = await res.json();
+        const target = trimmed.toUpperCase();
+        const match = data.find((item) => String(item?.kod || "").trim().toUpperCase() === target);
+        return match?.id != null ? String(match.id) : code;
+    } catch {
+        return code;
+    }
+};
+
 export const fetchLineStops = async (code: string, type: string): Promise<TransitStop[]> => {
     try {
+        const resolvedCode = await resolveSpecialLineId(code, type);
         let endpoint = "";
         if (type === "odak") {
-            endpoint = `${API_BASE}/api/odak/${code}/durak`;
+            endpoint = `${API_BASE}/api/odak/${resolvedCode}/durak`;
         } else if (type === "samair") {
-            endpoint = `${API_BASE}/api/samair/${code}/durak`;
+            endpoint = `${API_BASE}/api/samair/${resolvedCode}/durak`;
         } else {
             endpoint = `${API_BASE}/api/hat/durak/${code}`;
         }
