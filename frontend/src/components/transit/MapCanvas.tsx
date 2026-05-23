@@ -242,6 +242,21 @@ const MapCanvas = () => {
     });
   }, [vehicles, mapFilters, setDetailItem]);
 
+  const reduceRoutePoints = (coords: [number, number][], maxPoints = 20) => {
+    if (coords.length <= maxPoints) return coords;
+    const step = (coords.length - 1) / (maxPoints - 1);
+    const sampled: [number, number][] = [];
+    for (let i = 0; i < maxPoints; i += 1) {
+      const index = Math.round(i * step);
+      const point = coords[index];
+      const last = sampled[sampled.length - 1];
+      if (!last || last[0] !== point[0] || last[1] !== point[1]) {
+        sampled.push(point);
+      }
+    }
+    return sampled.length > 1 ? sampled : coords;
+  };
+
   // Route drawing for Selected Line
   useEffect(() => {
     if (!mapRef.current) return;
@@ -254,16 +269,8 @@ const MapCanvas = () => {
     if (!selectedLine || stops.length < 2 || !settings.showRoute) return;
 
     const drawRouteOSRM = async (coords: [number, number][], color: string) => {
-      // If there are too many stops, skip OSRM to prevent block/failures, draw direct precise line
-      if (coords.length > 20) {
-        const pl = L.polyline(coords, { color: color, weight: 6, opacity: 0.7, lineJoin: 'round', lineCap: 'round' }).addTo(mapRef.current!);
-        routeLayerRef.current = pl;
-        mapRef.current?.fitBounds(pl.getBounds(), { padding: [40, 40] });
-        return;
-      }
-
       try {
-        let pts = coords;
+        const pts = reduceRoutePoints(coords);
         const wp = pts.map(c => c[1] + ',' + c[0]).join(';');
         const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${wp}?overview=full&geometries=geojson`);
         if (!res.ok) throw new Error("OSRM fetching failed");
