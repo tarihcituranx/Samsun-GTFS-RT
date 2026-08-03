@@ -8,7 +8,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 async def main():
     from playwright.async_api import async_playwright
-    proxy_config = {"server": "http://dc1.livaproxy.com:38186", "username": "tarihcituranx", "password": "AdIowZ8L"}
+    proxy_config = {"server": "http://dc1.livaproxy.com:38186", "username": "[GIZLI_KULLANICI]", "password": "[GIZLI_SIFRE]"}
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(

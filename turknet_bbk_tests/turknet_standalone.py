@@ -7,7 +7,7 @@ import sys
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-PROXY_URL = "http://tarihcituranx:AdIowZ8L@dc1.livaproxy.com:38186"
+PROXY_URL = "http://[GIZLI_KULLANICI]:[GIZLI_SIFRE]@dc1.livaproxy.com:38186"
 TARGET_URL = "https://www.turk.net/internet-hiz-altyapi-sorgulama"
 
 async def get_cookies_scrapling():
